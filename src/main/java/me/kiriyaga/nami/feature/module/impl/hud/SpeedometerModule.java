@@ -7,7 +7,6 @@ import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import net.minecraft.text.Text;
 
 import static me.kiriyaga.nami.Nami.*;
@@ -20,74 +19,50 @@ public class SpeedometerModule extends HudElementModule {
     }
 
     public final BoolSetting displayLabel = addSetting(new BoolSetting("display label", true));
-    public final IntSetting samples = addSetting(new IntSetting("samples", 80, 10, 200));
     public final EnumSetting<SpeedMode> mode = addSetting(new EnumSetting<>("mode", SpeedMode.KMH));
 
     private double speed = 0;
-    private double[] speedSamples;
-    private int speedSampleIndex = 0;
-    private boolean speedBufferFilled = false;
-
     private double lastX = 0;
     private double lastZ = 0;
 
     public SpeedometerModule() {
         super("speedometer", "Displays current player speed.", 0, 0, 50, 9);
-
-        samples.setOnChanged(() -> {
-            speedSamples = new double[samples.get()];
-            speedSampleIndex = 0;
-            speedBufferFilled = false;
-        });
-
-        speedSamples = new double[samples.get()];
     }
-
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     private void onTick(PreTickEvent event) {
         if (MC.player == null) return;
 
-        int sampleCount = samples.get();
-        if (speedSamples == null || speedSamples.length != sampleCount) {
-            speedSamples = new double[sampleCount];
-            speedSampleIndex = 0;
-            speedBufferFilled = false;
+        double x = MC.player.getX();
+        double z = MC.player.getZ();
+
+        if (lastX == 0 && lastZ == 0) {
+            lastX = x;
+            lastZ = z;
+            return;
         }
 
-        double dx = MC.player.getX() - lastX;
-        double dz = MC.player.getZ() - lastZ;
+        double dx = x - lastX;
+        double dz = z - lastZ;
 
-        double instantSpeed = Math.sqrt(dx * dx + dz * dz) * 20;
+        double distPerTick = Math.sqrt(dx * dx + dz * dz);
+        double speedBps = distPerTick * 20.0;
 
-        speedSamples[speedSampleIndex] = instantSpeed;
-        speedSampleIndex = (speedSampleIndex + 1) % sampleCount;
-
-        if (speedSampleIndex == 0) speedBufferFilled = true;
-
-        int count = speedBufferFilled ? sampleCount : speedSampleIndex;
-        double sum = 0;
-        for (int i = 0; i < count; i++) {
-            sum += speedSamples[i];
+        if (mode.get() == SpeedMode.BPS) {
+            speed = speedBps;
+        } else {
+            speed = speedBps * 3.6;
         }
 
-        speed = count > 0 ? sum / count : 0;
-
-        lastX = MC.player.getX();
-        lastZ = MC.player.getZ();
+        lastX = x;
+        lastZ = z;
     }
 
     @Override
     public Text getDisplayText() {
         if (MC.player == null) return CAT_FORMAT.format("{bg}NaN");
 
-        String speedStr;
-        if (mode.get() == SpeedMode.BPS) {
-            speedStr = formatSpeedNumber(speed) + " bp/s";
-        } else {
-            speedStr = formatSpeedNumber(speed * 3.6) + " km/h";
-        }
-
+        String speedStr = formatSpeedNumber(speed) + (mode.get() == SpeedMode.BPS ? " b/s" : " km/h");
         String textStr = displayLabel.get() ? "Speed: " + speedStr : speedStr;
 
         width = FONT_MANAGER.getWidth(textStr);
