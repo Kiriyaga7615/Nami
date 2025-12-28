@@ -8,9 +8,9 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.player.LocalPlayer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +34,7 @@ public class ReplenishModule extends Module {
     public void onTick(PostTickEvent event) {
         if (MC.world == null || MC.player == null) return;
         if (!inScreen.get() && MC.currentScreen != null) return;
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         ItemStack cursor = player.currentScreenHandler.getCursorStack();
 
         if (!cursor.isEmpty()) return;
@@ -68,7 +68,7 @@ public class ReplenishModule extends Module {
     }
 
     private int findInventorySlotToReplenish(ItemStack target) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
 
         for (int i = 9; i < 36; i++) {
             ItemStack stack = player.getInventory().getStack(i);

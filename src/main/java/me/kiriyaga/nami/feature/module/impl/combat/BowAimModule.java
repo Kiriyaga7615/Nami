@@ -13,12 +13,12 @@ import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.util.entity.TargetUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.BowItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.TridentItem;
-import net.minecraft.util.math.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TridentItem;
+import net.minecraft.world.phys.*;
 import java.awt.*;
 
 import static me.kiriyaga.nami.Nami.*;
@@ -55,7 +55,7 @@ public class BowAimModule extends Module {
         currentTarget = target;
         this.setDisplayInfo(target.getName().getString());
 
-        Vec3d aimPos = getAimPosition(target);
+        Vec3 aimPos = getAimPosition(target);
         ROTATION_MANAGER.getRequestHandler().submit(new RotationRequest(
                 BowAimModule.class.getName(),
                 6,
@@ -73,20 +73,20 @@ public class BowAimModule extends Module {
         drawBox(currentTarget, colorModule.getStyledGlobalColor(), event.getMatrices(), event.getTickDelta());
     }
 
-    private Vec3d getAimPosition(Entity entity) {
-        Box box = entity.getBoundingBox();
-        Vec3d center = getEntityCenter(entity);
+    private Vec3 getAimPosition(Entity entity) {
+        AABB box = entity.getBoundingBox();
+        Vec3 center = getEntityCenter(entity);
         double distance = MC.player.getEyePos().distanceTo(center);
 
         double heightBoost = box.getLengthY() * 0.75 + distance * 0.03;
-        return new Vec3d(center.x, box.minY + heightBoost, center.z);
+        return new Vec3(center.x, box.minY + heightBoost, center.z);
     }
 
-    private void drawBox(Entity entity, Color color, MatrixStack matrices, float partialTicks) {
+    private void drawBox(Entity entity, Color color, PoseStack matrices, float partialTicks) {
         double interpX = entity.lastRenderX + (entity.getX() - entity.lastRenderX) * partialTicks;
         double interpY = entity.lastRenderY + (entity.getY() - entity.lastRenderY) * partialTicks;
         double interpZ = entity.lastRenderZ + (entity.getZ() - entity.lastRenderZ) * partialTicks;
-        Box box = entity.getBoundingBox().offset(interpX - entity.getX(), interpY - entity.getY(), interpZ - entity.getZ());
+        AABB box = entity.getBoundingBox().offset(interpX - entity.getX(), interpY - entity.getY(), interpZ - entity.getZ());
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
     }
 }

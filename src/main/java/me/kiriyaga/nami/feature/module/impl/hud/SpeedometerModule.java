@@ -8,7 +8,7 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -78,7 +78,7 @@ public class SpeedometerModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         if (MC.player == null) return CAT_FORMAT.format("{bg}NaN");
 
         String speedStr;
@@ -96,7 +96,7 @@ public class SpeedometerModule extends HudElementModule {
         if (displayLabel.get()) {
             return CAT_FORMAT.format("{bg}Speed: {bw}" + speedStr);
         } else {
-            return Text.literal(textStr);
+            return Component.literal(textStr);
         }
     }
 

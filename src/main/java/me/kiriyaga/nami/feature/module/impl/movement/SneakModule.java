@@ -9,12 +9,12 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.KeyBindingAccessor;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -51,7 +51,7 @@ public class SneakModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onPreTickEvent(PreTickEvent event) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null) return;
 
         this.setDisplayInfo(mode.get().toString());
@@ -77,8 +77,8 @@ public class SneakModule extends Module {
         }
     }
 
-    private boolean shouldSneakAtEdges(ClientPlayerEntity player) {
-        Vec3d pos = player.getEntityPos();
+    private boolean shouldSneakAtEdges(LocalPlayer player) {
+        Vec3 pos = player.getEntityPos();
         int blockY = (int) Math.floor(pos.y - 0.001);
 
         if (!MC.player.isOnGround())
@@ -165,10 +165,10 @@ public class SneakModule extends Module {
 //    }
 
     private void setSneakHeld(boolean held) {
-        KeyBinding sneakKey = MC.options.sneakKey;
-        InputUtil.Key boundKey = ((KeyBindingAccessor) sneakKey).getBoundKey();
+        KeyMapping sneakKey = MC.options.sneakKey;
+        InputConstants.Key boundKey = ((KeyBindingAccessor) sneakKey).getBoundKey();
         int keyCode = boundKey.getCode();
-        boolean physicallyPressed = InputUtil.isKeyPressed(MC.getWindow(), keyCode);
+        boolean physicallyPressed = InputConstants.isKeyPressed(MC.getWindow(), keyCode);
         sneakKey.setPressed(physicallyPressed || held);
     }
 }

@@ -11,11 +11,11 @@ import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.entity.EntityUtils;
 import me.kiriyaga.nami.util.PredictMovementUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.awt.*;
 import java.util.List;
@@ -39,21 +39,21 @@ public class PredictTestModule extends Module {
     public void onRender3D(Render3DEvent event) {
         if (MC.world == null || MC.player == null) return;
 
-        MatrixStack matrices = event.getMatrices();
+        PoseStack matrices = event.getMatrices();
 
         if (predictSelf.get())
             renderPredictionForEntity(MC.player, matrices);
 
         if (predictOthers.get()) {
-            List<PlayerEntity> others = EntityUtils.getOtherPlayers();
-            for (PlayerEntity other : others) {
+            List<Player> others = EntityUtils.getOtherPlayers();
+            for (Player other : others) {
                 if (other.isRemoved()) continue;
                 renderPredictionForEntity(other, matrices);
             }
         }
     }
 
-    private void renderPredictionForEntity(Entity entity, MatrixStack matrices) {
+    private void renderPredictionForEntity(Entity entity, PoseStack matrices) {
         PredictMovementUtils.PredictedEntity initial = new PredictMovementUtils.PredictedEntity(
                 entity.getEntityPos(),
                 entity.getVelocity(),
@@ -63,20 +63,20 @@ public class PredictTestModule extends Module {
                 entity.getStandingEyeHeight()
         );
 
-        PredictMovementUtils.PredictedEntity predicted = PredictMovementUtils.predict(initial, ticks.get(), t -> Vec3d.ZERO);
+        PredictMovementUtils.PredictedEntity predicted = PredictMovementUtils.predict(initial, ticks.get(), t -> Vec3.ZERO);
 
         if (predicted == null) return;
 
         if (showBox.get()) {
-            Box box = entity.getBoundingBox().offset(predicted.pos.subtract(entity.getEntityPos()));
+            AABB box = entity.getBoundingBox().offset(predicted.pos.subtract(entity.getEntityPos()));
             RenderUtil.drawBoxLines(box, new Color(0, 255, 0, 200), true, true, 1.5f);
 
         }
 
         if (showEye.get()) {
-            Vec3d eye = predicted.getEyePos();
+            Vec3 eye = predicted.getEyePos();
             double size = 0.1;
-            Box eyeBox = new Box(eye.x - size, eye.y - size, eye.z - size, eye.x + size, eye.y + size, eye.z + size);
+            AABB eyeBox = new AABB(eye.x - size, eye.y - size, eye.z - size, eye.x + size, eye.y + size, eye.z + size);
             RenderUtil.drawBoxLines(eyeBox, new Color(255, 0, 0, 255), true, true, 1.5f);
         }
     }

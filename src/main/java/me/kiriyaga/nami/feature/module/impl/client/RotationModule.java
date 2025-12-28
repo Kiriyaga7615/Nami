@@ -7,7 +7,6 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
 
 @RegisterModule
 public class RotationModule extends Module {

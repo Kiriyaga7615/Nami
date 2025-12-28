@@ -1,8 +1,8 @@
 package me.kiriyaga.nami.core.rotation.model;
 
 import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.function.Supplier;
 
@@ -148,12 +148,12 @@ public class RotationRequest {
      * @param player Player BEFORE motion predict
      * @param pos  Pos to look at
      */
-    public RotationRequest(String id, int priority, LivingEntity player, Vec3d pos) {
+    public RotationRequest(String id, int priority, LivingEntity player, Vec3 pos) {
         this.id = id;
         this.priority = priority;
         this.rotationMode = RotationModule.RotationMode.MOTION;
 
-        Vec3d predictedEye = predictMotion(player);
+        Vec3 predictedEye = predictMotion(player);
 
         this.targetYaw = getYawToVec(predictedEye, pos);
         this.targetPitch = getPitchToVec(predictedEye, pos);

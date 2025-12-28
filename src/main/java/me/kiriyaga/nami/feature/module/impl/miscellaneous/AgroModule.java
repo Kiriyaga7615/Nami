@@ -9,13 +9,13 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.util.entity.EntityUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.mob.CreakingEntity;
-import net.minecraft.entity.mob.EndermanEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.monster.creaking.Creaking;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.world.phys.Vec3;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.RotationUtils.*;
@@ -50,8 +50,8 @@ public class AgroModule extends Module {
         for (Entity entity : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.ALL)) {
             if (entity == MC.player) continue;
 
-            if (modeSetting.get() == Mode.ENDERMAN && !(entity instanceof EndermanEntity && !isAggressiveNow(entity))) continue;
-            if (modeSetting.get() == Mode.CREAKING && !(entity instanceof CreakingEntity creak && creak.isActive())) continue;
+            if (modeSetting.get() == Mode.ENDERMAN && !(entity instanceof EnderMan && !isAggressiveNow(entity))) continue;
+            if (modeSetting.get() == Mode.CREAKING && !(entity instanceof Creaking creak && creak.isActive())) continue;
 
             double distance = MC.player.squaredDistanceTo(entity);
             if (distance < closestDistance) {
@@ -61,7 +61,7 @@ public class AgroModule extends Module {
         }
 
         if (closest != null) {
-            Vec3d eyes = closest.getEyePos();
+            Vec3 eyes = closest.getEyePos();
 
             ROTATION_MANAGER.getRequestHandler().submit(
                     new RotationRequest(

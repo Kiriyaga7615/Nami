@@ -8,12 +8,11 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.mixininterface.IPlayerInteractEntityC2SPacket;
-import me.kiriyaga.nami.util.Timer;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.network.packet.c2s.play.*;
-import net.minecraft.util.Hand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.world.InteractionHand;
 
 import static me.kiriyaga.nami.Nami.MC;
 import static me.kiriyaga.nami.Nami.ROTATION_MANAGER;
@@ -32,7 +31,7 @@ public class CriticalsModule extends Module {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void PacketSendEvent(PacketSendEvent event) {
         if (!(event.getPacket() instanceof IPlayerInteractEntityC2SPacket packet)) return;
-        if (packet.getType() != PlayerInteractEntityC2SPacket.InteractType.ATTACK) return;
+        if (packet.getType() != ServerboundInteractPacket.InteractType.ATTACK) return;
 
         if (!isValidAttackContext()) return;
 
@@ -48,14 +47,14 @@ public class CriticalsModule extends Module {
     }
 
     private boolean isValidAttackContext() {
-        return MC.player != null && MC.world != null && !MC.player.isRiding() && !MC.player.isGliding() && !MC.player.isTouchingWater() && !MC.player.isInLava() && !MC.player.isHoldingOntoLadder() && !MC.player.hasStatusEffect(StatusEffects.BLINDNESS);
+        return MC.player != null && MC.world != null && !MC.player.isRiding() && !MC.player.isGliding() && !MC.player.isTouchingWater() && !MC.player.isInLava() && !MC.player.isHoldingOntoLadder() && !MC.player.hasStatusEffect(MobEffects.BLINDNESS);
     }
 
     private void handleRidingAttack(Entity target) {
         if (mode.get() == CritMode.PACKET) {
             for (int i = 0; i < 5; i++) {
-                MC.getNetworkHandler().sendPacket(PlayerInteractEntityC2SPacket.attack(target, MC.player.isSneaking()));
-                MC.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+                MC.getNetworkHandler().sendPacket(ServerboundInteractPacket.attack(target, MC.player.isSneaking()));
+                MC.getNetworkHandler().sendPacket(new HandSwingC2SPacket(InteractionHand.MAIN_HAND));
             }
         }
     }

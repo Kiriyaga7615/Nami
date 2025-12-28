@@ -10,11 +10,11 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.EnchantmentUtils;
-import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.GameMode;
+import net.minecraft.client.telemetry.TelemetryProperty;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.state.BlockState;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.entity.PlayerUtils.isBroken;
@@ -33,7 +33,7 @@ public class AutoToolModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     private void onStartBreakingBlockEvent(StartBreakingBlockEvent event) {
-        if (MC.player == null || MC.world == null || MC.player.getGameMode() != GameMode.SURVIVAL) {
+        if (MC.player == null || MC.world == null || MC.player.getGameMode() != TelemetryProperty.GameMode.SURVIVAL) {
             return;
         }
 

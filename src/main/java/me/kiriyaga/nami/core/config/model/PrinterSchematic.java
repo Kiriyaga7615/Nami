@@ -2,12 +2,12 @@ package me.kiriyaga.nami.core.config.model;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
 
 import static me.kiriyaga.nami.Nami.MC;
 
@@ -33,7 +33,7 @@ public class PrinterSchematic {
         );
 
         JsonArray array = new JsonArray();
-        ClientWorld world = MC.world;
+        ClientLevel world = MC.world;
 
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int y = min.getY(); y <= max.getY(); y++) {

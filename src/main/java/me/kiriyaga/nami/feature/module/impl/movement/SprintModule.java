@@ -9,9 +9,7 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.PlayerInteractEntityC2SPacketAccessor;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
+import net.minecraft.client.player.LocalPlayer;
 
 import static me.kiriyaga.nami.Nami.MC;
 // some crazy shit happened here
@@ -39,7 +37,7 @@ public class SprintModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPreTickEvent(PreTickEvent event) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null) return;
 
         if (shouldSprintTicks > 0) {

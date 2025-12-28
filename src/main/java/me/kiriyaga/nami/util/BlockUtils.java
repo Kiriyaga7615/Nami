@@ -1,9 +1,9 @@
 package me.kiriyaga.nami.util;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 
 import java.awt.*;
 import java.util.HashSet;
@@ -11,8 +11,8 @@ import java.util.Set;
 
 
 public class BlockUtils {
-    private static final Block AIR_BLOCK = Registries.BLOCK.get(Identifier.of("minecraft", "air"));
-    private static final Block VOID_AIR_BLOCK = Registries.BLOCK.get(Identifier.of("minecraft", "void_air"));
+    private static final Block AIR_BLOCK = BuiltInRegistries.BLOCK.get(Identifier.of("minecraft", "air"));
+    private static final Block VOID_AIR_BLOCK = BuiltInRegistries.BLOCK.get(Identifier.of("minecraft", "void_air"));
 
 
     private static final Set<String> NON_VANILLA_GENERATED_IDS = Set.of(

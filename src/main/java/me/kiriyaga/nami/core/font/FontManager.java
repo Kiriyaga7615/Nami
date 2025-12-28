@@ -2,8 +2,8 @@ package me.kiriyaga.nami.core.font;
 
 import me.kiriyaga.nami.feature.module.impl.client.FontModule;
 import me.kiriyaga.nami.util.ColorUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 
@@ -20,7 +20,7 @@ public class FontManager {
         fontLoader.init();
     }
 
-    public void drawText(DrawContext context, Text text, int x, int y, boolean shadow, int color) {
+    public void drawText(GuiGraphics context, Component text, int x, int y, boolean shadow, int color) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -32,7 +32,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, color, false);
     }
 
-    public void drawText(DrawContext context, String text, int x, int y, boolean shadow, int color) {
+    public void drawText(GuiGraphics context, String text, int x, int y, boolean shadow, int color) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -44,7 +44,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, color, false);
     }
 
-    public void drawText(DrawContext context, Text text, int x, int y, boolean shadow) {
+    public void drawText(GuiGraphics context, Component text, int x, int y, boolean shadow) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -56,7 +56,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, 0xFFFFFFFF, false);
     }
 
-    public void drawText(DrawContext context, String text, int x, int y, boolean shadow) {
+    public void drawText(GuiGraphics context, String text, int x, int y, boolean shadow) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -68,7 +68,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, 0xFFFFFFFF, false);
     }
 
-    public void drawText(DrawContext context, Text text, int x, int y, int color, boolean shadow) {
+    public void drawText(GuiGraphics context, Component text, int x, int y, int color, boolean shadow) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -80,7 +80,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, color, false);
     }
 
-    public void drawText(DrawContext context, String text, int x, int y, int color, boolean shadow) {
+    public void drawText(GuiGraphics context, String text, int x, int y, int color, boolean shadow) {
         if (shadow) {
             var matrices = context.getMatrices();
             matrices.pushMatrix();
@@ -92,7 +92,7 @@ public class FontManager {
         context.drawText(rendererProvider.getRenderer(), text, x, y, color, false);
     }
 
-    public int getWidth(Text text) {
+    public int getWidth(Component text) {
         return rendererProvider.getRenderer().getWidth(text);
     }
 

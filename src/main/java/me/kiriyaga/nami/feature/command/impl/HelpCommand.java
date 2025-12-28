@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.command.impl;
 import me.kiriyaga.nami.feature.command.Command;
 import me.kiriyaga.nami.feature.command.CommandArgument;
 import me.kiriyaga.nami.feature.command.RegisterCommand;
-import net.minecraft.text.MutableText;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,7 +36,7 @@ public class HelpCommand extends Command {
                 .map(this::getDisplay)
                 .collect(Collectors.joining(", "));
 
-        MutableText message = CAT_FORMAT.format("Available commands: %s.", displayText);
+        MutableComponent message = CAT_FORMAT.format("Available commands: %s.", displayText);
         CHAT_MANAGER.sendPersistent(HelpCommand.class.getName(), message);
     }
 

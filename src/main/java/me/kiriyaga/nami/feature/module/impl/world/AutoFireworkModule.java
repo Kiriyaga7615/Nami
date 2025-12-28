@@ -8,10 +8,10 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import static me.kiriyaga.nami.Nami.INVENTORY_MANAGER;
 import static me.kiriyaga.nami.Nami.MC;
@@ -65,7 +65,7 @@ public class AutoFireworkModule extends Module {
         if (hotbarSlot != -1) {
             int prevSlot = MC.player.getInventory().getSelectedSlot();
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(hotbarSlot);
-            MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+            MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(prevSlot);
             return true;
         }
@@ -76,7 +76,7 @@ public class AutoFireworkModule extends Module {
             int containerInvSlot = convertSlot(invSlot);
 
             INVENTORY_MANAGER.getClickHandler().swapSlot(containerInvSlot, selectedHotbarIndex);
-            MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+            MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
             INVENTORY_MANAGER.getClickHandler().swapSlot(containerInvSlot, selectedHotbarIndex);
             return true;
         }

@@ -20,23 +20,23 @@ import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.util.EnchantmentUtils;
 import me.kiriyaga.nami.util.entity.TargetUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.AttributeModifiersComponent;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.projectile.ShulkerBulletEntity;
-import net.minecraft.item.*;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.text.Text;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.*;
-import net.minecraft.util.hit.EntityHitResult;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.projectile.ShulkerBullet;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.*;
+import net.minecraft.world.phys.EntityHitResult;
 
 import java.awt.*;
 
@@ -91,7 +91,7 @@ public class AuraModule extends Module {
         attackCooldownTicks -= 1f * (tps / 20f);
         if (attackCooldownTicks < 0f) attackCooldownTicks = 0f;
 
-        MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugAura(Text.of("cooldown ticks is : "+attackCooldownTicks));
+        MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugAura(Component.of("cooldown ticks is : "+attackCooldownTicks));
 
         if (!multiTask.get() && MC.player.isUsingItem()) {
             currentTarget = null;
@@ -124,19 +124,19 @@ public class AuraModule extends Module {
 
         boolean skipCooldown = false;
 
-        if (target instanceof ShulkerBulletEntity) {
+        if (target instanceof ShulkerBullet) {
             skipCooldown = true;
         } else {
             ItemStack held = stack;
             float attackDamage = 1.0f;
 
-            if (MC.player.hasStatusEffect(StatusEffects.STRENGTH)) {
-                var strength = MC.player.getStatusEffect(StatusEffects.STRENGTH);
+            if (MC.player.hasStatusEffect(MobEffects.STRENGTH)) {
+                var strength = MC.player.getStatusEffect(MobEffects.STRENGTH);
                 attackDamage += 3.0f * (strength.getAmplifier() + 1);
             }
 
-            if (MC.player.hasStatusEffect(StatusEffects.WEAKNESS)) {
-                var weakness = MC.player.getStatusEffect(StatusEffects.WEAKNESS);
+            if (MC.player.hasStatusEffect(MobEffects.WEAKNESS)) {
+                var weakness = MC.player.getStatusEffect(MobEffects.WEAKNESS);
                 attackDamage -= 4.0f * (weakness.getAmplifier() + 1); // im not sure is it 4 or 3 btw
             }
 
@@ -163,8 +163,8 @@ public class AuraModule extends Module {
 
         // RayCast as main distance check
         if ((skipCooldown || attackCooldownTicks <= preRotate * tps)) {
-            Vec3d eyePos = MC.player.getCameraPosVec(1.0f);
-            Vec3d closestPoint = getClosestPointToEye(eyePos, target.getBoundingBox());
+            Vec3 eyePos = MC.player.getCameraPosVec(1.0f);
+            Vec3 closestPoint = getClosestPointToEye(eyePos, target.getBoundingBox());
             float idealYaw = (float) getYawToVec(MC.player, closestPoint);
             float idealPitch = (float) getPitchToVec(MC.player, closestPoint);
 
@@ -228,7 +228,7 @@ public class AuraModule extends Module {
 
         if (stopSprinting.get() == Sprint.PACKET && !MC.player.isSneaking())
             if (MC.player.isSprinting()){
-                MC.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(MC.player, ClientCommandC2SPacket.Mode.STOP_SPRINTING));
+                MC.getNetworkHandler().sendPacket(new ServerboundPlayerCommandPacket(MC.player, ServerboundPlayerCommandPacket.Mode.STOP_SPRINTING));
                 b = true;
             }
 
@@ -245,7 +245,7 @@ public class AuraModule extends Module {
         MC.interactionManager.attackEntity(MC.player, target);
 
         if (swing.get())
-            MC.player.swingHand(Hand.MAIN_HAND);
+            MC.player.swingHand(InteractionHand.MAIN_HAND);
 
         if (swap.get() == Swap.SILENT) {
             if (prev != -1) {
@@ -255,19 +255,19 @@ public class AuraModule extends Module {
 
         if (stopSprinting.get() == Sprint.PACKET)
             if (b)
-                MC.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(MC.player, ClientCommandC2SPacket.Mode.START_SPRINTING));
+                MC.getNetworkHandler().sendPacket(new ServerboundPlayerCommandPacket(MC.player, ServerboundPlayerCommandPacket.Mode.START_SPRINTING));
 
         if (!skipCooldown) attackCooldownTicks = getBaseCooldownTicks(stack, tps);
 
         long auraLogicDuration = System.nanoTime() - auraLogicStart;
-        debugModule.debugAura(Text.of(String.format("logic time: %.3f ms", auraLogicDuration / 1_000_000.0)));
+        debugModule.debugAura(Component.of(String.format("logic time: %.3f ms", auraLogicDuration / 1_000_000.0)));
         long totalDuration = System.nanoTime() - startTime;
-        debugModule.debugAura(Text.of(String.format("total %.3f ms", totalDuration / 1_000_000.0)));
+        debugModule.debugAura(Component.of(String.format("total %.3f ms", totalDuration / 1_000_000.0)));
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onPacketReceive(PacketReceiveEvent ev) {
-        if (!(ev.getPacket() instanceof UpdateSelectedSlotC2SPacket)) return;
+        if (!(ev.getPacket() instanceof ServerboundSetCarriedItemPacket)) return;
         if (MC.player == null || MC.world == null) return;
 
         EXECUTABLE_MANAGER.getRequestHandler().submit(() -> {
@@ -293,11 +293,11 @@ public class AuraModule extends Module {
         drawBox(currentTarget, colorModule.getStyledGlobalColor(), event.getMatrices(), event.getTickDelta());
     }
 
-    private void drawBox(Entity entity, Color color, MatrixStack matrices, float partialTicks) {
+    private void drawBox(Entity entity, Color color, PoseStack matrices, float partialTicks) {
         double interpX = entity.lastRenderX + (entity.getX() - entity.lastRenderX) * partialTicks;
         double interpY = entity.lastRenderY + (entity.getY() - entity.lastRenderY) * partialTicks;
         double interpZ = entity.lastRenderZ + (entity.getZ() - entity.lastRenderZ) * partialTicks;
-        Box box = entity.getBoundingBox().offset(interpX - entity.getX(), interpY - entity.getY(), interpZ - entity.getZ());
+        AABB box = entity.getBoundingBox().offset(interpX - entity.getX(), interpY - entity.getY(), interpZ - entity.getZ());
 
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
 
@@ -350,10 +350,10 @@ public class AuraModule extends Module {
 
             float attackDamage = 0f;
 
-            if (held.contains(DataComponentTypes.ATTRIBUTE_MODIFIERS)) {
-                AttributeModifiersComponent modifiers = held.get(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+            if (held.contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
+                ItemAttributeModifiers modifiers = held.get(DataComponents.ATTRIBUTE_MODIFIERS);
                 for (var entry : modifiers.comp_2393()) {
-                    if (entry.comp_2395().matches(EntityAttributes.ATTACK_DAMAGE)) {
+                    if (entry.comp_2395().matches(Attributes.ATTACK_DAMAGE)) {
                         attackDamage += (float) entry.comp_2396().value();
                     }
                 }

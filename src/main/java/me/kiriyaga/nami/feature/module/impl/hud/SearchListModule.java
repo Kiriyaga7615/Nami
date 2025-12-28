@@ -4,10 +4,10 @@ import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.module.impl.visuals.blocksearch.BlockSearchModule;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.block.BlockState;
-import net.minecraft.registry.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.registries.Registries;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
@@ -73,7 +73,7 @@ public class SearchListModule extends HudElementModule {
 
         for (String name : sortedNames) {
             int count = blockCounts.get(name);
-            Text text = CAT_FORMAT.format("{bg}" + name + (count > 1 ? " {bw}(x" + count + ")" : ""));
+            Component text = CAT_FORMAT.format("{bg}" + name + (count > 1 ? " {bw}(x" + count + ")" : ""));
             int textWidth = FONT_MANAGER.getWidth(text);
             elements.add(new TextElement(text, 0, yOffset));
 
@@ -88,7 +88,7 @@ public class SearchListModule extends HudElementModule {
     }
 
     private int getTextWidth(String name, int count) {
-        Text text = CAT_FORMAT.format("{bg}" + name + (count > 1 ? " {bw}(x" + count + ")" : ""));
+        Component text = CAT_FORMAT.format("{bg}" + name + (count > 1 ? " {bw}(x" + count + ")" : ""));
         return FONT_MANAGER.getWidth(text);
     }
 }

@@ -9,14 +9,14 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.entity.projectile.thrown.EnderPearlEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.InteractionUtils.interactWithEntity;
@@ -49,7 +49,7 @@ public class AutoNametagModule extends Module {
         for (Entity entity : MC.world.getEntities()) {
             if (entity == null || entity == MC.player) continue;
             if (entity.getCustomName() != null && !nametagged.get()) continue;
-            if (entity instanceof VillagerEntity || entity instanceof EnderPearlEntity || entity instanceof EnderDragonEntity) continue;
+            if (entity instanceof Villager || entity instanceof ThrownEnderpearl || entity instanceof EnderDragon) continue;
 
             int nameTagSlot = getNameTagSlot();
             if (nameTagSlot == -1) continue;

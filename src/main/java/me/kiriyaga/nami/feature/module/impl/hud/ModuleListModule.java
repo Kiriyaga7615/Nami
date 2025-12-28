@@ -5,7 +5,7 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.awt.*;
 import java.util.*;
@@ -74,7 +74,7 @@ public class ModuleListModule extends HudElementModule {
                 } else {
                     rawText = module.getName();
                 }
-                Text formattedText = CAT_FORMAT.format("{bg}" + rawText);
+                Component formattedText = CAT_FORMAT.format("{bg}" + rawText);
                 state.textWidth = FONT_MANAGER.getWidth(formattedText);
 
                 animationStates.put(name, state);
@@ -118,7 +118,7 @@ public class ModuleListModule extends HudElementModule {
                 formattedTextStr = "{bg}" + module.getName();
             }
 
-            Text formattedText = CAT_FORMAT.format(formattedTextStr);
+            Component formattedText = CAT_FORMAT.format(formattedTextStr);
             int width = FONT_MANAGER.getWidth(formattedText);
             moduleTexts.add(new ModuleTextInfo(module, formattedText, rawText, width));
         }
@@ -152,7 +152,7 @@ public class ModuleListModule extends HudElementModule {
                 continue;
             }
 
-            Text text = info.formattedText;
+            Component text = info.formattedText;
 
             int animatedOffsetX = 0;
             switch (alignment.get()) {
@@ -193,11 +193,11 @@ public class ModuleListModule extends HudElementModule {
 
     private static class ModuleTextInfo {
         public final Module module;
-        public final Text formattedText;
+        public final Component formattedText;
         public final String rawText;
         public final int width;
 
-        public ModuleTextInfo(Module module, Text formattedText, String rawText, int width) {
+        public ModuleTextInfo(Module module, Component formattedText, String rawText, int width) {
             this.module = module;
             this.formattedText = formattedText;
             this.rawText = rawText;

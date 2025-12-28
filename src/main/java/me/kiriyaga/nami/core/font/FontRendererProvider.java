@@ -2,12 +2,10 @@ package me.kiriyaga.nami.core.font;
 
 import me.kiriyaga.nami.feature.module.impl.client.FontModule;
 import me.kiriyaga.nami.mixin.TextRendererAccessor;
-import net.minecraft.client.font.EffectGlyph;
-import net.minecraft.client.font.FontStorage;
-import net.minecraft.client.font.GlyphProvider;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.text.StyleSpriteSource;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.gui.font.glyphs.EffectGlyph;
+import com.mojang.blaze3d.font.GlyphProvider;
+import net.minecraft.client.gui.Font;
+import net.minecraft.network.chat.FontDescription;
 
 import static me.kiriyaga.nami.Nami.MC;
 import static me.kiriyaga.nami.Nami.MODULE_MANAGER;
@@ -15,7 +13,7 @@ import static me.kiriyaga.nami.Nami.MODULE_MANAGER;
 public class FontRendererProvider {
 
     private final FontLoader fontLoader;
-    private TextRenderer cachedRenderer;
+    private Font cachedRenderer;
     private int cachedSize = -1;
     private int cachedOversample = -1;
 
@@ -23,7 +21,7 @@ public class FontRendererProvider {
         this.fontLoader = fontLoader;
     }
 
-    public TextRenderer getRenderer() {
+    public Font getRenderer() {
         FontModule fontModule = MODULE_MANAGER.getStorage().getByClass(FontModule.class);
 
         if (!fontModule.isEnabled()) {
@@ -40,9 +38,9 @@ public class FontRendererProvider {
 
         EffectGlyph rectangle = ((TextRendererAccessor) MC.textRenderer).getFonts().getRectangleGlyph();
 
-        cachedRenderer = new TextRenderer(new TextRenderer.GlyphsProvider() {
+        cachedRenderer = new Font(new Font.GlyphsProvider() {
             @Override
-            public GlyphProvider getGlyphs(StyleSpriteSource font) {
+            public GlyphProvider getGlyphs(FontDescription font) {
                 return fontLoader.getStorage().getGlyphs(true);
             }
 

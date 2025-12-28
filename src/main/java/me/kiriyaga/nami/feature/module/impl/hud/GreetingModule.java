@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -50,7 +50,7 @@ public class GreetingModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         if (MC.player == null) {
             resetGreeting();
             return CAT_FORMAT.format("{bg}NaN");
@@ -95,10 +95,10 @@ public class GreetingModule extends HudElementModule {
                 greetingShownTime = now;
             }
         } else if (greetingCharIndex == 0 && now - greetingShownTime < greetingDelay.get() * 1000L) {
-            return Text.empty();
+            return Component.empty();
         }
 
-        if (currentGreeting.isEmpty()) return Text.empty();
+        if (currentGreeting.isEmpty()) return Component.empty();
 
         String formattedText = "{bg}" + currentGreeting;
 

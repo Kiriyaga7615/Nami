@@ -6,9 +6,9 @@ import me.kiriyaga.nami.feature.command.CommandArgument;
 import me.kiriyaga.nami.feature.command.RegisterCommand;
 import me.kiriyaga.nami.feature.module.impl.client.DebugModule;
 import me.kiriyaga.nami.util.container.ContainerUtils;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -28,11 +28,11 @@ public class PeekCommand extends Command {
         EXECUTABLE_MANAGER.getRequestHandler().submit(() -> {
             ItemStack main = MC.player.getMainHandStack();
             ItemStack off = MC.player.getOffHandStack();
-            MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugPeek(Text.of("called"));
+            MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugPeek(Component.of("called"));
 
             if (ContainerUtils.openContainer(main)) return;
             if (ContainerUtils.openContainer(off)) return;
-            if (MC.targetedEntity instanceof ItemFrameEntity entity) {
+            if (MC.targetedEntity instanceof ItemFrame entity) {
                 ContainerUtils.openContainer(entity.getHeldItemStack());
             }
         }, 5, ExecutableThreadType.PRE_TICK);

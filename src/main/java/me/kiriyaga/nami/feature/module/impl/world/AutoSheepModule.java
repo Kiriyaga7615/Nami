@@ -9,10 +9,11 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.entity.EntityUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.SheepEntity;
-import net.minecraft.item.Items;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.sheep.Sheep;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.InteractionUtils.interactWithEntity;
@@ -41,7 +42,7 @@ public class AutoSheepModule extends Module {
         }
 
         for (Entity entity : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PASSIVE, 10, true)) {
-            if (!(entity instanceof SheepEntity sheep)) continue;
+            if (!(entity instanceof Sheep sheep)) continue;
             if (!sheep.isAlive() || sheep.isSheared() || sheep.isBaby()) continue;
 
             int shearsSlot = getShearsSlot();

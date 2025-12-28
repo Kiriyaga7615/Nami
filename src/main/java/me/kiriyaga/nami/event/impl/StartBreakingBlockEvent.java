@@ -1,8 +1,8 @@
 package me.kiriyaga.nami.event.impl;
 
 import me.kiriyaga.nami.event.Event;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 
 public class StartBreakingBlockEvent extends Event {
     public BlockPos blockPos;

@@ -5,8 +5,8 @@ import me.kiriyaga.nami.feature.gui.newgui.base.DataPanel;
 import me.kiriyaga.nami.feature.gui.newgui.entry.FriendEntry;
 import me.kiriyaga.nami.feature.gui.newgui.widget.ButtonWidget;
 import me.kiriyaga.nami.feature.gui.newgui.widget.TextBoxWidget;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -69,7 +69,7 @@ public class ConsolePanelComponent<T extends BaseEntry> extends DataPanel<T> {
     }
 
     @Override
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphics context, Font textRenderer, int mouseX, int mouseY) {
         super.render(context, textRenderer, mouseX, mouseY);
 
         inputBox.setPosition(x + 2, y + height - inputHeight - 2);

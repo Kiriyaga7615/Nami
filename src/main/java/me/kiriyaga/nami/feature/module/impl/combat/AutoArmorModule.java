@@ -11,11 +11,11 @@ import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.EnchantmentUtils;
 import me.kiriyaga.nami.util.entity.TargetUtils;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.*;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.*;
 
 import java.util.*;
 
@@ -116,7 +116,7 @@ public class AutoArmorModule extends Module {
     }
 
     private List<ItemStack> findCandidatesForSlot(EquipmentSlot slot, boolean forceBest) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         List<ItemStack> candidates = new ArrayList<>();
 
         for (int i = 0; i < 36; i++) {
@@ -249,7 +249,7 @@ public class AutoArmorModule extends Module {
     }
 
     private ItemStack findDamagedMendingArmor(EquipmentSlot slot) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         for (int i = 0; i < 36; i++) {
             ItemStack stack = player.getInventory().getStack(i);
             if (stack.isEmpty()) continue;

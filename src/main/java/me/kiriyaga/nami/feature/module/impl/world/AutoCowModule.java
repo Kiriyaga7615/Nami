@@ -9,10 +9,10 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.entity.EntityUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.InteractionUtils.interactWithEntity;
@@ -41,7 +41,7 @@ public class AutoCowModule extends Module {
         }
 
         for (Entity entity : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PASSIVE, 10, true)) {
-            if (!(entity instanceof CowEntity cow)) continue;
+            if (!(entity instanceof Cow cow)) continue;
             if (!cow.isAlive() || cow.isBaby()) continue;
 
             int bucketSlot = getBucketSlot();

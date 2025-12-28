@@ -1,6 +1,7 @@
 package me.kiriyaga.nami.feature.module.impl.visuals.blocksearch;
 
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.level.ChunkPos;
+
 import java.util.List;
 
 public class Chunk {

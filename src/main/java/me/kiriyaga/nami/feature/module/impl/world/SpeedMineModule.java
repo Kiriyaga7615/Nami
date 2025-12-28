@@ -16,20 +16,26 @@ import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.EnchantmentUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.effect.StatusEffectUtil;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
-import net.minecraft.registry.tag.FluidTags;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.*;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffectUtil;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.InteractionHand;
+
+
 
 import java.awt.*;
 
@@ -107,7 +113,7 @@ public class SpeedMineModule extends Module {
         event.cancel();
 
         if (swing.get())
-            MC.player.swingHand(Hand.MAIN_HAND);
+            MC.player.swingHand(InteractionHand.MAIN_HAND);
 
         if (currentTask != null) {
             if (currentTask.getBlockPos().equals(event.blockPos)) return;
@@ -141,32 +147,32 @@ public class SpeedMineModule extends Module {
 
     private void renderProgress(Render3DEvent event, BlockBreakingTask task) {
         BlockPos pos = task.getBlockPos();
-        VoxelShape shape = task.isInstantRemine() ? VoxelShapes.fullCube() : task.getBlockState().getOutlineShape(MC.world, pos);
+        VoxelShape shape = task.isInstantRemine() ? Shapes.block() : task.getBlockState().getOutlineShape(MC.world, pos);
 
-        if (shape.isEmpty()) shape = VoxelShapes.fullCube();
+        if (shape.isEmpty()) shape = Shapes.block();
 
-        Box bb = shape.getBoundingBox();
-        Box worldBox = new Box(
+        AABB bb = shape.getBoundingBox();
+        AABB worldBox = new AABB(
                 pos.getX() + bb.minX, pos.getY() + bb.minY, pos.getZ() + bb.minZ,
                 pos.getX() + bb.maxX, pos.getY() + bb.maxY, pos.getZ() + bb.maxZ
         );
 
-        Vec3d center = worldBox.getCenter();
+        Vec3 center = worldBox.getCenter();
 
         float partialTicks = event.getTickDelta();
         float currentProgress = task.getProgress();
         float previousProgress = task.getPreviousProgress();
         float interpolatedProgress = previousProgress + (currentProgress - previousProgress) * partialTicks;
 
-        float scale = MathHelper.clamp(interpolatedProgress / task.getTargetSpeed(), 0, 1.0f);
+        float scale = Mth.clamp(interpolatedProgress / task.getTargetSpeed(), 0, 1.0f);
 
         double dx = (bb.maxX - bb.minX) / 2.0;
         double dy = (bb.maxY - bb.minY) / 2.0;
         double dz = (bb.maxZ - bb.minZ) / 2.0;
 
-        Box box = new Box(center, center).expand(dx * scale, dy * scale, dz * scale);
+        AABB box = new AABB(center, center).expand(dx * scale, dy * scale, dz * scale);
 
-        float t = MathHelper.clamp((scale - 0.5f) * 2f, 0f, 1f);
+        float t = Mth.clamp((scale - 0.5f) * 2f, 0f, 1f);
         int maxColor = 200;
         int r = (int) (maxColor * (1 - t));
         int g = (int) (maxColor * t);
@@ -178,10 +184,10 @@ public class SpeedMineModule extends Module {
     }
 
     private void handleMiningTick(BlockBreakingTask task) {
-        Vec3d eyePos = MC.player.getEyePos();
-        Box blockBox = new Box(task.getBlockPos());
-        Vec3d lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
-        Vec3d reachEnd = eyePos.add(lookDir.multiply(range.get()));
+        Vec3 eyePos = MC.player.getEyePos();
+        AABB blockBox = new AABB(task.getBlockPos());
+        Vec3 lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
+        Vec3 reachEnd = eyePos.add(lookDir.multiply(range.get()));
         boolean insideBox = blockBox.contains(eyePos);
 
         if (!insideBox && blockBox.raycast(eyePos, reachEnd).isEmpty()) {
@@ -200,7 +206,7 @@ public class SpeedMineModule extends Module {
         }
 
         if (swing.get())
-            MC.player.swingHand(Hand.MAIN_HAND);
+            MC.player.swingHand(InteractionHand.MAIN_HAND);
 
         if (rotate.get() == Rotate.HOLD)
             ROTATION_MANAGER.getRequestHandler().submit(new RotationRequest(this.name, 8, getYawToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getPitchToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
@@ -216,10 +222,10 @@ public class SpeedMineModule extends Module {
         if (!doubleMine.get())
             return;
 
-        Vec3d eyePos = MC.player.getEyePos();
-        Box blockBox = new Box(task.getBlockPos());
-        Vec3d lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
-        Vec3d reachEnd = eyePos.add(lookDir.multiply(range.get()));
+        Vec3 eyePos = MC.player.getEyePos();
+        AABB blockBox = new AABB(task.getBlockPos());
+        Vec3 lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
+        Vec3 reachEnd = eyePos.add(lookDir.multiply(range.get()));
         boolean insideBox = blockBox.contains(eyePos);
 
         if (!insideBox && blockBox.raycast(eyePos, reachEnd).isEmpty()) {
@@ -259,10 +265,10 @@ public class SpeedMineModule extends Module {
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(getSlot(task.getBlockState()));
 
         if (grim.get())
-            sendDestroyPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, task);
+            sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
 
-        sendDestroyPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, task);
-        sendDestroyPacket(PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK, task);
+        sendDestroyPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, task);
+        sendDestroyPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, task);
 
         task.markStarted();
     }
@@ -272,12 +278,12 @@ public class SpeedMineModule extends Module {
             return;
 
         if (grim.get())
-            sendDestroyPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, task);
+            sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
 
         if (swing.get())
-            MC.player.swingHand(Hand.MAIN_HAND);
+            MC.player.swingHand(InteractionHand.MAIN_HAND);
 
-        sendDestroyPacket(PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK, task);
+        sendDestroyPacket(ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK, task);
     }
 
     private void finishMining(BlockBreakingTask task) {
@@ -286,8 +292,8 @@ public class SpeedMineModule extends Module {
         if (currentTask.lastBrokenCount == currentTask.brokenCount && !async.get())
             return;
 
-        Vec3d eyePos = MC.player.getEyePos();
-        Box blockBox = new Box(task.getBlockPos());
+        Vec3 eyePos = MC.player.getEyePos();
+        AABB blockBox = new AABB(task.getBlockPos());
 
         if (rotate.get() == Rotate.NORMAL)
             ROTATION_MANAGER.getRequestHandler().submit(new RotationRequest(this.name, 8, getYawToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getPitchToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
@@ -309,12 +315,12 @@ public class SpeedMineModule extends Module {
         }
 
         if (grim.get())
-            sendDestroyPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, task);
+            sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
 
         if (swing.get())
-            MC.player.swingHand(Hand.MAIN_HAND);
+            MC.player.swingHand(InteractionHand.MAIN_HAND);
 
-        sendDestroyPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, task);
+        sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
 
         if (swap.get() == Swap.SILENT121 && currentTask.isInstantRemine() && currentTask.brokenCount >= 2) {
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(prev);
@@ -331,7 +337,7 @@ public class SpeedMineModule extends Module {
     private void onPacketReceiveEvent(PacketReceiveEvent event) {
         if (currentTask == null) return;
 
-        if (event.getPacket() instanceof BlockUpdateS2CPacket blockPacket) {
+        if (event.getPacket() instanceof ClientboundBlockUpdatePacket blockPacket) {
             BlockPos pos = blockPacket.getPos();
 
             if (pos.equals(currentTask.getBlockPos())) {
@@ -342,11 +348,11 @@ public class SpeedMineModule extends Module {
 
 
 
-    private void sendDestroyPacket(PlayerActionC2SPacket.Action action, BlockBreakingTask task) {
-        sendSequencedPacket(id -> new PlayerActionC2SPacket(action, task.getBlockPos(), task.getFacing(), id));
+    private void sendDestroyPacket(ServerboundPlayerActionPacket.Action action, BlockBreakingTask task) {
+        sendSequencedPacket(id -> new ServerboundPlayerActionPacket(action, task.getBlockPos(), task.getFacing(), id));
     }
 
-    private float calculateBlockDamage(BlockState state, BlockView world, BlockPos pos) {
+    private float calculateBlockDamage(BlockState state, BlockGetter world, BlockPos pos) {
         float hardness = state.getHardness(world, pos);
         if (hardness == -1.0f) return 0.0f;
 
@@ -417,13 +423,13 @@ public class SpeedMineModule extends Module {
             }
         }
 
-        if (StatusEffectUtil.hasHaste(MC.player)) {
-            int amplifier = StatusEffectUtil.getHasteAmplifier(MC.player) + 1;
+        if (MobEffectUtil.hasDigSpeed(MC.player)) {
+            int amplifier = MobEffectUtil.getHasteAmplifier(MC.player) + 1;
             speed *= 1.0f + amplifier * 0.2f;
         }
 
-        if (MC.player.hasStatusEffect(StatusEffects.MINING_FATIGUE)) {
-            float multiplier = switch (MC.player.getStatusEffect(StatusEffects.MINING_FATIGUE).getAmplifier()) {
+            if (MC.player.hasStatusEffect(MobEffects.MINING_FATIGUE)) {
+            float multiplier = switch (MC.player.getStatusEffect(MobEffects.MINING_FATIGUE).getAmplifier()) {
                 case 0 -> 0.3f;
                 case 1 -> 0.09f;
                 case 2 -> 0.0027f;

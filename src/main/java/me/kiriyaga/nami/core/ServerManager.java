@@ -6,13 +6,13 @@ import me.kiriyaga.nami.event.impl.PacketReceiveEvent;
 import me.kiriyaga.nami.event.impl.PreTickEvent;
 import me.kiriyaga.nami.feature.module.impl.client.DebugModule;
 import me.kiriyaga.nami.feature.module.impl.client.FastLatencyModule;
-import net.minecraft.network.packet.s2c.common.CommonPingS2CPacket;
-import net.minecraft.network.packet.s2c.common.KeepAliveS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
-import net.minecraft.network.packet.s2c.play.WorldTimeUpdateS2CPacket;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.profiler.MultiValueDebugSampleLogImpl;
+import net.minecraft.network.protocol.common.ClientboundPingPacket;
+import net.minecraft.network.protocol.common.ClientboundKeepAlivePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.util.debugchart.LocalSampleLogger;
 
 import java.util.Arrays;
 
@@ -25,7 +25,7 @@ public class ServerManager {
     private int countTick = 0;
     private long lastTimeUpdate = -1;
 
-    private Vec3d lastSetbackPosition;
+    private Vec3 lastSetbackPosition;
     private long lastSetbackTime;
     private int lastTeleportId;
     private final int[] pendingTransactions = new int[4];
@@ -55,7 +55,7 @@ public class ServerManager {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (event.getPacket() instanceof WorldTimeUpdateS2CPacket) {
+        if (event.getPacket() instanceof ClientboundSetTimePacket) {
             long now = System.currentTimeMillis();
 
             if (lastTimeUpdate != -1) {
@@ -72,12 +72,12 @@ public class ServerManager {
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public void onPacketReceive2(PacketReceiveEvent event) {
-        if (event.getPacket() instanceof CommonPingS2CPacket packet) {
+        if (event.getPacket() instanceof ClientboundPingPacket packet) {
             if (transactionIndex > 3) return;
 
             pendingTransactions[transactionIndex] = packet.getParameter();
             transactionIndex++;
-        } else if (event.getPacket() instanceof PlayerPositionLookS2CPacket packet) {
+        } else if (event.getPacket() instanceof ClientboundPlayerPositionPacket packet) {
             lastSetbackPosition = packet.comp_3228().comp_3148();
             lastSetbackTime = System.currentTimeMillis();
             lastTeleportId = packet.teleportId();
@@ -91,7 +91,7 @@ public class ServerManager {
         if (config.fastLatencyMode.get() != FastLatencyModule.FastLatencyMode.OLD)
             return;
 
-        if (packet.getPacket() instanceof KeepAliveS2CPacket) {
+        if (packet.getPacket() instanceof ClientboundKeepAlivePacket) {
             long now = System.currentTimeMillis();
             int keepAliveInterval = config != null ? config.keepAliveInterval.get() : 1000;
 
@@ -116,7 +116,7 @@ public class ServerManager {
                 updatePing(averagePing());
                 DebugModule debugModule = MODULE_MANAGER.getStorage().getByClass(DebugModule.class);
 
-                debugModule.debugPing(Text.of("Interval=" + interval + "ms, Ping=" + ping + "ms, Average=" + lastPing + "ms"));
+                debugModule.debugPing(Component.of("Interval=" + interval + "ms, Ping=" + ping + "ms, Average=" + lastPing + "ms"));
             }
 
             lastReceiveTime = now;
@@ -162,7 +162,7 @@ public class ServerManager {
         return lastSetbackPosition != null && (System.currentTimeMillis() - lastSetbackTime) >= milliseconds;
     }
 
-    public Vec3d getLastSetbackPosition() {
+    public Vec3 getLastSetbackPosition() {
         return lastSetbackPosition;
     }
 
@@ -204,7 +204,7 @@ public class ServerManager {
             case NEW:
                 try {
                     if (MC.getDebugHud() != null && MC.getDebugHud().getPingLog() != null) {
-                        MultiValueDebugSampleLogImpl pingLog = MC.getDebugHud().getPingLog();
+                        LocalSampleLogger pingLog = MC.getDebugHud().getPingLog();
                         int count = pingLog.getLength();
                         if (count == 0) ping = -1;
 
@@ -227,12 +227,12 @@ public class ServerManager {
         int timeoutMillis = config.unstableConnectionTimeout.get() * 1000;
 
         if (lastUpdated == -1) {
-            debugModule.debugPing(Text.of("Connection unstable: no ping data yet"));
+            debugModule.debugPing(Component.of("Connection unstable: no ping data yet"));
             return true;
         }
 
         boolean unstable = (System.currentTimeMillis() - lastUpdated) > timeoutMillis;
-        debugModule.debugPing(Text.of("Connection unstable: last ping updated " + (System.currentTimeMillis() - lastUpdated) + "ms ago"));
+        debugModule.debugPing(Component.of("Connection unstable: last ping updated " + (System.currentTimeMillis() - lastUpdated) + "ms ago"));
         return unstable;
     }
 

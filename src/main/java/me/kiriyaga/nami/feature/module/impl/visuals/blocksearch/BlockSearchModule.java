@@ -10,13 +10,15 @@ import me.kiriyaga.nami.feature.setting.impl.*;
 
 import me.kiriyaga.nami.util.BlockUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.*;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.awt.*;
 import java.util.*;
@@ -37,7 +39,7 @@ public class BlockSearchModule extends Module {
     private final BlockingQueue<Chunk> snapshotQueue = new LinkedBlockingQueue<>();
     private BlockSearch workerThread;
     public static final ConcurrentMap<Long, Set<BlockPos>> chunkBlocks = new ConcurrentHashMap<>();
-    private final Queue<Text> pendingMessages = new LinkedList<>();
+    private final Queue<Component> pendingMessages = new LinkedList<>();
 
     public BlockSearchModule() {
         super("BlockSearch", "Search for specified blocks.", ModuleCategory.of("Render"));
@@ -83,7 +85,7 @@ public class BlockSearchModule extends Module {
     }
 
     // yeah we still are forced to load them in main thread
-    private Chunk makeSnapshot(WorldChunk chunk) {
+    private Chunk makeSnapshot(LevelChunk chunk) {
         ChunkPos pos = chunk.getPos();
         List<Block> blocks = new ArrayList<>();
 
@@ -107,7 +109,7 @@ public class BlockSearchModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public void onRender(Render3DEvent event) {
-        MatrixStack matrices = event.getMatrices();
+        PoseStack matrices = event.getMatrices();
 
         synchronized (pendingMessages) {
             while (!pendingMessages.isEmpty()) CHAT_MANAGER.sendRaw(pendingMessages.poll());

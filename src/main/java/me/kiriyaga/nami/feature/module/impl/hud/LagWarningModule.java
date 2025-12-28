@@ -2,7 +2,7 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -15,11 +15,11 @@ public class LagWarningModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         if (!SERVER_MANAGER.isConnectionUnstable())
-            return Text.empty();
+            return Component.empty();
 
-        if (MC.isInSingleplayer() || MC.world == null) return Text.of("LagWarning:");
+        if (MC.isInSingleplayer() || MC.world == null) return Component.of("LagWarning:");
 
         double seconds = SERVER_MANAGER.getUnstableTime();
         double roundedSeconds = Math.round(seconds * 100.0) / 100.0;

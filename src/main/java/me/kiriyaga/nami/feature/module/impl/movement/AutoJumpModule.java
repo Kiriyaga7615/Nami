@@ -7,8 +7,8 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.KeyBindingAccessor;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
+import 	com.mojang.blaze3d.platform.InputConstants;
 
 import static me.kiriyaga.nami.Nami.MC;
 
@@ -30,8 +30,8 @@ public class AutoJumpModule extends Module {
     }
 
     private void setJumpHeld(boolean held) {
-        KeyBinding jumpKey = MC.options.jumpKey;
-        InputUtil.Key boundKey = ((KeyBindingAccessor) jumpKey).getBoundKey();
+        KeyMapping jumpKey = MC.options.jumpKey;
+        InputConstants.Key boundKey = ((KeyBindingAccessor) jumpKey).getBoundKey();
         int keyCode = boundKey.getCode();
         boolean physicallyPressed = InputUtil.isKeyPressed(MC.getWindow(), keyCode);
         jumpKey.setPressed(physicallyPressed || held);

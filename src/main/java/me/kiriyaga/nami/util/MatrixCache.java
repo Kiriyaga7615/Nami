@@ -1,6 +1,6 @@
 package me.kiriyaga.nami.util;
 
-import net.minecraft.client.render.Camera;
+import net.minecraft.client.Camera;
 import org.joml.Matrix4f;
 
 public final class MatrixCache {

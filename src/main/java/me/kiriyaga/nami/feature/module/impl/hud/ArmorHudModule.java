@@ -4,9 +4,9 @@ import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+    import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +46,7 @@ public class ArmorHudModule extends HudElementModule {
         for (int i = 0; i < armor.length; i++) {
             ItemStack stack = armor[i];
 
-            Text labelText = Text.empty();
+            Component labelText = Component.empty();
             if (showDurability.get() && !stack.isEmpty() && stack.getMaxDamage() > 0) {
                 int max = stack.getMaxDamage();
                 int remaining = max - stack.getDamage();

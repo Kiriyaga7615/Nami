@@ -10,11 +10,9 @@ import me.kiriyaga.nami.feature.module.impl.movement.GuiMoveModule;
 import me.kiriyaga.nami.feature.module.impl.movement.SprintModule;
 import me.kiriyaga.nami.feature.module.impl.visuals.FreecamModule;
 import me.kiriyaga.nami.util.InputCache;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.ingame.*;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.screens.*;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import static me.kiriyaga.nami.Nami.*;
@@ -84,7 +82,7 @@ public class RotationTickHandler {
 
         float realYaw = MC.player.getYaw();
         float spoofYaw = stateHandler.getRotationYaw();
-        float delta = MathHelper.wrapDegrees(realYaw - spoofYaw);
+        float delta = Mth.wrapDegrees(realYaw - spoofYaw);
 
         // theese are tick thread and render thread
         boolean forward = INPUT_MANAGER.isForwardPressed();
@@ -210,8 +208,8 @@ public class RotationTickHandler {
         currentYawSpeed = lerp(currentYawSpeed, yawDiff, rotationEaseFactor);
         currentPitchSpeed = lerp(currentPitchSpeed, pitchDiff, rotationEaseFactor);
 
-        float yawSpeed = MathHelper.clamp(currentYawSpeed, -rotationSpeed, rotationSpeed);
-        float pitchSpeed = MathHelper.clamp(currentPitchSpeed, -rotationSpeed, rotationSpeed);
+        float yawSpeed = Mth.clamp(currentYawSpeed, -rotationSpeed, rotationSpeed);
+        float pitchSpeed = Mth.clamp(currentPitchSpeed, -rotationSpeed, rotationSpeed);
 
         float newYaw = stateHandler.getRotationYaw() + yawSpeed;
         float newPitch = stateHandler.getRotationPitch() + pitchSpeed;
@@ -284,7 +282,7 @@ public class RotationTickHandler {
 //        requestHandler.clearLastActiveId();
 //        requestHandler.removeActiveRequest();
 
-        MC.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.Full(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYaw, targetPitch, MC.player.isOnGround(), true));
+        MC.getNetworkHandler().sendPacket(new ServerboundMovePlayerPacket.Full(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYaw, targetPitch, MC.player.isOnGround(), true));
     }
 
     private float lerp(float from, float to, float factor) {

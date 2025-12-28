@@ -1,5 +1,6 @@
 package me.kiriyaga.nami.feature.module.impl.world;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.kiriyaga.nami.core.rotation.model.RotationRequest;
 import me.kiriyaga.nami.event.SubscribeEvent;
 import me.kiriyaga.nami.event.impl.PreTickEvent;
@@ -15,14 +16,16 @@ import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.feature.setting.impl.WhitelistSetting;
 import me.kiriyaga.nami.util.PredictMovementUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.InteractionHand;
+
+
 
 import java.awt.*;
 import java.util.Arrays;
@@ -104,12 +107,12 @@ public class ScaffoldModule extends Module {
     public void onRender(Render3DEvent event) {
         if (MC.player == null || MC.world == null || renderPos == null || !render.get()) return;
 
-        MatrixStack matrices = event.getMatrices();
+        PoseStack matrices = event.getMatrices();
 
         ColorModule colorModule = MODULE_MANAGER.getStorage().getByClass(ColorModule.class);
         Color color = colorModule.getStyledGlobalColor();
 
-        Box box = new Box(renderPos);
+        AABB box = new AABB(renderPos);
 
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
 
@@ -162,13 +165,13 @@ public class ScaffoldModule extends Module {
 
         PredictMovementUtils.PredictedEntity initial = new PredictMovementUtils.PredictedEntity(MC.player.getEntityPos(), MC.player.getVelocity(), MC.player.getYaw(), MC.player.getPitch(), MC.player.isOnGround(), MC.player.getStandingEyeHeight());
 
-        PredictMovementUtils.PredictedEntity predicted = PredictMovementUtils.predict(initial, 3, t -> Vec3d.ZERO);
-        Vec3d eyePos = predicted != null ? predicted.getEyePos() : MC.player.getEyePos();
+        PredictMovementUtils.PredictedEntity predicted = PredictMovementUtils.predict(initial, 3, t -> Vec3.ZERO);
+        Vec3 eyePos = predicted != null ? predicted.getEyePos() : MC.player.getEyePos();
         BlockPos closest = null;
         double bestDist = Double.MAX_VALUE;
 
         for (BlockPos pos : valid) {
-            Vec3d center = Vec3d.ofCenter(pos);
+            Vec3 center = Vec3.ofCenter(pos);
             double dist = center.squaredDistanceTo(eyePos);
 
             if (dist < bestDist) {

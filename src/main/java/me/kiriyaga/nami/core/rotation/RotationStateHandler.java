@@ -1,6 +1,6 @@
 package me.kiriyaga.nami.core.rotation;
 
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 import static me.kiriyaga.nami.Nami.ROTATION_MANAGER;
 import static me.kiriyaga.nami.util.RotationUtils.wrapDegrees;
@@ -38,7 +38,7 @@ public class RotationStateHandler {
 
     public void updateRealRotation(float yaw, float pitch) {
         realYaw = yaw;
-        realPitch = MathHelper.clamp(pitch, -90f, 90f);
+        realPitch = Mth.clamp(pitch, -90f, 90f);
     }
 
     public float getRealYaw() { return realYaw; }
@@ -49,7 +49,7 @@ public class RotationStateHandler {
 
     public void setRotationYaw(float yaw) {this.rotationYaw = yaw;}
 
-    public void setRotationPitch(float pitch) {this.rotationPitch = MathHelper.clamp(pitch, -90f, 90f);}
+    public void setRotationPitch(float pitch) {this.rotationPitch = Mth.clamp(pitch, -90f, 90f);}
 
     // WE DO NOT WRAP/NORMALIZE SERVER ROTATIONS!!!
     public float getServerYaw() {return serverYaw;}

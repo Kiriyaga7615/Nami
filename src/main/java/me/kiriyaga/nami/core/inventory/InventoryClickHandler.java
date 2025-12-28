@@ -2,12 +2,12 @@ package me.kiriyaga.nami.core.inventory;
 
 import me.kiriyaga.nami.feature.module.impl.combat.AutoTotemModule;
 import me.kiriyaga.nami.feature.module.impl.movement.NoSlowModule;
-import net.minecraft.client.gui.screen.ingame.*;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.client.gui.screens.*;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.core.NonNullList;
 
 import com.google.common.collect.Lists;
 
@@ -18,43 +18,43 @@ import static me.kiriyaga.nami.Nami.*;
 public class InventoryClickHandler {
 
     public boolean pickupSlot(int slotIndex, boolean skipGeneric) {
-        return click(slotIndex, 0, SlotActionType.PICKUP, skipGeneric);
+        return click(slotIndex, 0, ClickType.PICKUP, skipGeneric);
     }
 
     public boolean quickMoveSlot(int slotIndex, boolean skipGeneric) {
-        return click(slotIndex, 0, SlotActionType.QUICK_MOVE, skipGeneric);
+        return click(slotIndex, 0, ClickType.QUICK_MOVE, skipGeneric);
     }
 
     public boolean throwSlot(int slotIndex, boolean skipGeneric) {
-        return click(slotIndex, 0, SlotActionType.THROW, skipGeneric);
+        return click(slotIndex, 0, ClickType.THROW, skipGeneric);
     }
 
     public boolean swapSlot(int targetSlot, int hotbarSlotIndex, boolean skipGeneric) {
-        return click(targetSlot, hotbarSlotIndex, SlotActionType.SWAP, skipGeneric);
+        return click(targetSlot, hotbarSlotIndex, ClickType.SWAP, skipGeneric);
     }
 
 
     public boolean pickupSlot(int slotIndex) {
-        return click(slotIndex, 0, SlotActionType.PICKUP);
+        return click(slotIndex, 0, ClickType.PICKUP);
     }
 
     public boolean quickMoveSlot(int slotIndex) {
-        return click(slotIndex, 0, SlotActionType.QUICK_MOVE);
+        return click(slotIndex, 0, ClickType.QUICK_MOVE);
     }
 
     public boolean throwSlot(int slotIndex) {
-        return click(slotIndex, 0, SlotActionType.THROW);
+        return click(slotIndex, 0, ClickType.THROW);
     }
 
     public boolean swapSlot(int targetSlot, int hotbarSlotIndex) {
-        return click(targetSlot, hotbarSlotIndex, SlotActionType.SWAP);
+        return click(targetSlot, hotbarSlotIndex, ClickType.SWAP);
     }
 
-    private boolean click(int slot, int button, SlotActionType type) {
+    private boolean click(int slot, int button, ClickType type) {
         return click(slot, button, type, false);
     }
 
-    private boolean click(int slot, int button, SlotActionType type, boolean skipGeneric) {
+    private boolean click(int slot, int button, ClickType type, boolean skipGeneric) {
         if (slot < 0) return false;
 
         NoSlowModule noSlow = MODULE_MANAGER.getStorage().getByClass(NoSlowModule.class);
@@ -95,9 +95,9 @@ public class InventoryClickHandler {
             return false;
         }
 
-        ScreenHandler handler = MC.player.currentScreenHandler;
+        AbstractContainerMenu handler = MC.player.currentScreenHandler;
 
-        DefaultedList<Slot> slots = handler.slots;
+        NonNullList<Slot> slots = handler.slots;
         List<ItemStack> before = Lists.newArrayListWithCapacity(slots.size());
         for (Slot s : slots) before.add(s.getStack().copy());
 

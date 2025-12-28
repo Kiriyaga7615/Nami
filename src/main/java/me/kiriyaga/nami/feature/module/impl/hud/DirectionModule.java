@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Locale;
 
@@ -20,7 +20,7 @@ public class DirectionModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         String dirText;
         float yaw = 0;
         float pitch = 0;

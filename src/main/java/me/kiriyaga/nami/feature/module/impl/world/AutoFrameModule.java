@@ -9,12 +9,10 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import 	net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.MapItem;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -53,7 +51,7 @@ public class AutoFrameModule extends Module {
         }
 
         for (Entity entity : MC.world.getEntities()) {
-            if (!(entity instanceof ItemFrameEntity frame))
+            if (!(entity instanceof ItemFrame frame))
                 continue;
 
             if (frame.getHeldItemStack() != null)
@@ -80,7 +78,7 @@ public class AutoFrameModule extends Module {
     private int getMapSlot() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = MC.player.getInventory().getStack(i);
-            if (!stack.isEmpty() && stack.getItem() instanceof FilledMapItem) {
+            if (!stack.isEmpty() && stack.getItem() instanceof MapItem) {
                 return i;
             }
         }

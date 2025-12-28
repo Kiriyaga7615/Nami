@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.command.impl;
 import me.kiriyaga.nami.feature.command.Command;
 import me.kiriyaga.nami.feature.command.CommandArgument;
 import me.kiriyaga.nami.feature.command.RegisterCommand;
-import net.minecraft.text.MutableText;
+import net.minecraft.network.chat.MutableComponent;
 
 import java.util.Set;
 

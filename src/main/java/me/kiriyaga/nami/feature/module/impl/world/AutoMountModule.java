@@ -9,12 +9,15 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.*;
-import net.minecraft.entity.vehicle.BoatEntity;
-import net.minecraft.entity.vehicle.MinecartEntity;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.equine.Donkey;
+import net.minecraft.world.entity.animal.equine.Horse;
+import net.minecraft.world.entity.animal.equine.Llama;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.monster.Strider;
+import net.minecraft.world.entity.vehicle.boat.Boat;
+import net.minecraft.world.entity.vehicle.minecart.Minecart;
+
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.InteractionUtils.interactWithEntity;
@@ -48,9 +51,9 @@ public class AutoMountModule extends Module {
         for (Entity entity : MC.world.getEntities()) {
             if (entity == null || entity == MC.player || !entity.isAlive() || entity.hasPassengers()) continue;
 
-            if (!(entity instanceof HorseEntity || entity instanceof PigEntity || entity instanceof StriderEntity ||
-                    entity instanceof LlamaEntity || entity instanceof DonkeyEntity ||
-                    entity instanceof BoatEntity || entity instanceof MinecartEntity)) continue;
+            if (!(entity instanceof Horse || entity instanceof Pig || entity instanceof Strider ||
+                    entity instanceof Llama || entity instanceof Donkey ||
+                    entity instanceof Boat || entity instanceof Minecart)) continue;
 
             interactWithEntity(entity, range.get(), swing.get(), rotate.get(), this.name);
 

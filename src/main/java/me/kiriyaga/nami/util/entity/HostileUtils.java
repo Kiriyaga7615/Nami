@@ -1,13 +1,13 @@
 package me.kiriyaga.nami.util.entity;
 
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.mob.*;
-import net.minecraft.entity.passive.*;
-import net.minecraft.entity.projectile.*;
-import net.minecraft.entity.projectile.thrown.ThrownEntity;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.monster.*;
+import net.minecraft.world.entity.projectile.*;
+import net.minecraft.world.entity.projectile.ThrowableProjectile;
 
 import static me.kiriyaga.nami.Nami.MC;
 
@@ -18,7 +18,7 @@ public class HostileUtils {
                 || e instanceof WitherSkullEntity
                 || e instanceof ArrowEntity
                 || e instanceof TridentEntity
-                || e instanceof ThrownEntity;
+                || e instanceof ThrowableProjectile;
     }
 
     public static boolean isHostile(Entity e) {
@@ -37,8 +37,8 @@ public class HostileUtils {
                 || e instanceof VexEntity
                 || e instanceof BreezeEntity
                 || e instanceof BlazeEntity
-                || e instanceof WitherEntity
-                || e instanceof EnderDragonEntity
+                || e instanceof WitherBoss
+                || e instanceof EnderDragon
                 || e instanceof ShulkerEntity
                 || e instanceof GuardianEntity
                 || e instanceof ElderGuardianEntity
@@ -80,7 +80,7 @@ public class HostileUtils {
     }
 
     public static boolean isAggressiveNow(Entity e) {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null || MC.world == null) return false;
 
         long timeOfDay = MC.world.getTimeOfDay() % 24000;

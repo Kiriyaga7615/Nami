@@ -14,12 +14,11 @@ import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.InteractionUtils;
 import me.kiriyaga.nami.util.entity.TargetUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.references.Blocks;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -98,7 +97,7 @@ public class SelfWebModule extends Module {
         ColorModule colorModule = MODULE_MANAGER.getStorage().getByClass(ColorModule.class);
         Color color = colorModule.getStyledGlobalColor();
 
-        Box box = new Box(renderPos);
+        AABB box = new AABB(renderPos);
 
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
     }
@@ -113,7 +112,7 @@ public class SelfWebModule extends Module {
         return -1;
     }
 
-    private List<BlockPos> getPositions(PlayerEntity player) {
+    private List<BlockPos> getPositions(Player player) {
         double maxX = player.getBoundingBox().maxX;
         double minZ = player.getBoundingBox().minZ;
         double maxZ = player.getBoundingBox().maxZ;

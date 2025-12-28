@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -17,7 +17,7 @@ public class FpsModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         int fps = MC.getCurrentFps();
         String textStr;
 
@@ -33,7 +33,7 @@ public class FpsModule extends HudElementModule {
         if (displayLabel.get()) {
             return CAT_FORMAT.format("{bg}FPS: {bw}" + fps);
         } else {
-            return Text.literal(textStr);
+            return Component.literal(textStr);
         }
     }
 }

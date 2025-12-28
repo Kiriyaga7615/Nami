@@ -7,8 +7,8 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.KeyBindingAccessor;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
+import 	com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,10 +18,10 @@ import static me.kiriyaga.nami.Nami.MC;
 @RegisterModule
 public class AutoKeyModule extends Module {
 
-    private KeyBinding[] trackedKeys;
+    private KeyMapping[] trackedKeys;
 
 
-    private final Map<KeyBinding, Boolean> savedKeyStates = new HashMap<>();
+    private final Map<KeyMapping, Boolean> savedKeyStates = new HashMap<>();
 
     public AutoKeyModule() {
         super("AutoKey", "Holds all physically pressed keys automatically.", ModuleCategory.of("Movement"),"autokey");
@@ -29,7 +29,7 @@ public class AutoKeyModule extends Module {
 
     @Override
     public void onEnable() {
-        trackedKeys = new KeyBinding[]{
+        trackedKeys = new KeyMapping[]{
                 MC.options.forwardKey,
                 MC.options.backKey,
                 MC.options.leftKey,
@@ -42,10 +42,10 @@ public class AutoKeyModule extends Module {
         };
 
         savedKeyStates.clear();
-        for (KeyBinding key : trackedKeys) {
-            InputUtil.Key boundKey = ((KeyBindingAccessor) key).getBoundKey();
+        for (KeyMapping key : trackedKeys) {
+            InputConstants.Key boundKey = ((KeyBindingAccessor) key).getBoundKey();
             int keyCode = boundKey.getCode();
-            boolean physicallyPressed = InputUtil.isKeyPressed(MC.getWindow(), keyCode);
+            boolean physicallyPressed = InputConstants.isKeyPressed(MC.getWindow(), keyCode);
             if (physicallyPressed) {
                 savedKeyStates.put(key, true);
             }
@@ -55,7 +55,7 @@ public class AutoKeyModule extends Module {
     @Override
     public void onDisable() {
         if (trackedKeys == null) return;
-        for (KeyBinding key : savedKeyStates.keySet()) {
+        for (KeyMapping key : savedKeyStates.keySet()) {
             key.setPressed(false);
         }
         savedKeyStates.clear();
@@ -63,8 +63,8 @@ public class AutoKeyModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onUpdateEvent(PreTickEvent event) {
-        if (trackedKeys == null) return;
-        for (KeyBinding key : trackedKeys) {
+        if (KeyMapping == null) return;
+        for (KeyMapping key : trackedKeys) {
             if (savedKeyStates.getOrDefault(key, false)) {
                 key.setPressed(true);
             } else {

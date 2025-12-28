@@ -9,12 +9,12 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FoodComponent;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.world.InteractionHand;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -48,7 +48,7 @@ public class AutoEatModule extends Module {
         if (MC.player == null) return;
 
         if (eating.get())
-            MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+            MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
 
         double hunger = MC.player.getHungerManager().getFoodLevel();
         double health = MC.player.getHealth();
@@ -102,7 +102,7 @@ public class AutoEatModule extends Module {
     }
 
     private float getFoodScore(ItemStack stack) {
-        if (stack.isEmpty() || !stack.getItem().getComponents().contains(DataComponentTypes.FOOD)) {
+        if (stack.isEmpty() || !stack.getItem().getComponents().contains(DataComponents.FOOD)) {
             return -1;
         }
 
@@ -116,7 +116,7 @@ public class AutoEatModule extends Module {
             return -1;
         }
 
-        FoodComponent food = item.getComponents().get(DataComponentTypes.FOOD);
+        FoodProperties food = item.getComponents().get(DataComponents.FOOD);
         float nutrition = food.comp_2491();
         float saturation = food.comp_2492();
         float totalValue = nutrition + saturation;

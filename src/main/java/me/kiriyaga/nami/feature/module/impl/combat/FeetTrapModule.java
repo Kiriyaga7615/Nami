@@ -12,16 +12,16 @@ import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.InteractionUtils;
 import me.kiriyaga.nami.util.render.RenderUtil;
-import net.minecraft.block.Block;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.level.block.Block;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -112,21 +112,21 @@ public class FeetTrapModule extends Module {
     public void onRender(Render3DEvent event) {
         if (MC.player == null || MC.world == null || surroundPositions.isEmpty() || !render.get()) return;
 
-        MatrixStack matrices = event.getMatrices();
+        PoseStack matrices = event.getMatrices();
 
         ColorModule colorModule = MODULE_MANAGER.getStorage().getByClass(ColorModule.class);
         Color color = colorModule.getStyledGlobalColor();
 
         for (BlockPos pos : surroundPositions) {
-            Box box = new Box(pos);
+            AABB box = new AABB(pos);
             RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
         }
     }
 
-    private List<BlockPos> getSurround(PlayerEntity player) {
+    private List<BlockPos> getSurround(Player player) {
         Set<BlockPos> positions = new HashSet<>();
 
-        Box bb = player.getBoundingBox();
+        AABB bb = player.getBoundingBox();
         int yLegs = (int) Math.floor(player.getY());
         List<BlockPos> inside = new ArrayList<>();
         for (int x = (int) Math.floor(bb.minX); x < Math.ceil(bb.maxX); x++) {
@@ -170,19 +170,19 @@ public class FeetTrapModule extends Module {
     }
 
 
-    private void expand(Set<BlockPos> positions, PlayerEntity player) {
+    private void expand(Set<BlockPos> positions, Player player) {
         Set<BlockPos> extra = new HashSet<>();
 
         for (BlockPos pos : positions) {
-            Box blockBox = new Box(pos);
+            AABB blockBox = new AABB(pos);
             for (Entity entity : MC.world.getEntities()) {
                 if (entity.squaredDistanceTo(player) > 10) continue;
-                if (entity instanceof EndCrystalEntity) continue;
+                if (entity instanceof EndCrystal) continue;
                 if (entity instanceof ItemEntity) continue;
 
                 if (entity.getBoundingBox().intersects(blockBox)) {
                     int entY = (int) Math.floor(entity.getY());
-                    Box entBox = entity.getBoundingBox();
+                    AABB entBox = entity.getBoundingBox();
                     for (int x = (int) Math.floor(entBox.minX); x < Math.ceil(entBox.maxX); x++) {
                         for (int z = (int) Math.floor(entBox.minZ); z < Math.ceil(entBox.maxZ); z++) {
                             BlockPos entBase = new BlockPos(x, entY, z);

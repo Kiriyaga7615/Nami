@@ -4,7 +4,7 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.CHAT_MANAGER;
 
@@ -24,7 +24,7 @@ public class DebugModule extends Module {
         super("Debug", ".", ModuleCategory.of("Client"), "debug");
     }
 
-    public boolean debugAura(Text text){
+    public boolean debugAura(Component text){
         if (this.isEnabled() && aura.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;
@@ -32,7 +32,7 @@ public class DebugModule extends Module {
         return false;
     }
 
-    public boolean debugPing(Text text){
+    public boolean debugPing(Component text){
         if (this.isEnabled() && ping.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;
@@ -40,7 +40,7 @@ public class DebugModule extends Module {
         return false;
     }
 
-    public boolean debugDelta(Text text){
+    public boolean debugDelta(Component text){
         if (this.isEnabled() && deltafix.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;
@@ -48,7 +48,7 @@ public class DebugModule extends Module {
         return false;
     }
 
-    public boolean debugRot(Text text){
+    public boolean debugRot(Component text){
         if (this.isEnabled() && rotdata.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;
@@ -56,7 +56,7 @@ public class DebugModule extends Module {
         return false;
     }
 
-    public boolean debugSpeedRot(Text text){
+    public boolean debugSpeedRot(Component text){
         if (this.isEnabled() && speedrot.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;
@@ -64,7 +64,7 @@ public class DebugModule extends Module {
         return false;
     }
 
-    public boolean debugPeek(Text text){
+    public boolean debugPeek(Component text){
         if (this.isEnabled() && peek.get()) {
             CHAT_MANAGER.sendRaw(text);
             return true;

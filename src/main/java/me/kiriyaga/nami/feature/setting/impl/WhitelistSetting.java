@@ -3,7 +3,7 @@ package me.kiriyaga.nami.feature.setting.impl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashSet;
 import java.util.Set;

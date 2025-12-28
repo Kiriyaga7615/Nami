@@ -3,7 +3,7 @@ package me.kiriyaga.nami.core;
 import com.google.gson.*;
 import me.kiriyaga.nami.core.config.ConfigManager;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.io.File;
 import java.io.FileReader;
@@ -44,12 +44,12 @@ public class FriendManager {
         }
     }
 
-    public void addFriend(Text name) {
+    public void addFriend(Component name) {
         if (name == null) return;
         addFriend(name.getString());
     }
 
-    public void removeFriend(Text name) {
+    public void removeFriend(Component name) {
         if (name == null) return;
         removeFriend(name.getString());
     }

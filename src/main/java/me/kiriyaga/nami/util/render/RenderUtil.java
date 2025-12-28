@@ -9,38 +9,36 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
 import me.kiriyaga.nami.feature.module.impl.client.FontModule;
 import me.kiriyaga.nami.util.MatrixCache;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.*;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.render.item.model.ItemModel;
-import net.minecraft.client.render.model.BakedModelManager;
-import net.minecraft.client.render.model.BakedSimpleModel;
-import net.minecraft.client.render.model.ModelBaker;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemDisplayContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ResolvedModel;
+import net.minecraft.client.resources.model.ModelBaker;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.math.*;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.World;
-import net.minecraft.world.debug.gizmo.GizmoDrawing;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.Camera;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.world.phys.Vec3;
+import com.mojang.math.Axis;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.Level;
+import net.minecraft.gizmos.Gizmos;
 import org.joml.*;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.core.BlockPos;
+import 	net.minecraft.world.level.BlockAndTintGetter;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32C;
 
@@ -51,7 +49,7 @@ import java.awt.*;
 
 public class RenderUtil {
 
-    public static void rect3d(MatrixStack matrix, float x1, float y1, float x2, float y2, int color) {
+    public static void rect3d(PoseStack matrix, float x1, float y1, float x2, float y2, int color) {
         float i;
         if (x1 < x2) {
             i = x1;
@@ -83,7 +81,7 @@ public class RenderUtil {
 
     // 3d
     //   net.minecraft.client.render.debug.ChunkBorderDebugRenderer
-    public static void drawBlockPosLines(World world, BlockPos pos, BlockState state, Color color, boolean filled, boolean outlined, float outlineWidth) {
+    public static void drawBlockPosLines(Level world, BlockPos pos, BlockState state, Color color, boolean filled, boolean outlined, float outlineWidth) {
         VoxelShape shape = state.getOutlineShape(world, pos);
 
         int fillColor = ColorHelper.getArgb(
@@ -111,14 +109,14 @@ public class RenderUtil {
             );
 
             if (filled) {
-                GizmoDrawing.box(
+                Gizmos.cuboid(
                         box,
                         DrawStyle.filled(fillColor)
                 ).ignoreOcclusion();
             }
 
             if (outlined) {
-                GizmoDrawing.box(
+                Gizmos.cuboid(
                         box,
                         DrawStyle.stroked(outlineColor, outlineWidth)
                 ).ignoreOcclusion();
@@ -142,21 +140,21 @@ public class RenderUtil {
         );
 
         if (filled) {
-            GizmoDrawing.box(
+            Gizmos.cuboid(
                     box,
                     DrawStyle.filled(fillColor)
             ).ignoreOcclusion();
         }
 
         if (outlined) {
-            GizmoDrawing.box(
+            Gizmos.cuboid(
                     box,
                     DrawStyle.stroked(outlineColor, outlineWidth)
             ).ignoreOcclusion();
         }
     }
 
-    public static void drawText3D(MatrixStack matrices, Text text, Vec3d pos, float scale, boolean background, boolean border, float borderWidth) {
+    public static void drawText3D(PoseStack matrices, Component text, Vec3 pos, float scale, boolean background, boolean border, float borderWidth) {
         Camera camera = MC.gameRenderer.getCamera();
 
         matrices.push();
@@ -166,16 +164,16 @@ public class RenderUtil {
                 pos.z - camera.getCameraPos().z
         );
 
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-camera.getYaw()));
-        matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
+        matrices.multiply(Axis.YP.rotationDegrees(-camera.getYaw()));
+        matrices.multiply(Axis.XP.rotationDegrees(camera.getPitch()));
 
         matrices.scale(-scale, -scale, scale);
 
-        TextRenderer textRenderer = FONT_MANAGER.rendererProvider.getRenderer();
+        Font textRenderer = FONT_MANAGER.rendererProvider.getRenderer();
         float textWidth = FONT_MANAGER.getWidth(text) / 2f;
 
         Matrix4f matrix = matrices.peek().getPositionMatrix();
-        VertexConsumerProvider.Immediate provider = MC.getBufferBuilders().getEntityVertexConsumers();
+        MultiBufferSource.Immediate provider = MC.getBufferBuilders().getEntityVertexConsumers();
 
         if (background) {
             float bgPadding = 1f;
@@ -200,7 +198,7 @@ public class RenderUtil {
         }
 
         textRenderer.draw(
-                text, -textWidth, 0, -1, !MODULE_MANAGER.getStorage().getByClass(FontModule.class).isEnabled(), matrix, provider, TextRenderer.TextLayerType.SEE_THROUGH, 0, 15728880
+                text, -textWidth, 0, -1, !MODULE_MANAGER.getStorage().getByClass(FontModule.class).isEnabled(), matrix, provider, Font.TextLayerType.SEE_THROUGH, 0, 15728880
         );
 
         provider.draw();
@@ -208,24 +206,24 @@ public class RenderUtil {
         matrices.pop();
     }
 
-    public static void renderItem3D(ItemStack stack, MatrixStack matrices, Vec3d pos, float scale, Vec3d lookDir) {
+    public static void renderItem3D(ItemStack stack, PoseStack matrices, Vec3 pos, float scale, Vec3 lookDir) {
         ItemRenderer itemRenderer = MC.getItemRenderer();
         Camera camera = MC.gameRenderer.getCamera();
 
         matrices.push();
 
-        Vec3d camPos = camera.getCameraPos();
+        Vec3 camPos = camera.getCameraPos();
 
         matrices.translate((float)(pos.x - camPos.x), (float)(pos.y - camPos.y), (float)(pos.z - camPos.z));
 
-        Vec3d dir = lookDir.normalize();
+        Vec3 dir = lookDir.normalize();
 
-        Vec3d up = new Vec3d(0, 1, 0);
-        Vec3d right = up.crossProduct(dir).normalize();
+        Vec3 up = new Vec3(0, 1, 0);
+        Vec3 right = up.crossProduct(dir).normalize();
         if (right.lengthSquared() < 1e-6) {
-            right = new Vec3d(1, 0, 0);
+            right = new Vec3(1, 0, 0);
         }
-        Vec3d newUp = dir.crossProduct(right).normalize();
+        Vec3 newUp = dir.crossProduct(right).normalize();
 
         Matrix3f basis = new Matrix3f(
                 (float) right.x, (float) right.y, (float) right.z,

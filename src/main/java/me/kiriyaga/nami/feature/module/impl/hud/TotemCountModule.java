@@ -3,9 +3,9 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.text.Text;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class TotemCountModule extends HudElementModule {
     public List<LabeledItemElement> getLabeledItemElements() {
         int totemCount = countTotems();
         ItemStack totemStack = new ItemStack(Items.TOTEM_OF_UNDYING);
-        Text label;
+        Component label;
 
         if (white.get())
             label = CAT_FORMAT.format("{bw}"+totemCount);

@@ -1,16 +1,16 @@
 package me.kiriyaga.nami.event.impl;
 
 import me.kiriyaga.nami.event.Event;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 public class ChunkDataEvent extends Event {
-    private final WorldChunk chunk;
+    private final LevelChunk chunk;
 
-    public ChunkDataEvent(WorldChunk chunk) {
+    public ChunkDataEvent(LevelChunk chunk) {
         this.chunk = chunk;
     }
 
-    public WorldChunk getChunk() {
+    public LevelChunk getChunk() {
         return chunk;
     }
 }

@@ -2,9 +2,9 @@ package me.kiriyaga.nami.feature.gui.newgui.widget;
 
 import me.kiriyaga.nami.feature.gui.newgui.base.PanelRenderer;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
@@ -32,7 +32,7 @@ public class TextBoxWidget {
         this.onEnter = onEnter;
     }
 
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphics context, Font textRenderer, int mouseX, int mouseY) {
         panelRenderer.renderPanel(context, x, y, width, height, 0, false);
         Color textColor = focused
                 ? MODULE_MANAGER.getStorage().getByClass(ColorModule.class).getStyledTextColor(255)
@@ -44,7 +44,7 @@ public class TextBoxWidget {
         int textX = x + 4;
         int textY = y + (height - textRenderer.fontHeight) / 2 + 1;
 
-        FONT_MANAGER.drawText(context, Text.of(display), textX, textY, true, CLICK_GUI.applyFade(toRGBA(textColor)));
+        FONT_MANAGER.drawText(context, Component.of(display), textX, textY, true, CLICK_GUI.applyFade(toRGBA(textColor)));
     }
 
     public boolean mouseClicked(int mouseX, int mouseY, int button) {

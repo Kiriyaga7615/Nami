@@ -3,8 +3,8 @@ package me.kiriyaga.nami.feature.gui.newgui.base;
 
 import me.kiriyaga.nami.feature.module.impl.client.ClickGuiModule;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 
 
 import java.awt.*;
@@ -22,7 +22,7 @@ public class PanelRenderer {
         this.clickGuiModule = MODULE_MANAGER.getStorage().getByClass(ClickGuiModule.class);
     }
 
-    public void renderPanel(DrawContext context, int x, int y, int width, int height, int headerHeight, boolean renderHeader, boolean renderBackground) {
+    public void renderPanel(GuiGraphics context, int x, int y, int width, int height, int headerHeight, boolean renderHeader, boolean renderBackground) {
 
         Color primary = colorModule.getStyledGlobalColor();
         Color secondary = colorModule.getStyledSecondColor();
@@ -58,7 +58,7 @@ public class PanelRenderer {
         }
     }
 
-    public void renderHeaderText(DrawContext context, TextRenderer textRenderer, String text, int x, int y, int headerHeight, int padding) {
+    public void renderHeaderText(GuiGraphics context, Font textRenderer, String text, int x, int y, int headerHeight, int padding) {
         if (text == null || textRenderer == null) return; // ???
 
         Color textCol =  MODULE_MANAGER.getStorage().getByClass(ColorModule.class).getStyledTextColor(255);
@@ -68,11 +68,11 @@ public class PanelRenderer {
     }
 
 
-    public void renderPanel(DrawContext context, int x, int y, int width, int height, int headerHeight) {
+    public void renderPanel(GuiGraphics context, int x, int y, int width, int height, int headerHeight) {
         renderPanel(context, x, y, width, height, headerHeight, true, true);
     }
 
-    public void renderPanel(DrawContext context, int x, int y, int width, int height, int headerHeight, boolean renderHeader) {
+    public void renderPanel(GuiGraphics context, int x, int y, int width, int height, int headerHeight, boolean renderHeader) {
         renderPanel(context, x, y, width, height, headerHeight, renderHeader, true);
     }
 }

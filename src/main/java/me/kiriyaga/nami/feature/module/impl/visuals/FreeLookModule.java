@@ -4,7 +4,7 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
-import net.minecraft.client.option.Perspective;
+import net.minecraft.client.CameraType;
 
 import static me.kiriyaga.nami.Nami.MC;
 
@@ -13,7 +13,7 @@ public class FreeLookModule extends Module { // todo this shit broke
     public float cameraYaw;
     public float cameraPitch;
 
-    private Perspective previousPerspective;
+    private CameraType previousPerspective;
 
     public DoubleSetting sensivity = addSetting(new DoubleSetting("Sensivity", 5, 2, 15));
 
@@ -33,8 +33,8 @@ public class FreeLookModule extends Module { // todo this shit broke
         cameraPitch = MC.player.getPitch();
 
         previousPerspective = MC.options.getPerspective();
-        if (previousPerspective != Perspective.THIRD_PERSON_BACK) {
-            MC.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+        if (previousPerspective != CameraType.THIRD_PERSON_BACK) {
+            MC.options.setPerspective(CameraType.THIRD_PERSON_BACK);
         }
     }
 
@@ -44,7 +44,7 @@ public class FreeLookModule extends Module { // todo this shit broke
             MC.options.setPerspective(previousPerspective);
         }
         if (previousPerspective == null) {
-            MC.options.setPerspective(Perspective.FIRST_PERSON);
+            MC.options.setPerspective(CameraType.FIRST_PERSON);
         }
     }
 }

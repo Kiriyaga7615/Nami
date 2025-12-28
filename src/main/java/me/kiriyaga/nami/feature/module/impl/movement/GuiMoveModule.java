@@ -8,18 +8,16 @@ import me.kiriyaga.nami.feature.module.impl.visuals.FreecamModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.KeyBindingAccessor;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.EditBox;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.ingame.*;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.input.MouseInput;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.packet.c2s.play.ClickSlotC2SPacket;
-import net.minecraft.network.packet.s2c.play.CloseScreenS2CPacket;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.*;
+import 	net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import 	net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+import net.minecraft.network.protocol.game.ClientboundContainerClosePacket;
 import org.lwjgl.glfw.GLFW;
 
 import static me.kiriyaga.nami.Nami.MC;
@@ -35,7 +33,7 @@ public class GuiMoveModule extends Module {
     private boolean jumpHeld = false;
 
     private Screen lastScreen = null;
-    private final java.util.Deque<ClickSlotC2SPacket> clickBuffer = new java.util.ArrayDeque<>();
+    private final java.util.Deque<ServerboundContainerClickPacket> clickBuffer = new java.util.ArrayDeque<>();
 
     public final BoolSetting _2b2t = addSetting(new BoolSetting("2b2t", true));
 
@@ -65,7 +63,7 @@ public class GuiMoveModule extends Module {
         if (!_2b2t.get())
             return;
 
-        if (ev.getPacket() instanceof CloseScreenS2CPacket packet && packet.getSyncId() == MC.player.playerScreenHandler.syncId)
+        if (ev.getPacket() instanceof ClientboundContainerClosePacket packet && packet.getSyncId() == MC.player.playerScreenHandler.syncId)
             ev.cancel();
     }
 
@@ -129,13 +127,13 @@ public class GuiMoveModule extends Module {
         updateHeld(MC.options.jumpKey, event.key, event.scancode, event.action, event.modifiers, false, v -> jumpHeld = v);
     }
 
-    private void updateHeld(KeyBinding bind, int key, int scancode, int action, int modifiers, boolean mouse, java.util.function.Consumer<Boolean> setter) {
+    private void updateHeld(KeyMapping bind, int key, int scancode, int action, int modifiers, boolean mouse, java.util.function.Consumer<Boolean> setter) {
         if (!mouse) {
-            KeyInput input = new KeyInput(key, scancode, modifiers);
+            KeyEvent input = new KeyEvent(key, scancode, modifiers);
             if (!bind.matchesKey(input)) return;
         } else {
-            MouseInput mouseInput = new MouseInput(key, 0);
-            Click click = new Click(0, 0, mouseInput);
+            MouseButtonInfo mouseInput = new MouseButtonInfo(key, 0);
+            MouseButtonEvent click = new MouseButtonEvent(0, 0, mouseInput);
             if (!bind.matchesMouse(click)) return;
         }
 
@@ -182,10 +180,10 @@ public class GuiMoveModule extends Module {
         setKeysPressed(false);
     }
 
-    private void updateKeyWithHold(KeyBinding bind, boolean held) {
-        InputUtil.Key boundKey = ((KeyBindingAccessor) bind).getBoundKey();
+    private void updateKeyWithHold(KeyMapping bind, boolean held) {
+        InputConstants.Key boundKey = ((KeyBindingAccessor) bind).getBoundKey();
         int keyCode = boundKey.getCode();
-        boolean physicallyPressed = InputUtil.isKeyPressed(MC.getWindow(), keyCode);
+        boolean physicallyPressed = InputConstants.isKeyPressed(MC.getWindow(), keyCode);
         bind.setPressed(physicallyPressed || held);
     }
 

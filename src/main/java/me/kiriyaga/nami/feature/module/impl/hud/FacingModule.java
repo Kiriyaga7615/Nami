@@ -3,8 +3,8 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.text.Text;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.Minecraft;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -18,8 +18,8 @@ public class FacingModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
-        MinecraftClient mc = MC;
+    public Component getDisplayText() {
+        Minecraft mc = MC;
         if (mc.player == null) {
             width = FONT_MANAGER.getWidth("NaN");
             height = FONT_MANAGER.getHeight();

@@ -1,23 +1,23 @@
 package me.kiriyaga.nami.event.impl;
 
 import me.kiriyaga.nami.event.Event;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.DeltaTracker;
 
 public class Render2DEvent extends Event {
-    private final DrawContext drawContext;
-    private final RenderTickCounter renderTickCounter;
+    private final GuiGraphics drawContext;
+    private final DeltaTracker renderTickCounter;
 
-    public Render2DEvent(DrawContext drawContext, RenderTickCounter renderTickCounter) {
+    public Render2DEvent(GuiGraphics drawContext, DeltaTracker renderTickCounter) {
         this.drawContext = drawContext;
         this.renderTickCounter = renderTickCounter;
     }
 
-    public DrawContext getDrawContext() {
+    public GuiGraphics getDrawContext() {
         return drawContext;
     }
 
-    public RenderTickCounter getRenderTickCounter() {
+    public DeltaTracker getRenderTickCounter() {
         return renderTickCounter;
     }
 }

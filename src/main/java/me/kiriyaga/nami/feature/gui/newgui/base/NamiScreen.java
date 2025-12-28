@@ -1,10 +1,10 @@
 package me.kiriyaga.nami.feature.gui.newgui.base;
 
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class NamiScreen extends Screen {
-    protected NamiScreen(Text text) {
+    protected NamiScreen(Component text) {
         super(text);
     }
 

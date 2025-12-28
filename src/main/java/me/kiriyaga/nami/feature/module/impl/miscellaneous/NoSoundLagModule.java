@@ -9,13 +9,13 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
+import 	net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.resources.Identifier;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +32,7 @@ public class NoSoundLagModule extends Module { // TODO whitelist sounds
     public final BoolSetting firework = addSetting(new BoolSetting("Firework", false));
     public final BoolSetting elytra = addSetting(new BoolSetting("Elytra", true));
 
-    private static final Set<RegistryEntry<SoundEvent>> ARMOR_SOUNDS = Sets.newHashSet(
+    private static final Set<Holder<SoundEvent>> ARMOR_SOUNDS = Sets.newHashSet(
             SoundEvents.ITEM_ARMOR_EQUIP_GENERIC,
             SoundEvents.ITEM_ARMOR_EQUIP_ELYTRA,
             SoundEvents.ITEM_ARMOR_EQUIP_DIAMOND,
@@ -85,7 +85,7 @@ public class NoSoundLagModule extends Module { // TODO whitelist sounds
             lastClearTime = now;
         }
 
-        if (event.getPacket() instanceof PlaySoundS2CPacket packet) {
+        if (event.getPacket() instanceof ClientboundSoundPacket packet) {
             SoundEvent sound = packet.getSound().comp_349();
 
             boolean cancel = false;

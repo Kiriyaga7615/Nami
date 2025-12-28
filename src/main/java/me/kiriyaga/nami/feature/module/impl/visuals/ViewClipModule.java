@@ -8,7 +8,7 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
-import net.minecraft.client.option.Perspective;
+import net.minecraft.client.CameraType;
 
 import static me.kiriyaga.nami.Nami.MC;
 
@@ -26,9 +26,9 @@ public class ViewClipModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onRender(Render2DEvent ev) {
-        Perspective perspective = MC.options.getPerspective();
+        CameraType perspective = MC.options.getPerspective();
 
-        if (perspective == Perspective.FIRST_PERSON) {
+        if (perspective == CameraType.FIRST_PERSON) {
             currentDistance = 1f;
         } else {
             if (animate.get()) {

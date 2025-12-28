@@ -2,7 +2,7 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -15,12 +15,12 @@ public class SetbackModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
 
         if (!SERVER_MANAGER.hasElapsedSinceSetback(5000))
-            return Text.empty();
+            return Component.empty();
 
-        if (MC.isInSingleplayer() || MC.world == null) return Text.of("Setback:");
+        if (MC.isInSingleplayer() || MC.world == null) return Component.of("Setback:");
 
         long last = SERVER_MANAGER.getLastSetbackTime();
         double delta = (System.currentTimeMillis() - last) / 1000.0;

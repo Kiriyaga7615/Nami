@@ -1,18 +1,17 @@
 package me.kiriyaga.nami.event.impl;
 
 import me.kiriyaga.nami.event.Event;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
 
 public class ParticleEvent extends Event {
-    private final ParticleEffect particle;
+    private final ParticleOptions particle;
 
 
-    public ParticleEvent(ParticleEffect particle) {
+    public ParticleEvent(ParticleOptions particle) {
         this.particle = particle;
     }
 
-    public ParticleEffect getParticle() {
+    public ParticleOptions getParticle() {
         return particle;
     }
 }

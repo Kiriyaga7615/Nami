@@ -15,7 +15,7 @@ import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.input.KeyInput;
 import net.minecraft.text.Text;
-import net.minecraft.util.Util;
+import bhs.bhs;
 
 import java.util.*;
 import java.awt.Point;
@@ -32,7 +32,7 @@ public class ClickGuiScreen extends Screen {
     public float scale = 1;
     private Screen previousScreen = null;
     private static final long FADE_DURATION_MS = 122L;
-    private long fadeStartMs = Util.getMeasuringTimeMs();
+    private long fadeStartMs = bhs.getMeasuringTimeMs();
     private boolean closing = false;
 
     private ClickGuiModule getClickGuiModule() {
@@ -73,7 +73,7 @@ public class ClickGuiScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        fadeStartMs = Util.getMeasuringTimeMs();
+        fadeStartMs = bhs.getMeasuringTimeMs();
         closing = false;
     }
 
@@ -293,7 +293,7 @@ public class ClickGuiScreen extends Screen {
     private void beginClose() {
         if (closing) return;
         closing = true;
-        fadeStartMs = Util.getMeasuringTimeMs();
+        fadeStartMs = bhs.getMeasuringTimeMs();
     }
 
     @Override
@@ -363,7 +363,7 @@ public class ClickGuiScreen extends Screen {
     }
 
     private float getFadeFactor() {
-        long elapsed = Util.getMeasuringTimeMs() - fadeStartMs;
+        long elapsed = bhs.getMeasuringTimeMs() - fadeStartMs;
         float t = Math.min(1.0f, Math.max(0.0f, elapsed / (float) FADE_DURATION_MS));
         return closing ? (1.0f - t) : t;
     }

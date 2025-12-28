@@ -10,12 +10,11 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
-import net.minecraft.client.option.Perspective;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.CameraType;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
-import net.minecraft.client.gui.screen.*;
 
 import static me.kiriyaga.nami.Nami.MC;
 import static me.kiriyaga.nami.Nami.ROTATION_MANAGER;
@@ -29,10 +28,10 @@ public class FreecamModule extends Module { // todo this shit broke
     private double currentFactor = 1.0;
     private long accelStartTime = -1;
     private final double accelDuration = 0.8;
-    private Perspective previousPerspective;
-    private Vec3d cameraPos;
-    public Vec3d pos = Vec3d.ZERO;
-    public Vec3d prevPos = Vec3d.ZERO;
+    private CameraType previousPerspective;
+    private Vec3 cameraPos;
+    public Vec3 pos = Vec3.ZERO;
+    public Vec3 prevPos = Vec3.ZERO;
     public float yaw, pitch;
     public float lastYaw, lastPitch;
 
@@ -52,7 +51,7 @@ public class FreecamModule extends Module { // todo this shit broke
         }
 
         previousPerspective = MC.options.getPerspective();
-        MC.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+        MC.options.setPerspective(CameraType.THIRD_PERSON_BACK);
 
         cameraPos = MC.player.getCameraPosVec(1.0f);
         camX = cameraPos.x;
@@ -87,7 +86,7 @@ public class FreecamModule extends Module { // todo this shit broke
         if (moving) {
             if (accelStartTime < 0) accelStartTime = System.currentTimeMillis();
             double elapsed = (System.currentTimeMillis() - accelStartTime) / 1000.0;
-            double t = MathHelper.clamp(elapsed / accelDuration, 0, 1);
+            double t = Mth.clamp(elapsed / accelDuration, 0, 1);
             currentFactor = 1.0 + t * (accelerate.get() - 1.0);
         } else {
             currentFactor = 1.0;
@@ -97,8 +96,8 @@ public class FreecamModule extends Module { // todo this shit broke
         double spd = speed.get() * currentFactor;
 
         double dx = 0, dy = 0, dz = 0;
-        Vec3d forwardVec = Vec3d.fromPolar(0, yaw);
-        Vec3d rightVec = Vec3d.fromPolar(0, yaw + 90);
+        Vec3 forwardVec = Vec3.fromPolar(0, yaw);
+        Vec3 rightVec = Vec3.fromPolar(0, yaw + 90);
 
         if (forward) { dx += forwardVec.x * spd; dz += forwardVec.z * spd; }
         if (back)    { dx -= forwardVec.x * spd; dz -= forwardVec.z * spd; }
@@ -123,8 +122,8 @@ public class FreecamModule extends Module { // todo this shit broke
         if (look.get()) {
             var hit = MC.crosshairTarget;
             if (hit != null && hit.getType() != net.minecraft.util.hit.HitResult.Type.MISS) {
-                Vec3d target = hit.getPos();
-                Vec3d from = MC.player.getEntityPos().add(0, MC.player.getStandingEyeHeight(), 0);
+                Vec3 target = hit.getPos();
+                Vec3 from = MC.player.getEntityPos().add(0, MC.player.getStandingEyeHeight(), 0);
 
                 double diffX = target.x - from.x;
                 double diffY = target.y - from.y;
@@ -141,12 +140,12 @@ public class FreecamModule extends Module { // todo this shit broke
     @SubscribeEvent
     public void onKeyInput(KeyInputEvent event) {
 
-        int forwardKey = InputUtil.fromTranslationKey(MC.options.forwardKey.getBoundKeyTranslationKey()).getCode();
-        int backKey    = InputUtil.fromTranslationKey(MC.options.backKey.getBoundKeyTranslationKey()).getCode();
-        int leftKey    = InputUtil.fromTranslationKey(MC.options.leftKey.getBoundKeyTranslationKey()).getCode();
-        int rightKey   = InputUtil.fromTranslationKey(MC.options.rightKey.getBoundKeyTranslationKey()).getCode();
-        int jumpKey    = InputUtil.fromTranslationKey(MC.options.jumpKey.getBoundKeyTranslationKey()).getCode();
-        int sneakKey   = InputUtil.fromTranslationKey(MC.options.sneakKey.getBoundKeyTranslationKey()).getCode();
+        int forwardKey = InputConstants.fromTranslationKey(MC.options.forwardKey.getBoundKeyTranslationKey()).getCode();
+        int backKey    = InputConstants.fromTranslationKey(MC.options.backKey.getBoundKeyTranslationKey()).getCode();
+        int leftKey    = InputConstants.fromTranslationKey(MC.options.leftKey.getBoundKeyTranslationKey()).getCode();
+        int rightKey   = InputConstants.fromTranslationKey(MC.options.rightKey.getBoundKeyTranslationKey()).getCode();
+        int jumpKey    = InputConstants.fromTranslationKey(MC.options.jumpKey.getBoundKeyTranslationKey()).getCode();
+        int sneakKey   = InputConstants.fromTranslationKey(MC.options.sneakKey.getBoundKeyTranslationKey()).getCode();
 
 
         boolean pressed = event.action != GLFW.GLFW_RELEASE;
@@ -169,7 +168,7 @@ public class FreecamModule extends Module { // todo this shit broke
     public double getY() { return camY; }
     public double getZ() { return camZ; }
 
-    public Vec3d getCameraPos() {
+    public Vec3 getCameraPos() {
         return cameraPos;
     }
 
@@ -188,6 +187,6 @@ public class FreecamModule extends Module { // todo this shit broke
         yaw += (float) deltaX;
         pitch += (float) deltaY;
 
-        pitch = MathHelper.clamp(pitch, -90, 90);
+        pitch = Mth.clamp(pitch, -90, 90);
     }
 }

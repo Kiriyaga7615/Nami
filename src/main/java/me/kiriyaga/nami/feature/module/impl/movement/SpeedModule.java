@@ -12,8 +12,8 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.core.rotation.model.RotationRequest;
 import me.kiriyaga.nami.util.InputCache;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -49,7 +49,7 @@ public class SpeedModule extends Module {
             float pitch = MC.player.getPitch();
             ROTATION_MANAGER.getRequestHandler().submit(new RotationRequest(SpeedModule.class.getName(), 1, yaw, pitch, RotationModule.RotationMode.MOTION));
 
-            MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugSpeedRot(Text.of("Yaw diff: " + Math.abs(((MC.player.getYaw() - getYaw() + 540) % 360) - 180) ));
+            MODULE_MANAGER.getStorage().getByClass(DebugModule.class).debugSpeedRot(Component.of("Yaw diff: " + Math.abs(((MC.player.getYaw() - getYaw() + 540) % 360) - 180) ));
         }
     }
 
@@ -75,13 +75,13 @@ public class SpeedModule extends Module {
 
         if (inputZ > 0) return realYaw;
 
-        if (inputZ < 0) return MathHelper.wrapDegrees(realYaw + 180);
+        if (inputZ < 0) return Mth.wrapDegrees(realYaw + 180);
 
-        if (inputX != 0 && inputZ == 0) return MathHelper.wrapDegrees(realYaw + (inputX > 0 ? 90 : -90));
+        if (inputX != 0 && inputZ == 0) return Mth.wrapDegrees(realYaw + (inputX > 0 ? 90 : -90));
 
         if (inputZ > 0 && inputX != 0) return realYaw;
 
-        if (inputZ < 0 && inputX != 0) return MathHelper.wrapDegrees(realYaw + 180);
+        if (inputZ < 0 && inputX != 0) return Mth.wrapDegrees(realYaw + 180);
 
         return realYaw;
     }

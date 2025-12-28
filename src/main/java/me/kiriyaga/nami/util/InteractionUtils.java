@@ -3,20 +3,19 @@ package me.kiriyaga.nami.util;
 import me.kiriyaga.nami.core.rotation.model.RotationRequest;
 import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
 import me.kiriyaga.nami.mixin.ClientPlayerInteractionManagerAccessor;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.decoration.EndCrystalEntity;
-import net.minecraft.entity.projectile.ArrowEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
+import net.minecraft.world.level.block.BedBlock;
+import 	net.minecraft.world.level.block.Block;
+import 	net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.util.math.*;
 
 import static me.kiriyaga.nami.Nami.*;
@@ -181,7 +180,7 @@ public class InteractionUtils {
             if (simulate)
                 MC.interactionManager.interactBlock(MC.player, MAIN_HAND, hitResult);
             else
-                sendSequencedPacket(id -> new PlayerInteractBlockC2SPacket(MAIN_HAND, hitResult, id));
+                sendSequencedPacket(id -> new ServerboundPlayerActionPacket(MAIN_HAND, hitResult, id));
 
             if (swing)
                 MC.player.swingHand(MAIN_HAND);
@@ -246,7 +245,7 @@ public class InteractionUtils {
         if (simulate)
             MC.interactionManager.interactBlock(MC.player, MAIN_HAND, hit);
         else
-            sendSequencedPacket(id -> new PlayerInteractBlockC2SPacket(MAIN_HAND, hit, id));
+            sendSequencedPacket(id -> new ServerboundPlayerActionPacket(MAIN_HAND, hit, id));
 
         if (swing)
             MC.player.swingHand(MAIN_HAND);
@@ -276,16 +275,16 @@ public class InteractionUtils {
 
     public static void airPlace(BlockHitResult target, boolean grim, boolean swing) {
         if (grim) {
-            MC.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                    PlayerActionC2SPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ORIGIN, Direction.DOWN));
+            MC.getNetworkHandler().sendPacket(new ServerboundPlayerActionPacket(
+                    ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ORIGIN, Direction.DOWN));
 
             MC.interactionManager.interactBlock(MC.player, Hand.OFF_HAND, target);
             if (swing)
                 MC.player.swingHand(Hand.MAIN_HAND, false);
 
-            MC.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.OFF_HAND));
-            MC.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                    PlayerActionC2SPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ORIGIN, Direction.DOWN));
+            MC.getNetworkHandler().sendPacket(new ServerboundSwingPacket(Hand.OFF_HAND));
+            MC.getNetworkHandler().sendPacket(new ServerboundPlayerActionPacket(
+                    ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ORIGIN, Direction.DOWN));
         } else {
             MC.interactionManager.interactBlock(MC.player, Hand.MAIN_HAND, target);
             if (swing)
@@ -405,9 +404,9 @@ public class InteractionUtils {
         Box blockBox = new Box(pos);
         for (Entity entity : MC.world.getEntities()) {
             if (entity.squaredDistanceTo(MC.player) > distance) continue;
-            if (entity instanceof EndCrystalEntity) continue;
+            if (entity instanceof EndCrystal) continue;
             if (entity instanceof ItemEntity) continue;
-            if (entity instanceof ArrowEntity) continue;
+            if (entity instanceof Arrow) continue;
 
             if (entity.getBoundingBox().intersects(blockBox)) {
                 return true;

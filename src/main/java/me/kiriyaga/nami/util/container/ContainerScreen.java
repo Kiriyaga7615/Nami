@@ -1,27 +1,26 @@
 package me.kiriyaga.nami.util.container;
 
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.ShulkerBoxScreen;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ShulkerBoxScreenHandler;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+
+import net.minecraft.world.inventory.ShulkerBoxMenu;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 import static me.kiriyaga.nami.Nami.MC;
-import static net.minecraft.client.gl.RenderPipelines.GUI_TEXTURED;
- // TODO: unblock actions, and change the slot count, so people can see shulkers and manage inventory
+import static net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED;
+
+// TODO: unblock actions, and change the slot count, so people can see shulkers and manage inventory
 public class ContainerScreen extends ShulkerBoxScreen {
     private static final Identifier TEXTURE = Identifier.of("textures/gui/container/shulker_box.png");
     private final ItemStack[] contents;
@@ -29,22 +28,22 @@ public class ContainerScreen extends ShulkerBoxScreen {
     private static final Deque<Screen> screenStack = new ArrayDeque<>();
 
     public ContainerScreen(ItemStack containerStack, ItemStack[] contents) {
-        super(new ShulkerBoxScreenHandler(0, MC.player.getInventory(), new SimpleInventory(contents)),
+        super(new ShulkerBoxMenu(0, MC.player.getInventory(), new SimpleContainer(contents)),
                 MC.player.getInventory(),
-                Text.translatable(containerStack.getItemName().getString()));
+                Component.translatable(containerStack.getItemName().getString()));
         this.containerStack = containerStack;
         this.contents = contents;
     }
 
     @Override
-    protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
+    protected void drawBackground(GuiGraphics context, float delta, int mouseX, int mouseY) {
         int x = (width - backgroundWidth) / 2;
         int y = (height - backgroundHeight) / 2;
         context.drawTexture(GUI_TEXTURED, TEXTURE, x, y, 0f, 0f, backgroundWidth, backgroundHeight, 256, 256);
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         drawMouseoverTooltip(context, mouseX, mouseY);
     }
@@ -67,7 +66,7 @@ public class ContainerScreen extends ShulkerBoxScreen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean bl) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean bl) {
         if (click.button() == 1 || click.button() == 0)
              return false;
 
@@ -76,8 +75,8 @@ public class ContainerScreen extends ShulkerBoxScreen {
     }
 
      @Override
-     public boolean keyPressed(KeyInput keyInput) {
-         KeyBinding keyBindEscape = MC.options.inventoryKey;
+     public boolean keyPressed(KeyEvent keyInput) {
+         KeyMapping keyBindEscape = MC.options.inventoryKey;
          int escKey = keyBindEscape.getDefaultKey().getCode();
 
          int keyCode = keyInput.getKeycode();

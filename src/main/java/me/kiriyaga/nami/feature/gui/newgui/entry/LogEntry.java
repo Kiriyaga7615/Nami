@@ -1,7 +1,7 @@
 package me.kiriyaga.nami.feature.gui.newgui.entry;
 
 import me.kiriyaga.nami.feature.gui.newgui.base.BaseEntry;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -17,13 +17,13 @@ public class LogEntry extends BaseEntry {
         displayText = formatMessage();
     }
 
-    private Text formatMessage() {
+    private Component formatMessage() {
         String time = timestamp.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         return CAT_FORMAT.format("[" + time + "] " + message);
     }
 
     @Override
-    public Text getDisplayText() {
+    public Component getDisplayText() {
         return displayText;
     }
 

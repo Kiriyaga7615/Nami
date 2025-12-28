@@ -1,8 +1,8 @@
 package me.kiriyaga.nami.feature.gui.newgui.entry;
 
 import me.kiriyaga.nami.feature.gui.newgui.base.BaseEntry;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.text.Text;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
 
 import java.util.Collection;
 
@@ -20,13 +20,13 @@ public class FriendEntry extends BaseEntry {
     public String getName() { return name; }
 
     @Override
-    public Text getDisplayText() { return displayText; }
+    public Component getDisplayText() { return displayText; }
 
     @Override
     public void refreshEntry() {
         boolean nowOnline = false;
         if (MC.getNetworkHandler() != null) {
-            Collection<PlayerListEntry> list = MC.getNetworkHandler().getPlayerList();
+            Collection<PlayerInfo> list = MC.getNetworkHandler().getPlayerList();
             nowOnline = list.stream().anyMatch(entry -> entry.getProfile().name().equalsIgnoreCase(name));
         }
 

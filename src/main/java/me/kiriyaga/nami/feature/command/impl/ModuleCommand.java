@@ -5,7 +5,7 @@ import me.kiriyaga.nami.feature.command.CommandArgument;
 import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.setting.Setting;
 import me.kiriyaga.nami.feature.setting.impl.*;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 import java.util.Arrays;
 

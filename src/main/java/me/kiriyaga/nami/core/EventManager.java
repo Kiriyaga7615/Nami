@@ -4,7 +4,6 @@ import me.kiriyaga.nami.event.Event;
 import me.kiriyaga.nami.event.SubscribeEvent;
 import me.kiriyaga.nami.event.EventPriority;
 import me.kiriyaga.nami.util.ReflectionUtils;
-import net.minecraft.world.debug.gizmo.GizmoDrawing;
 
 import java.lang.reflect.Method;
 import java.util.*;

@@ -1,4 +1,4 @@
-    package me.kiriyaga.nami.feature.module.impl.visuals;
+package me.kiriyaga.nami.feature.module.impl.visuals;
 
     import me.kiriyaga.nami.event.EventPriority;
     import me.kiriyaga.nami.event.SubscribeEvent;
@@ -9,8 +9,8 @@
     import me.kiriyaga.nami.mixininterface.ISimpleOption;
     import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
     import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-    import net.minecraft.entity.effect.StatusEffectInstance;
-    import net.minecraft.entity.effect.StatusEffects;
+    import net.minecraft.world.effect.MobEffectInstance;
+    import net.minecraft.world.effect.MobEffects;
 
     import static me.kiriyaga.nami.Nami.MC;
 
@@ -39,14 +39,14 @@
                 if (current != amount.get()) {
                     ((ISimpleOption) (Object) MC.options.getGamma()).setValue(amount.get());
                 }
-                if (MC.player.hasStatusEffect(StatusEffects.NIGHT_VISION)) {
-                    MC.player.removeStatusEffect(StatusEffects.NIGHT_VISION);
+                if (MC.player.hasStatusEffect(MobEffects.NIGHT_VISION)) {
+                    MC.player.removeStatusEffect(MobEffects.NIGHT_VISION);
                 }
             }
             else if (mode.get() == Mode.POTION) {
                 if (MC.options.getGamma().getValue() > 1.0)
                     ((ISimpleOption) (Object) MC.options.getGamma()).setValue(1.0);
-                MC.player.addStatusEffect(new StatusEffectInstance(StatusEffects.NIGHT_VISION, 220, 0, false, false, false));
+                MC.player.addStatusEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 220, 0, false, false, false));
             }
         }
 
@@ -56,8 +56,8 @@
             if (MC.options != null) {
                 ((ISimpleOption) (Object) MC.options.getGamma()).setValue(1.0);
             }
-            if (MC.player != null && MC.player.hasStatusEffect(StatusEffects.NIGHT_VISION)) {
-                MC.player.removeStatusEffect(StatusEffects.NIGHT_VISION);
+            if (MC.player != null && MC.player.hasStatusEffect(MobEffects.NIGHT_VISION)) {
+                MC.player.removeStatusEffect(MobEffects.NIGHT_VISION);
             }
         }
     }

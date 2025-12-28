@@ -10,11 +10,11 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -39,8 +39,8 @@ public class AnnouncerModule extends Module {
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!joinAnnounce.get()) return;
 
-        if (event.getPacket() instanceof PlayerListS2CPacket joinPacket) {
-            if (joinPacket.getActions().contains(PlayerListS2CPacket.Action.ADD_PLAYER)) {
+        if (event.getPacket() instanceof ClientboundPlayerInfoUpdatePacket joinPacket) {
+            if (joinPacket.getActions().contains(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER)) {
                 for (var entry : joinPacket.getEntries()) {
                     String playerName = entry.profile().name();
                     if (playerName == null) continue;
@@ -48,13 +48,13 @@ public class AnnouncerModule extends Module {
                     boolean isFriend = FRIEND_MANAGER.isFriend(playerName);
 
                     if ((everyone.get() && !isFriend) || (friends.get() && isFriend)) {
-                        Text message = CAT_FORMAT.format("{g}" + playerName + " {reset}joined the game.");
+                        Component message = CAT_FORMAT.format("{g}" + playerName + " {reset}joined the game.");
                         LOG.addEntry(this.name + ": " + message.getString());
                         CHAT_MANAGER.sendPersistent(playerName, message);
                     }
                 }
             }
-        } else if (event.getPacket() instanceof PlayerRemoveS2CPacket leavePacket) {
+        } else if (event.getPacket() instanceof ClientboundPlayerInfoRemovePacket leavePacket) {
             for (var playerInfo : leavePacket.comp_1105()) {
                 var info = MC.getNetworkHandler().getPlayerListEntry(playerInfo);
                 if (info == null) continue;
@@ -65,7 +65,7 @@ public class AnnouncerModule extends Module {
                 boolean isFriend = FRIEND_MANAGER.isFriend(playerName);
 
                 if ((everyone.get() && !isFriend) || (friends.get() && isFriend)) {
-                    Text message = CAT_FORMAT.format("{g}" + playerName + " {reset}has left the game.");
+                    Component message = CAT_FORMAT.format("{g}" + playerName + " {reset}has left the game.");
                     LOG.addEntry(this.name + ": " + message.getString());
                     CHAT_MANAGER.sendPersistent(playerName, message);
                 }
@@ -77,7 +77,7 @@ public class AnnouncerModule extends Module {
     public void onEntitySpawn(EntitySpawnEvent event) {
         if (MC.player == null || MC.world == null || !visualRange.get()) return;
 
-        if (event.getEntity() instanceof PlayerEntity player) {
+        if (event.getEntity() instanceof Player player) {
 
             if (player == MC.player)
                 return;
@@ -91,7 +91,7 @@ public class AnnouncerModule extends Module {
                 return;
             }
 
-            Text message = CAT_FORMAT.format("{g}" + player.getName().getString() + " {reset}has entered visual range.");
+            Component message = CAT_FORMAT.format("{g}" + player.getName().getString() + " {reset}has entered visual range.");
 
             LOG.addEntry(this.name + ": " + message.getString());
             CHAT_MANAGER.sendPersistent(player.getUuidAsString(), message);

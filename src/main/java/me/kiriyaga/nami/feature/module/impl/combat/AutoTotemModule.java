@@ -12,13 +12,13 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.EnchantmentUtils;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.text.Text;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.network.chat.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,7 +74,7 @@ public class AutoTotemModule extends Module {
     private void onReceivePacket(PacketReceiveEvent event) {
         if (MC.world == null || MC.player == null) return;
 
-        if (event.getPacket() instanceof EntityStatusS2CPacket packet) {
+        if (event.getPacket() instanceof ClientboundEntityEventPacket packet) {
             if (packet.getEntity(MC.world) == MC.player && packet.getStatus() == 3 && deathLog.get()) {
                 EXECUTABLE_MANAGER.getRequestHandler().submit(this::logDeathData, 20, ExecutableThreadType.PRE_TICK);
             }
@@ -82,7 +82,7 @@ public class AutoTotemModule extends Module {
     }
 
     private void attemptPlaceOffhand() {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null) return;
 
         ItemStack offhandStack = player.getOffHandStack();
@@ -178,7 +178,7 @@ public class AutoTotemModule extends Module {
 
     private ItemStack getOverrideStack() {
         Offhand type = overrideItem.get();
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
 
         switch (type) {
             case CRYSTAL:
@@ -250,7 +250,7 @@ public class AutoTotemModule extends Module {
     }
 
     private void logDeathData() {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null) return;
 
         int ping = SERVER_MANAGER.getPing();
@@ -280,7 +280,7 @@ public class AutoTotemModule extends Module {
             reasonsBuilder.append("- ").append(entry.getValue()).append("\n");
         }
 
-        Text message = CAT_FORMAT.format(
+        Component message = CAT_FORMAT.format(
                 "\n=== {g}AutoTotem{reset} ===\n" +
                         "Death reasons:\n{g}" + reasonsBuilder.toString() + "{reset}\n" +
                         "Ping: {g}" + ping + " ms{reset}\n" +

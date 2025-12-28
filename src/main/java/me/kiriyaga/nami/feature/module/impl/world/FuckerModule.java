@@ -11,8 +11,10 @@ import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.InteractionUtils;
-import net.minecraft.block.*;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockState;
+
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -145,7 +147,7 @@ public class FuckerModule extends Module {
 
         if (block == Blocks.BEDROCK || state.isAir()) return false;
 
-        if (block instanceof SugarCaneBlock || block instanceof BambooBlock) {
+        if (block instanceof SugarCaneBlock || block instanceof BambooStalkBlock) {
             BlockPos belowPos = pos.down();
             Block belowBlock = MC.world.getBlockState(belowPos).getBlock();
             return belowBlock == block;
@@ -160,6 +162,6 @@ public class FuckerModule extends Module {
 
         if (block == Blocks.BEDROCK || state.isAir()) return false;
 
-        return block instanceof PlantBlock;
+        return block instanceof VegetationBlock;
     }
 }

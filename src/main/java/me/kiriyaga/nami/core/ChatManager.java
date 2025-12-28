@@ -6,11 +6,11 @@ import me.kiriyaga.nami.event.SubscribeEvent;
 import me.kiriyaga.nami.event.impl.PreTickEvent;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
 import me.kiriyaga.nami.mixin.ChatHudAccessor;
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.gui.hud.ChatHudLine;
-import net.minecraft.client.gui.hud.MessageIndicator;
-import net.minecraft.network.message.MessageSignatureData;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.GuiMessage;
+import net.minecraft.client.GuiMessageTag;
+import net.minecraft.network.chat.MessageSignature;
+import net.minecraft.network.chat.Component;
 
 import java.security.SecureRandom;
 import java.util.*;
@@ -35,67 +35,67 @@ public class ChatManager {
      *
      */
 
-    public final Map<String, MessageSignatureData> persistentMessages = new HashMap<>();
-    public MessageSignatureData transientSignature = null;
+    public final Map<String, MessageSignature> persistentMessages = new HashMap<>();
+    public MessageSignature transientSignature = null;
 
-    private final List<Text> allMessages = new ArrayList<>(); // theese are always key == null
+    private final List<Component> allMessages = new ArrayList<>(); // theese are always key == null
 
     public void init(){
         EVENT_MANAGER.register(this);
     }
 
-    private MessageSignatureData generateSignature() {
+    private MessageSignature generateSignature() {
         byte[] data = new byte[256];
         new SecureRandom().nextBytes(data);
-        return new MessageSignatureData(data);
+        return new MessageSignature(data);
     }
 
     public void sendRaw(String message) {
-        sendRaw(Text.literal(message), true);
+        sendRaw(Component.literal(message), true);
     }
 
     public void sendRaw(String message, boolean prefix) {
-        sendRaw(Text.literal(message), prefix);
+        sendRaw(Component.literal(message), prefix);
     }
 
-    public void sendRaw(Text message) {
+    public void sendRaw(Component message) {
         sendRaw(message, true);
     }
 
-    public void sendRaw(Text message, boolean prefix) {
+    public void sendRaw(Component message, boolean prefix) {
         retry(() -> {
             if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
-            Text text = prefix ? prefix().copy().append(message) : message;
+            Component text = prefix ? prefix().copy().append(message) : message;
             getChatHud().addMessage(text);
         });
     }
 
 
     public void sendPersistent(String key, String message) {
-        sendPersistent(key, Text.literal(message), true);
+        sendPersistent(key, Component.literal(message), true);
     }
 
     public void sendPersistent(String key, String message, boolean prefix) {
-        sendPersistent(key, Text.literal(message), prefix);
+        sendPersistent(key, Component.literal(message), prefix);
     }
 
-    public void sendPersistent(String key, Text message) {
+    public void sendPersistent(String key, Component message) {
         sendPersistent(key, message, true);
     }
 
-    public void sendPersistent(String key, Text message, boolean prefix) {
+    public void sendPersistent(String key, Component message, boolean prefix) {
         retry(() -> {
         if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud chatHud = getChatHud();
+            ChatComponent chatHud = getChatHud();
 
         if (persistentMessages.containsKey(key)) {
             removeSilently(persistentMessages.get(key));
         }
 
-        Text text = prefix ? prefix().copy().append(message) : message;
-        MessageSignatureData signature = generateSignature();
-        MessageIndicator indicator = indicator();
+            Component text = prefix ? prefix().copy().append(message) : message;
+            MessageSignature signature = generateSignature();
+            GuiMessageTag indicator = indicator();
 
         chatHud.addMessage(text, signature, indicator);
         persistentMessages.put(key, signature);
@@ -103,31 +103,31 @@ public class ChatManager {
     }
 
     public void sendTransient(String message) {
-        sendTransient(Text.literal(message), true);
+        sendTransient(Component.literal(message), true);
     }
 
     public void sendTransient(String message, boolean prefix) {
-        sendTransient(Text.literal(message), prefix);
+        sendTransient(Component.literal(message), prefix);
     }
 
-    public void sendTransient(Text message) {
+    public void sendTransient(Component message) {
         sendTransient(message, true);
     }
 
-    public void sendTransient(Text message, boolean prefix) {
+    public void sendTransient(Component message, boolean prefix) {
         retry(() -> {
             if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud chatHud = getChatHud();
+            ChatComponent chatHud = getChatHud();
 
         if (transientSignature != null) {
             removeSilently(transientSignature);
             transientSignature = null;
         }
 
-        Text text = prefix ? prefix().copy().append(message) : message;
-        MessageSignatureData signature = generateSignature();
-        MessageIndicator indicator = indicator();
+            Component text = prefix ? prefix().copy().append(message) : message;
+            MessageSignature signature = generateSignature();
+            GuiMessageTag indicator = indicator();
 
         chatHud.addMessage(text, signature, indicator);
         transientSignature = signature;
@@ -146,8 +146,8 @@ public class ChatManager {
     public void clear() {
         if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud chatHud = getChatHud();
-        for (MessageSignatureData sig : persistentMessages.values()) {
+        ChatComponent chatHud = getChatHud();
+        for (MessageSignature sig : persistentMessages.values()) {
             chatHud.removeMessage(sig);
             removeSilently(sig);
         }
@@ -161,20 +161,20 @@ public class ChatManager {
         allMessages.clear();
     }
 
-    private ChatHud getChatHud() {
+    private ChatComponent getChatHud() {
         return MC.inGameHud.getChatHud();
     }
 
-    public void removeSilently(MessageSignatureData signature) {
+    public void removeSilently(MessageSignature signature) {
         if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud hud = MC.inGameHud.getChatHud();
+        ChatComponent hud = MC.inGameHud.getChatHud();
         ChatHudAccessor accessor = (ChatHudAccessor) hud;
 
         accessor.getMessages().removeIf(line -> signature.equals(line.comp_915()));
 
         accessor.getVisibleMessages().removeIf(visible -> {
-            for (ChatHudLine line : accessor.getMessages()) {
+            for (GuiMessage line : accessor.getMessages()) {
                 if (signature.equals(line.comp_915())) {
                     return visible.comp_896().equals(line.comp_893());
                 }
@@ -186,19 +186,19 @@ public class ChatManager {
         allMessages.remove(signature);
     }
 
-    private MessageIndicator indicator() {
+    private GuiMessageTag indicator() {
         int global = MODULE_MANAGER.getStorage().getByClass(ColorModule.class).getStyledGlobalColor().getRGB() & 0x00FFFFFF;
-        return new MessageIndicator(global, null, Text.literal(DISPLAY_NAME), NAME);
+        return new GuiMessageTag(global, null, Component.literal(DISPLAY_NAME), NAME);
     }
 
-    private Text prefix() {
+    private Component prefix() {
         return CAT_FORMAT.format("{s}[{g}" + NAME + "{s}] {reset}");
     }
 
     public void removeByText(String text) {
         if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud hud = getChatHud();
+        ChatComponent hud = getChatHud();
         ChatHudAccessor accessor = (ChatHudAccessor) hud;
 
         accessor.getMessages().removeIf(line -> line.comp_893().getString().equals(text));
@@ -223,12 +223,12 @@ public class ChatManager {
     public void onPreTick(PreTickEvent ev) {
         if (MC == null || MC.inGameHud == null || getChatHud() == null) return;
 
-        ChatHud hud = getChatHud();
+        ChatComponent hud = getChatHud();
         ChatHudAccessor accessor = (ChatHudAccessor) hud;
 
         allMessages.clear();
-        for (ChatHudLine line : accessor.getMessages()) {
-            Text text = line.comp_893();
+        for (GuiMessage line : accessor.getMessages()) {
+            Component text = line.comp_893();
 
             if (persistentMessages.containsValue(line.comp_915())) continue;
             if (transientSignature != null && transientSignature.equals(line.comp_915())) continue;
@@ -237,7 +237,7 @@ public class ChatManager {
         }
     }
 
-    public List<Text> getAllMessages() {
+    public List<Component> getAllMessages() {
         return allMessages;
     }
 }

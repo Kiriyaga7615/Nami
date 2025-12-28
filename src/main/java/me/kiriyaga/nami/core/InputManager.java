@@ -8,17 +8,16 @@ import me.kiriyaga.nami.event.impl.PreTickEvent;
 import me.kiriyaga.nami.feature.module.impl.movement.GuiMoveModule;
 import me.kiriyaga.nami.feature.module.impl.visuals.FreecamModule;
 import me.kiriyaga.nami.util.InputCache;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ChatScreen;
-import net.minecraft.client.gui.screen.ingame.*;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.option.GameOptions;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.network.packet.c2s.play.PlayerInputC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
-import net.minecraft.util.PlayerInput;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.*;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.Options;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundMoveVehiclePacket;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 import static me.kiriyaga.nami.Nami.*; // TODO: 1.20.6 viafabric flags sprinting, since packet does not exists. The grim check, does not apply for input on theese versions, but do apply for sprinting
@@ -53,8 +52,8 @@ public class InputManager {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPacketSend(PacketSendEvent event) {
-        if (event.getPacket() instanceof PlayerInputC2SPacket packet) {
-            PlayerInput input = packet.comp_3139();
+        if (event.getPacket() instanceof ServerboundPlayerInputPacket packet) {
+            Input input = packet.comp_3139();
 
             this.forward = input.comp_3159();
             this.backward = input.comp_3160();
@@ -63,9 +62,9 @@ public class InputManager {
             this.jumping = input.comp_3163();
             this.sneaking = input.sneak();
             this.sprinting = input.comp_3165();
-        } else if (event.getPacket() instanceof VehicleMoveC2SPacket) {
+        } else if (event.getPacket() instanceof ServerboundMoveVehiclePacket) {
             // TODO: finish this
-        } else if (event.getPacket() instanceof PlayerMoveC2SPacket) {
+        } else if (event.getPacket() instanceof ServerboundMovePlayerPacket) {
         }
     }
 
@@ -115,7 +114,7 @@ public class InputManager {
     }
 
     private void saveKeys() {
-        GameOptions opt = MC.options;
+        Options opt = MC.options;
         savedForward = opt.forwardKey.isPressed();
         savedBack = opt.backKey.isPressed();
         savedLeft = opt.leftKey.isPressed();
@@ -126,7 +125,7 @@ public class InputManager {
     }
 
     private void disableAllKeys() {
-        GameOptions opt = MC.options;
+        Options opt = MC.options;
         setPressed(opt.forwardKey, false);
         setPressed(opt.backKey, false);
         setPressed(opt.leftKey, false);
@@ -137,7 +136,7 @@ public class InputManager {
     }
 
     private void restoreKeys() {
-        GameOptions opt = MC.options;
+        Options opt = MC.options;
         setPressed(opt.forwardKey, savedForward);
         setPressed(opt.backKey, savedBack);
         setPressed(opt.leftKey, savedLeft);
@@ -147,12 +146,12 @@ public class InputManager {
         setPressed(opt.sprintKey, savedSprint);
     }
 
-    private void setPressed(KeyBinding key, boolean pressed) {
+    private void setPressed(KeyMapping key, boolean pressed) {
         key.setPressed(pressed);
     }
 
-    private void updateHeld(KeyBinding bind, int key, int scancode, int action, java.util.function.Consumer<Boolean> setter) {
-        KeyInput input = new KeyInput(key, scancode, 0); // 0 = нет модификаторов, если нужны, передайте их сюда
+    private void updateHeld(KeyMapping bind, int key, int scancode, int action, java.util.function.Consumer<Boolean> setter) {
+        KeyEvent input = new KeyEvent(key, scancode, 0); // 0 = нет модификаторов, если нужны, передайте их сюда
         if (!bind.matchesKey(input)) return;
         boolean pressed = action == GLFW.GLFW_PRESS || action == GLFW.GLFW_REPEAT;
         setter.accept(pressed);
@@ -177,13 +176,13 @@ public class InputManager {
 
         if (inputZ > 0) return realYaw;
 
-        if (inputZ < 0) return MathHelper.wrapDegrees(realYaw + 180);
+        if (inputZ < 0) return Mth.wrapDegrees(realYaw + 180);
 
-        if (inputX != 0 && inputZ == 0) return MathHelper.wrapDegrees(realYaw + (inputX > 0 ? 90 : -90));
+        if (inputX != 0 && inputZ == 0) return Mth.wrapDegrees(realYaw + (inputX > 0 ? 90 : -90));
 
         if (inputZ > 0 && inputX != 0) return realYaw;
 
-        if (inputZ < 0 && inputX != 0) return MathHelper.wrapDegrees(realYaw + 180);
+        if (inputZ < 0 && inputX != 0) return Mth.wrapDegrees(realYaw + 180);
 
         return realYaw;
     }

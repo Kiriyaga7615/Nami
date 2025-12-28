@@ -7,10 +7,10 @@ MIT(2024)
 package me.kiriyaga.nami.core.cat;
 
 import dev.cattyn.catformat.CatFormatImpl;
-import net.minecraft.text.MutableText;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.ChatFormatting;
 
-public class FabricCatFormat extends CatFormatImpl<MutableText> {
+public class FabricCatFormat extends CatFormatImpl<MutableComponent> {
     public FabricCatFormat() {
         this(true);
     }
@@ -23,7 +23,7 @@ public class FabricCatFormat extends CatFormatImpl<MutableText> {
     }
 
     private void addVanilla() {
-        for (Formatting value : Formatting.values()) {
+        for (ChatFormatting value : ChatFormatting.values()) {
             if (!value.isColor() || value.getColorValue() == null) {
                 continue;
             }

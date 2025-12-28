@@ -1,17 +1,17 @@
 package me.kiriyaga.nami.util;
 
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.phys.Vec3;
 import java.util.function.IntFunction;
-
+import net.minecraft.world.entity.LivingEntity;
 public final class PredictMovementUtils {
 
     private PredictMovementUtils() {} // elytra is fucked up here
 
     public static class PredictedEntity {
-        public Vec3d pos;
-        public Vec3d velocity;
+        public Vec3 pos;
+        public Vec3 velocity;
         public float yaw, pitch;
         public boolean onGround;
         public float standingEyeHeight;
@@ -34,7 +34,7 @@ public final class PredictMovementUtils {
         public double finalGravity;
         public double swimHeight;
 
-        public PredictedEntity(Vec3d pos, Vec3d velocity, float yaw, float pitch, boolean onGround, float eyeHeight) {
+        public PredictedEntity(Vec3 pos, Vec3 velocity, float yaw, float pitch, boolean onGround, float eyeHeight) {
             this.pos = pos;
             this.velocity = velocity;
             this.yaw = yaw;
@@ -43,12 +43,12 @@ public final class PredictMovementUtils {
             this.standingEyeHeight = eyeHeight;
         }
 
-        public Vec3d getEyePos() {
+        public Vec3 getEyePos() {
             return pos.add(0, standingEyeHeight, 0);
         }
     }
 
-    public static PredictedEntity toPredicted(net.minecraft.entity.LivingEntity entity) {
+    public static PredictedEntity toPredicted(LivingEntity entity) {
         PredictedEntity p = new PredictedEntity(
                 entity.getEntityPos(),
                 entity.getVelocity(),
@@ -63,34 +63,34 @@ public final class PredictMovementUtils {
         p.horizontalCollision = entity.horizontalCollision;
         p.wasInPowderSnow = entity.wasInPowderSnow;
 
-        p.hasLevitation = entity.hasStatusEffect(StatusEffects.LEVITATION);
-        p.levitationAmplifier = entity.hasStatusEffect(StatusEffects.LEVITATION) ? entity.getStatusEffect(StatusEffects.LEVITATION).getAmplifier() : 0;
-        p.hasSlowFalling = entity.hasStatusEffect(StatusEffects.SLOW_FALLING);
+        p.hasLevitation = entity.hasStatusEffect(MobEffects.LEVITATION);
+        p.levitationAmplifier = entity.hasStatusEffect(MobEffects.LEVITATION) ? entity.getStatusEffect(MobEffects.LEVITATION).getAmplifier() : 0;
+        p.hasSlowFalling = entity.hasStatusEffect(MobEffects.SLOW_FALLING);
 
         p.isSprinting = entity.isSprinting();
         p.touchingWater = entity.isTouchingWater();
         p.inLava = entity.isInLava();
 
         p.movementSpeed = entity.getMovementSpeed();
-        p.waterMovementEfficiency = (float) entity.getAttributeValue(EntityAttributes.WATER_MOVEMENT_EFFICIENCY);
+        p.waterMovementEfficiency = (float) entity.getAttributeValue(Attributes.WATER_MOVEMENT_EFFICIENCY);
         p.finalGravity = entity.getFinalGravity();
         p.swimHeight = entity.getSwimHeight();
 
         return p;
     }
 
-    public static PredictedEntity predict(PredictedEntity entity, int ticks, IntFunction<Vec3d> inputProvider) {
+    public static PredictedEntity predict(PredictedEntity entity, int ticks, IntFunction<Vec3> inputProvider) {
         PredictedEntity fake = copy(entity);
 
         for (int t = 0; t < ticks; t++) {
-            Vec3d input = inputProvider != null ? inputProvider.apply(t) : Vec3d.ZERO;
+            Vec3 input = inputProvider != null ? inputProvider.apply(t) : Vec3.ZERO;
             travel(fake, input);
         }
 
         return fake;
     }
 
-    private static void travel(PredictedEntity e, Vec3d input) {
+    private static void travel(PredictedEntity e, Vec3 input) {
         if (e.onGround) {
             travelOnGround(e, input);
         } else if (e.touchingWater || e.inLava) {
@@ -102,11 +102,11 @@ public final class PredictMovementUtils {
         }
     }
 
-    private static void travelOnGround(PredictedEntity e, Vec3d input) {
+    private static void travelOnGround(PredictedEntity e, Vec3 input) {
         float friction = 0.91F; // TODO fix this
         float speed = (float) e.movementSpeed;
 
-        Vec3d move = input.multiply(speed, 0, speed);
+        Vec3 move = input.multiply(speed, 0, speed);
 
         double velX = e.velocity.x * friction + move.x;
         double velZ = e.velocity.z * friction + move.z;
@@ -118,12 +118,12 @@ public final class PredictMovementUtils {
             velY = 0;
         }
 
-        e.velocity = new Vec3d(velX, velY, velZ);
+        e.velocity = new Vec3(velX, velY, velZ);
         e.pos = e.pos.add(e.velocity);
     }
 
-    private static void travelMidAir(PredictedEntity e, Vec3d input) {
-        Vec3d move = input.multiply(e.movementSpeed, 1, e.movementSpeed);
+    private static void travelMidAir(PredictedEntity e, Vec3 input) {
+        Vec3 move = input.multiply(e.movementSpeed, 1, e.movementSpeed);
 
         double yVel = e.velocity.y;
 
@@ -133,25 +133,25 @@ public final class PredictMovementUtils {
             yVel -= getEffectiveGravity(e);
         }
 
-        e.velocity = new Vec3d(move.x, yVel, move.z);
+        e.velocity = new Vec3(move.x, yVel, move.z);
         e.pos = e.pos.add(e.velocity);
     }
 
-    private static void travelInFluid(PredictedEntity e, Vec3d input) {
+    private static void travelInFluid(PredictedEntity e, Vec3 input) {
         float speedMultiplier = e.touchingWater ? 0.8f : 0.5f;
-        Vec3d move = input.multiply(speedMultiplier, 0.8, speedMultiplier);
+        Vec3 move = input.multiply(speedMultiplier, 0.8, speedMultiplier);
         double yVel = e.velocity.y - (getEffectiveGravity(e) / 4.0);
 
-        e.velocity = new Vec3d(move.x, yVel, move.z);
+        e.velocity = new Vec3(move.x, yVel, move.z);
         e.pos = e.pos.add(e.velocity);
     }
 
-    private static void travelGliding(PredictedEntity e, Vec3d input) {
+    private static void travelGliding(PredictedEntity e, Vec3 input) {
         double pitchRad = e.pitch * 0.017453292;
         double horizontalSpeed = Math.sqrt(e.velocity.x * e.velocity.x + e.velocity.z * e.velocity.z);
 
         double glideY = -getEffectiveGravity(e) + horizontalSpeed * -Math.sin(pitchRad) * 0.04;
-        e.velocity = new Vec3d(e.velocity.x + input.x, glideY, e.velocity.z + input.z);
+        e.velocity = new Vec3(e.velocity.x + input.x, glideY, e.velocity.z + input.z);
         e.pos = e.pos.add(e.velocity.multiply(0.99, 0.98, 0.99));
     }
 

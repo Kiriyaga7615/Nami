@@ -2,7 +2,7 @@ package me.kiriyaga.nami.core.rotation;
 
 import me.kiriyaga.nami.core.rotation.model.RotationRequest;
 import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -143,6 +143,6 @@ public class RotationRequestHandler {
         ROTATION_MANAGER.getStateHandler().setServerYaw(targetYaw);
         ROTATION_MANAGER.getStateHandler().setServerPitch(targetPitch);
 
-        MC.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.Full(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYaw, targetPitch, MC.player.isOnGround(), true));
+        MC.getNetworkHandler().sendPacket(new ServerboundMovePlayerPacket.Full(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYaw, targetPitch, MC.player.isOnGround(), true));
     }
 }

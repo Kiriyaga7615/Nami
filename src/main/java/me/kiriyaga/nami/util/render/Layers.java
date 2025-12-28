@@ -1,34 +1,34 @@
 package me.kiriyaga.nami.util.render;
 
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.util.Util;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import bhs.bhs;//wth is dis
 import java.util.function.Function;
 
 public class Layers {
-    private static final RenderLayer GLOBAL_QUADS;
-    private static final RenderLayer GLOBAL_TEXT;
-    private static final Function<Double, RenderLayer> GLOBAL_LINES;
+    private static final RenderType GLOBAL_QUADS;
+    private static final RenderType GLOBAL_TEXT;
+    private static final Function<Double, RenderType> GLOBAL_LINES;
 
-    public static RenderLayer getGlobalQuads() {
+    public static RenderType getGlobalQuads() {
         return GLOBAL_QUADS;
     }
 
-    public static RenderLayer getGlobalText() {
+    public static RenderType getGlobalText() {
         return GLOBAL_TEXT;
     }
 
-    public static RenderLayer getGlobalLines(double width) {
+    public static RenderType getGlobalLines(double width) {
         return GLOBAL_LINES.apply(width);
     }
 
     static {
-        GLOBAL_QUADS = RenderLayers.solid();
+        GLOBAL_QUADS = RenderTypes.solid();
 
-        GLOBAL_TEXT = RenderLayers.textBackground();
+        GLOBAL_TEXT = RenderTypes.textBackground();
 
-        GLOBAL_LINES = Util.memoize(width -> {
-            return RenderLayers.lines();
+        GLOBAL_LINES = bhs.b(width -> {
+            return RenderTypes.lines();
         });
     }
 }

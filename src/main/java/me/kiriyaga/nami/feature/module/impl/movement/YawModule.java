@@ -7,7 +7,6 @@ import me.kiriyaga.nami.feature.module.ModuleCategory;
 import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
-import net.minecraft.client.network.ClientPlayerEntity;
 
 import static me.kiriyaga.nami.Nami.MC;
 import static me.kiriyaga.nami.util.RotationUtils.alignYaw;

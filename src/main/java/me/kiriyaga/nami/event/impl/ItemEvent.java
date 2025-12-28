@@ -1,7 +1,7 @@
 package me.kiriyaga.nami.event.impl;
 
 import me.kiriyaga.nami.event.Event;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class ItemEvent extends Event {
 

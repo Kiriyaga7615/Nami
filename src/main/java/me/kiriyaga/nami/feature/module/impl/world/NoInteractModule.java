@@ -9,21 +9,16 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.WhitelistSetting;
-import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.item.HoneycombItem;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionTypes;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.worldgen.DimensionTypes;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.Map;
 
@@ -44,7 +39,7 @@ public class NoInteractModule extends Module {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     private void onPlaceBlock(PlaceBlockEvent event) {
-        ClientPlayerEntity player = event.getPlayer();
+        LocalPlayer player = event.getPlayer();
         BlockHitResult hitResult = event.getHitResult();
 
         if (player.getEntityWorld() == null) return;
@@ -94,12 +89,12 @@ public class NoInteractModule extends Module {
     private void onPacketSendRespawn(PacketSendEvent ev) {
         if (!packet.get()) return;
 
-        if (!(ev.getPacket() instanceof PlayerInteractBlockC2SPacket interactPacket)) return;
+        if (!(ev.getPacket() instanceof ServerboundUseItemOnPacket interactPacket)) return;
         if (MC.world == null) return;
 
         BlockPos pos = interactPacket.getBlockHitResult().getBlockPos();
         Block block = MC.world.getBlockState(pos).getBlock();
-        var dimension = MC.world.getDimensionEntry().matchesKey(DimensionTypes.OVERWORLD) ? "overworld"
+            var dimension = MC.world.getDimensionEntry().matchesKey(DimensionTypes.OVERWORLD) ? "overworld"
                 : MC.world.getDimensionEntry().matchesKey(DimensionTypes.THE_NETHER) ? "nether"
                 : MC.world.getDimensionEntry().matchesKey(DimensionTypes.THE_END) ? "end"
                 : "unknown";

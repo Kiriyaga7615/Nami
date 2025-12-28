@@ -8,8 +8,8 @@ import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.mixin.KeyBindingAccessor;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import static me.kiriyaga.nami.Nami.MC;
 import static me.kiriyaga.nami.Nami.SERVER_MANAGER;
@@ -43,8 +43,8 @@ public class AutoWalkModule extends Module {
     }
 
     private void setWalkHeld(boolean held) {
-        KeyBinding walkKey = MC.options.forwardKey;
-        InputUtil.Key boundKey = ((KeyBindingAccessor) walkKey).getBoundKey();
+        KeyMapping walkKey = MC.options.forwardKey;
+        InputConstants.Key boundKey = ((KeyBindingAccessor) walkKey).getBoundKey();
         int keyCode = boundKey.getCode();
         boolean physicallyPressed = InputUtil.isKeyPressed(MC.getWindow(), keyCode);
         walkKey.setPressed(physicallyPressed || held);

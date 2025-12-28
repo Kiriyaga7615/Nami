@@ -9,9 +9,9 @@ import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.DoubleSetting;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.util.entity.EntityUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -49,7 +49,7 @@ public class AutoBreedModule extends Module {
             Entity e = MC.world.getEntityById(id);
             return e == null
                     || !e.isAlive()
-                    || e instanceof AnimalEntity an && !canBreed(an);
+                    || e instanceof Animal an && !canBreed(an);
         });
 
         if (breedCooldown > 0) {
@@ -58,7 +58,7 @@ public class AutoBreedModule extends Module {
         }
 
         for (Entity entity : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PASSIVE, 10, true)) {
-            if (!(entity instanceof AnimalEntity animal)) continue;
+            if (!(entity instanceof Animal animal)) continue;
             if (animalsFed.contains(animal.getId())) continue;
 
             if (!canBreed(animal)) continue;
@@ -82,7 +82,7 @@ public class AutoBreedModule extends Module {
         }
     }
 
-    private int getSlot(AnimalEntity animal) {
+    private int getSlot(Animal animal) {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = MC.player.getInventory().getStack(i);
             if (!stack.isEmpty() && animal.isBreedingItem(stack)) {

@@ -4,8 +4,8 @@ import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,8 +28,8 @@ public class TimeModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
-        MinecraftClient mc = MC;
+    public Component getDisplayText() {
+        Minecraft mc = MC;
         if (mc.world == null) return CAT_FORMAT.format("{bg}NaN");
 
         String timeText;

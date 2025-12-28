@@ -6,8 +6,8 @@ import me.kiriyaga.nami.feature.command.CommandArgument;
 import me.kiriyaga.nami.feature.module.Module;
 import me.kiriyaga.nami.feature.setting.impl.KeyBindSetting;
 import me.kiriyaga.nami.util.KeyUtils;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.text.Text;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -36,7 +36,7 @@ public class BindCommand extends Command {
                 .orElse(null);
 
         if (module == null) {
-            Text message = CAT_FORMAT.format("Module {g}" + moduleName + " {reset}not found.");
+            Component message = CAT_FORMAT.format("Module {g}" + moduleName + " {reset}not found.");
             CHAT_MANAGER.sendPersistent(BindCommand.class.getName(), message);
             return;
         }
@@ -48,7 +48,7 @@ public class BindCommand extends Command {
                 .orElse(null);
 
         if (bindSetting == null) {
-            Text message = CAT_FORMAT.format("Module {g}" + moduleName + " {reset}does not have a keybind setting.");
+            Component message = CAT_FORMAT.format("Module {g}" + moduleName + " {reset}does not have a keybind setting.");
             CHAT_MANAGER.sendPersistent(BindCommand.class.getName(), message);
             return;
         }
@@ -56,21 +56,21 @@ public class BindCommand extends Command {
         int keyCode = KeyUtils.parseKey(keyName);
 
         if (keyCode == -1) {
-            Text message = CAT_FORMAT.format("Invalid key name: {g}" + keyName + "{reset}.");
+            Component message = CAT_FORMAT.format("Invalid key name: {g}" + keyName + "{reset}.");
             CHAT_MANAGER.sendPersistent(BindCommand.class.getName(), message);
             return;
         }
 
-        InputUtil.Key key = InputUtil.Type.KEYSYM.createFromCode(keyCode);
+        InputConstants.Key key = InputConstants.Type.KEYSYM.createFromCode(keyCode);
         if (key == null) {
-            Text message = CAT_FORMAT.format("Invalid key code: {g}" + keyCode + "{reset}.");
+            Component message = CAT_FORMAT.format("Invalid key code: {g}" + keyCode + "{reset}.");
             CHAT_MANAGER.sendPersistent(BindCommand.class.getName(), message);
             return;
         }
 
         bindSetting.set(keyCode);
 
-        Text message = CAT_FORMAT.format("Bound module {g}" + module.getName() + " {reset}to key {g}" + keyName + "{reset}.");
+        Component message = CAT_FORMAT.format("Bound module {g}" + module.getName() + " {reset}to key {g}" + keyName + "{reset}.");
         CHAT_MANAGER.sendPersistent(BindCommand.class.getName(), message);
     }
 }

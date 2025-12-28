@@ -3,9 +3,12 @@ package me.kiriyaga.nami.core.font;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.AddressMode;
 import me.kiriyaga.nami.feature.module.impl.client.FontModule;
-import net.minecraft.client.font.*;
-import net.minecraft.client.gl.GpuSampler;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.font.*;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.font.FontSet;
+import net.minecraft.client.gui.font.GlyphStitcher;
+import net.minecraft.client.gui.font.providers.TrueTypeGlyphProviderDefinition;
+import net.minecraft.resources.Identifier;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -17,7 +20,7 @@ import static me.kiriyaga.nami.Nami.MODULE_MANAGER;
 
 public class FontLoader {
 
-    private FontStorage storage;
+    private FontSet storage;
     private int currentSize = -1;
     private int currentOversample = -1;
     private FontType lastFont = null;
@@ -35,21 +38,21 @@ public class FontLoader {
 
         lastFont = selectedFont;
 
-        TrueTypeFontLoader loader = new TrueTypeFontLoader(
+        TrueTypeGlyphProviderDefinition loader = new TrueTypeGlyphProviderDefinition(
                 Identifier.of("nami", selectedFont.getFileName()),
                 newSize,
                 newOversample,
-                TrueTypeFontLoader.Shift.NONE,
+                TrueTypeGlyphProviderDefinition.Shift.NONE,
                 ""
         );
 
         try {
             Font font = loader.build().orThrow().load(MC.getResourceManager());
-            GlyphBaker glyphBaker = new GlyphBaker(MC.getTextureManager(),
+            GlyphStitcher glyphBaker = new GlyphStitcher(MC.getTextureManager(),
                     Identifier.of("nami", selectedFont.getFileName() + "_storage"));
 
 
-            storage = new FontStorage(glyphBaker);
+            storage = new FontSet(glyphBaker);
             storage.setFonts(List.of(new Font.FontFilterPair(font, FontFilterType.FilterMap.NO_FILTER)),
                     Collections.emptySet());
 
@@ -64,7 +67,7 @@ public class FontLoader {
         }
     }
 
-    public FontStorage getStorage() {
+    public FontSet getStorage() {
         return storage;
     }
 

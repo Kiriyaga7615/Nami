@@ -11,16 +11,14 @@ import me.kiriyaga.nami.feature.module.impl.movement.NoSlowModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.KeyBindSetting;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.util.RotationUtils.getLookVectorFromYawPitch;
@@ -111,7 +109,7 @@ public class ClickPearlModule extends Module {
         if (hotbarSlot != -1) {
             int prevSlot = MC.player.getInventory().getSelectedSlot();
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(hotbarSlot);
-            MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+            MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
             INVENTORY_MANAGER.getSlotHandler().attemptSwitch(prevSlot);
             return;
         }
@@ -124,7 +122,7 @@ public class ClickPearlModule extends Module {
             int containerInvSlot = convertSlot(invSlot);
 
             if (INVENTORY_MANAGER.getClickHandler().swapSlot(containerInvSlot, selectedHotbarIndex)) {
-                MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+                MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
 
                 INVENTORY_MANAGER.getClickHandler().swapSlot(containerInvSlot, selectedHotbarIndex);
             } else recall = true;
@@ -169,11 +167,11 @@ public class ClickPearlModule extends Module {
     }
 
     private EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yaw, float pitch) {
-        Vec3d eyePos = player.getCameraPosVec(1.0f);
-        Vec3d look = getLookVectorFromYawPitch(yaw, pitch);
-        Vec3d reachEnd = eyePos.add(look.multiply(reach));
+        Vec3 eyePos = player.getCameraPosVec(1.0f);
+        Vec3 look = getLookVectorFromYawPitch(yaw, pitch);
+        Vec3 reachEnd = eyePos.add(look.multiply(reach));
 
-        Box targetBox = target.getBoundingBox();
+        AABB targetBox = target.getBoundingBox();
 
         if (targetBox.raycast(eyePos, reachEnd).isPresent()) {
             return new EntityHitResult(target);

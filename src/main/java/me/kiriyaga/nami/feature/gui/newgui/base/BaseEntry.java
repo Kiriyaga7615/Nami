@@ -1,11 +1,11 @@
 package me.kiriyaga.nami.feature.gui.newgui.base;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public abstract class BaseEntry {
-    protected Text displayText;
+    protected Component displayText;
 
-    public abstract Text getDisplayText();
+    public abstract Component getDisplayText();
 
     public abstract void refreshEntry();
 }

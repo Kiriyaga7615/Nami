@@ -1,6 +1,6 @@
 package me.kiriyaga.nami.feature.module.impl.visuals.blocksearch;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
 
 public class Block {
     public final int x, y, z;

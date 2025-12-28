@@ -3,9 +3,9 @@ package me.kiriyaga.nami.feature.module.impl.hud;
 import me.kiriyaga.nami.feature.module.HudElementModule;
 import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -19,8 +19,8 @@ public class DurabilityModule extends HudElementModule {
     }
 
     @Override
-    public Text getDisplayText() {
-        MinecraftClient mc = MC;
+    public Component getDisplayText() {
+        Minecraft mc = MC;
         if (mc.player == null) return CAT_FORMAT.format("{bg}NaN");
 
         ItemStack stack = mc.player.getMainHandStack();

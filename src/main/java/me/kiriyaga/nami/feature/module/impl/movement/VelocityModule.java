@@ -11,15 +11,13 @@ import me.kiriyaga.nami.feature.module.impl.client.RotationModule;
 import me.kiriyaga.nami.feature.setting.impl.*;
 import me.kiriyaga.nami.mixin.*;
 
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityStatuses;
-import net.minecraft.entity.projectile.FishingBobberEntity;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.util.math.*;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityEvent;
+import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.network.protocol.Packet;
+
 
 import java.util.*;
 
@@ -71,18 +69,18 @@ public class VelocityModule extends Module {
 
         Packet<?> packet = event.getPacket();
 
-        if (packet instanceof PlayerPositionLookS2CPacket && concealMotion.get()) {
+        if (packet instanceof ClientboundPlayerPositionPacket && concealMotion.get()) {
             pendingConcealment = true;
         }
 
-        if (packet instanceof EntityVelocityUpdateS2CPacket vel && handleKnockback.get()) {
+        if (packet instanceof ClientboundSetEntityMotionPacket vel && handleKnockback.get()) {
             handleVelocityPacket(event, vel);
-        } else if (packet instanceof ExplosionS2CPacket explosion && handleExplosions.get()) {
+        } else if (packet instanceof ClientboundExplodePacket explosion && handleExplosions.get()) {
             handleExplosionPacket(event, explosion);
-        } else if (packet instanceof BundleS2CPacket bundle) {
+        } else if (packet instanceof ClientboundBundlePacket bundle) {
             handleBundlePacket(event, bundle);
-        } else if (packet instanceof EntityStatusS2CPacket status
-                && status.getStatus() == EntityStatuses.PULL_HOOKED_ENTITY
+        } else if (packet instanceof ClientboundEntityEventPacket status
+                && status.getStatus() == EntityEvent.FISHING_ROD_REEL_IN
                 && cancelFishHook.get()) {
             handleFishHookPacket(event, status);
         }
@@ -109,7 +107,7 @@ public class VelocityModule extends Module {
         }
     }
 
-    private void handleVelocityPacket(PacketReceiveEvent event, EntityVelocityUpdateS2CPacket packet) {
+    private void handleVelocityPacket(PacketReceiveEvent event, ClientboundSetEntityMotionPacket packet) {
         if (packet.getEntityId() != MC.player.getId()) return;
 
         if (pendingConcealment && isZeroVelocity(packet)) {
@@ -124,7 +122,7 @@ public class VelocityModule extends Module {
         }
     }
 
-    private void handleExplosionPacket(PacketReceiveEvent event, ExplosionS2CPacket packet) {
+    private void handleExplosionPacket(PacketReceiveEvent event, ClientboundExplodePacket packet) {
         switch (mode.get()) {
             case VANILLA -> processExplosionVanilla(event, packet);
             case WALLS -> processExplosionWalls(event, packet);
@@ -132,13 +130,13 @@ public class VelocityModule extends Module {
         }
     }
 
-    private void handleBundlePacket(PacketReceiveEvent event, BundleS2CPacket bundle) {
+    private void handleBundlePacket(PacketReceiveEvent event, ClientboundBundlePacket bundle) {
         List<Packet<?>> filtered = new ArrayList<>();
 
         for (Packet<?> packet : bundle.getPackets()) {
-            if (packet instanceof ExplosionS2CPacket exp && handleExplosions.get()) {
+            if (packet instanceof ClientboundExplodePacket exp && handleExplosions.get()) {
                 processBundleExplosion(filtered, exp);
-            } else if (packet instanceof EntityVelocityUpdateS2CPacket vel && handleKnockback.get()) {
+            } else if (packet instanceof ClientboundSetEntityMotionPacket vel && handleKnockback.get()) {
                 processBundleVelocity(filtered, vel, event);
             } else {
                 filtered.add(packet);
@@ -148,14 +146,14 @@ public class VelocityModule extends Module {
         ((BundlePacketAccessor) bundle).setIterable(filtered);
     }
 
-    private void handleFishHookPacket(PacketReceiveEvent event, EntityStatusS2CPacket status) {
+    private void handleFishHookPacket(PacketReceiveEvent event, ClientboundEntityEventPacket status) {
         Entity entity = status.getEntity(MC.world);
-        if (entity instanceof FishingBobberEntity hook && hook.getHookedEntity() == MC.player) {
+        if (entity instanceof FishingHook hook && hook.getHookedEntity() == MC.player) {
             event.cancel();
         }
     }
 
-    private void processVelocityVanilla(PacketReceiveEvent event, EntityVelocityUpdateS2CPacket packet) {
+    private void processVelocityVanilla(PacketReceiveEvent event, ClientboundSetEntityMotionPacket packet) {
         if (isNoVelocityConfigured()) {
             event.cancel();
         } else {
@@ -164,7 +162,7 @@ public class VelocityModule extends Module {
         }
     }
 
-    private void processVelocityWalls(PacketReceiveEvent event, EntityVelocityUpdateS2CPacket packet) {
+    private void processVelocityWalls(PacketReceiveEvent event, ClientboundSetEntityMotionPacket packet) {
         if (!isPhased(MC.player) || (requireGround.get() && !MC.player.isOnGround())) return;
         processVelocityVanilla(event, packet);
     }
@@ -175,7 +173,7 @@ public class VelocityModule extends Module {
         pendingVelocity = true;
     }
 
-    private void processExplosionVanilla(PacketReceiveEvent event, ExplosionS2CPacket packet) {
+    private void processExplosionVanilla(PacketReceiveEvent event, ClientboundExplodePacket packet) {
         if (isNoVelocityConfigured()) {
             event.cancel();
         } else {
@@ -183,7 +181,7 @@ public class VelocityModule extends Module {
         }
     }
 
-    private void processExplosionWalls(PacketReceiveEvent event, ExplosionS2CPacket packet) {
+    private void processExplosionWalls(PacketReceiveEvent event, ClientboundExplodePacket packet) {
         if (!isPhased(MC.player)) return;
         processExplosionVanilla(event, packet);
     }
@@ -194,7 +192,7 @@ public class VelocityModule extends Module {
         pendingVelocity = true;
     }
 
-    private void processBundleExplosion(List<Packet<?>> filtered, ExplosionS2CPacket packet) {
+    private void processBundleExplosion(List<Packet<?>> filtered, ClientboundExplodePacket packet) {
         switch (mode.get()) {
             case VANILLA -> {
                 if (!isNoVelocityConfigured()) scaleExplosionPacket(packet);
@@ -214,7 +212,7 @@ public class VelocityModule extends Module {
         filtered.add(packet);
     }
 
-    private void processBundleVelocity(List<Packet<?>> filtered, EntityVelocityUpdateS2CPacket packet, PacketReceiveEvent event) {
+    private void processBundleVelocity(List<Packet<?>> filtered, ClientboundSetEntityMotionPacket packet, PacketReceiveEvent event) {
         if (packet.getEntityId() != MC.player.getId()) {
             filtered.add(packet);
             return;
@@ -256,14 +254,14 @@ public class VelocityModule extends Module {
         float pitch = ROTATION_MANAGER.getStateHandler().getServerPitch();
 
         ROTATION_MANAGER.getRequestHandler().submit(new RotationRequest(this.name, 0, yaw, pitch, RotationModule.RotationMode.SILENT));
-        MC.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK,
+        MC.getNetworkHandler().sendPacket(new ServerboundPlayerActionPacket(
+                ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK,
                 MC.player.isCrawling() ? MC.player.getBlockPos() : MC.player.getBlockPos().up(),
                 Direction.DOWN
         ));
     }
 
-    private boolean isZeroVelocity(EntityVelocityUpdateS2CPacket packet) {
+    private boolean isZeroVelocity(ClientboundSetEntityMotionPacket packet) {
         return packet.getVelocity().x == 0 && packet.getVelocity().y == 0 && packet.getVelocity().z == 0;
     }
 
@@ -271,7 +269,7 @@ public class VelocityModule extends Module {
         return horizontalPercent.get() == 0 && verticalPercent.get() == 0;
     }
 
-    private EntityVelocityUpdateS2CPacket scaleVelocityPacket(EntityVelocityUpdateS2CPacket packet) {
+    private ClientboundSetEntityMotionPacket scaleVelocityPacket(ClientboundSetEntityMotionPacket packet) {
         Vec3d v = packet.getVelocity();
 
         Vec3d scaled = new Vec3d(
@@ -280,12 +278,12 @@ public class VelocityModule extends Module {
                 v.z * (horizontalPercent.get() / 100.0)
         );
 
-        EntityVelocityUpdateS2CPacket newPacket = EntityVelocityUpdateS2CPacketAccessor.create(packet.getEntityId(), scaled);
+        ClientboundSetEntityMotionPacket newPacket = EntityVelocityUpdateS2CPacketAccessor.create(packet.getEntityId(), scaled);
         return newPacket;
     }
 
 
-    private void scaleExplosionPacket(ExplosionS2CPacket packet) {
+    private void scaleExplosionPacket(ClientboundExplodePacket packet) {
         ExplosionS2CPacketAccessor accessor = (ExplosionS2CPacketAccessor) (Object) packet;
         accessor.getPlayerKnockback().ifPresent(original -> {
             Vec3d scaled = new Vec3d(

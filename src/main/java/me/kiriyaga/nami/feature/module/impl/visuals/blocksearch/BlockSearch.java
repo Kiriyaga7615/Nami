@@ -1,8 +1,7 @@
 package me.kiriyaga.nami.feature.module.impl.visuals.blocksearch;
 
-import net.minecraft.block.Blocks;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;

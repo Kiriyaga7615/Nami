@@ -10,9 +10,9 @@ import me.kiriyaga.nami.feature.module.RegisterModule;
 import me.kiriyaga.nami.mixin.SignEditScreenAccessor;
 import me.kiriyaga.nami.feature.setting.impl.IntSetting;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
-import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen;
-import net.minecraft.network.packet.c2s.play.UpdateSignC2SPacket;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.client.gui.screens.inventory.AbstractSignEditScreen;
+import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -48,7 +48,7 @@ public class AutoSignModule extends Module {
 
     @SubscribeEvent
     public void onPacketSend(PacketSendEvent event) {
-        if (!(event.getPacket() instanceof UpdateSignC2SPacket packet)) return;
+        if (!(event.getPacket() instanceof ServerboundSignUpdatePacket packet)) return;
 
         if (isReplacingPacket) {
             return;
@@ -71,7 +71,7 @@ public class AutoSignModule extends Module {
             }
 
             isReplacingPacket = true;
-            MC.player.networkHandler.sendPacket(new UpdateSignC2SPacket(sign.getPos(), packet.isFront(), textToSend[0], textToSend[1], textToSend[2], textToSend[3]));
+            MC.player.networkHandler.sendPacket(new ServerboundSignUpdatePacket(sign.getPos(), packet.isFront(), textToSend[0], textToSend[1], textToSend[2], textToSend[3]));
             isReplacingPacket = false;
 
             shouldFill = false;

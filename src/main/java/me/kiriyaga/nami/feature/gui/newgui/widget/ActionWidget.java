@@ -2,8 +2,8 @@ package me.kiriyaga.nami.feature.gui.newgui.widget;
 
 import me.kiriyaga.nami.feature.gui.newgui.base.PanelRenderer;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public class ActionWidget {
 
     public boolean isVisible() { return visible; }
 
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphics context, Font textRenderer, int mouseX, int mouseY) {
         if (!visible) return;
 
         panelRenderer.renderPanel(context, x, y, width, height, 0, false);

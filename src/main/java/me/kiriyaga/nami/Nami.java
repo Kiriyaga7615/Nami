@@ -20,12 +20,12 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ServerAddress;
-import net.minecraft.client.network.ServerInfo;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.minecraft.server.ServerInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import net.minecraft.util.Pair;
+import net.minecraft.util.Tuple;
 
 public class Nami implements ClientModInitializer {
     public static String NAME = "nami";
@@ -41,7 +41,7 @@ public class Nami implements ClientModInitializer {
         }
     }
 
-    public static final MinecraftClient MC = MinecraftClient.getInstance();
+    public static final Minecraft MC = Minecraft.getInstance();
 
     public static final Logger LOGGER = LogManager.getLogger(NAME);
 
@@ -59,7 +59,7 @@ public class Nami implements ClientModInitializer {
     public static final ServerManager SERVER_MANAGER = new ServerManager();
     public static final InputManager INPUT_MANAGER = new InputManager();
 
-    public static Pair<ServerAddress, ServerInfo> LAST_CONNECTION = null;
+    public static Tuple<ServerAddress, ServerInfo> LAST_CONNECTION = null;
     public static FabricCatFormat CAT_FORMAT = new FabricCatFormat();
     public static ClickGuiScreen CLICK_GUI;
     public static HudEditorScreen HUD_EDITOR;

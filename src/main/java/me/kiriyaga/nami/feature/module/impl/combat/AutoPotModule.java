@@ -12,20 +12,20 @@ import me.kiriyaga.nami.feature.setting.impl.EnumSetting;
 import me.kiriyaga.nami.feature.setting.impl.BoolSetting;
 import me.kiriyaga.nami.util.Timer;
 import me.kiriyaga.nami.util.entity.TargetUtils;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.references.Items;
+import net.minecraft.core.Holder;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -104,11 +104,11 @@ public class AutoPotModule extends Module {
         switch (swapMode.get()) {
             case NORMAL -> {
                 INVENTORY_MANAGER.getSlotHandler().attemptSwitch(potSlot);
-                MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+                MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
             }
             case SILENT -> {
                 INVENTORY_MANAGER.getSlotHandler().attemptSwitch(potSlot);
-                MC.interactionManager.interactItem(MC.player, Hand.MAIN_HAND);
+                MC.interactionManager.interactItem(MC.player, InteractionHand.MAIN_HAND);
                 INVENTORY_MANAGER.getSlotHandler().attemptSwitch(prevSlot);
             }
         }
@@ -119,10 +119,10 @@ public class AutoPotModule extends Module {
             ItemStack stack = MC.player.getInventory().getStack(i);
             if (stack.isEmpty() || stack.getItem() != Items.SPLASH_POTION) continue;
 
-            PotionContentsComponent contents = stack.get(DataComponentTypes.POTION_CONTENTS);
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
             if (contents == null) continue;
 
-            for (StatusEffectInstance inst : contents.getEffects()) {
+            for (MobEffectInstance inst : contents.getEffects()) {
                 if (inst.getEffectType() == targetEffect.getEffect()) {
                     return i;
                 }
@@ -132,20 +132,20 @@ public class AutoPotModule extends Module {
     }
 
     public enum Pot {
-        STRENGTH(StatusEffects.STRENGTH, Items.SPLASH_POTION),
-        SPEED(StatusEffects.SPEED, Items.SPLASH_POTION),
-        JUMP_BOOST(StatusEffects.JUMP_BOOST, Items.SPLASH_POTION),
-        RESISTANCE(StatusEffects.RESISTANCE, Items.SPLASH_POTION);
+        STRENGTH(MobEffects.STRENGTH, Items.SPLASH_POTION),
+        SPEED(MobEffects.SPEED, Items.SPLASH_POTION),
+        JUMP_BOOST(MobEffects.JUMP_BOOST, Items.SPLASH_POTION),
+        RESISTANCE(MobEffects.RESISTANCE, Items.SPLASH_POTION);
 
-        private final RegistryEntry effect;
+        private final Holder effect;
         private final Item item;
 
-        Pot(RegistryEntry effect, Item item) {
+        Pot(Holder effect, Item item) {
             this.effect = effect;
             this.item = item;
         }
 
-        public RegistryEntry getEffect() {
+        public Holder getEffect() {
             return effect;
         }
 
@@ -155,16 +155,16 @@ public class AutoPotModule extends Module {
     }
 
     private boolean isPhased() {
-        ClientPlayerEntity player = MC.player;
+        LocalPlayer player = MC.player;
         if (player == null || MC.world == null) return false;
 
-        Box box = player.getBoundingBox();
-        int minX = MathHelper.floor(box.minX);
-        int maxX = MathHelper.ceil(box.maxX);
-        int minY = MathHelper.floor(box.minY);
-        int maxY = MathHelper.ceil(box.maxY);
-        int minZ = MathHelper.floor(box.minZ);
-        int maxZ = MathHelper.ceil(box.maxZ);
+        AABB box = player.getBoundingBox();
+        int minX = Mth.floor(box.minX);
+        int maxX = Mth.ceil(box.maxX);
+        int minY = Mth.floor(box.minY);
+        int maxY = Mth.ceil(box.maxY);
+        int minZ = Mth.floor(box.minZ);
+        int maxZ = Mth.ceil(box.maxZ);
 
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {

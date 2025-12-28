@@ -6,11 +6,11 @@ import me.kiriyaga.nami.feature.gui.newgui.entry.LogEntry;
 import me.kiriyaga.nami.feature.gui.newgui.widget.ActionItem;
 import me.kiriyaga.nami.feature.module.impl.client.ClickGuiModule;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.input.CharInput;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.text.Text;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
 
 import static me.kiriyaga.nami.Nami.*;
 
@@ -19,7 +19,7 @@ public class LogScreen extends NamiScreen {
     private ConsolePanelComponent<LogEntry> console;
 
     public LogScreen() {
-        super(Text.literal("Log"));
+        super(Component.literal("Log"));
     }
 
     private ClickGuiModule getClickGuiModule() {
@@ -42,7 +42,7 @@ public class LogScreen extends NamiScreen {
     }
 
     @Override
-    public void renderBackground(DrawContext context, int i, int j, float f) {
+    public void renderBackground(GuiGraphics context, int i, int j, float f) {
         if (MC.world != null && MODULE_MANAGER.getStorage().getByClass(ClickGuiModule.class).blur.get())
             this.applyBlur(context);
     }
@@ -76,7 +76,7 @@ public class LogScreen extends NamiScreen {
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
         ClickGuiModule clickGuiModule = getClickGuiModule();
         if (clickGuiModule != null && clickGuiModule.background.get()) {
             renderDarkening(context);
@@ -93,7 +93,7 @@ public class LogScreen extends NamiScreen {
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean bl) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean bl) {
         NAVIGATE_PANEL.mouseClicked(click.comp_4798(), click.comp_4799(), FONT_MANAGER.rendererProvider.getRenderer());
 
         double sx = click.comp_4798() / CLICK_GUI.scale;
@@ -123,19 +123,19 @@ public class LogScreen extends NamiScreen {
     }
 
     @Override
-    public boolean mouseDragged(Click click, double d, double e) {
+    public boolean mouseDragged(MouseButtonEvent click, double d, double e) {
         return console.mouseDragged(click.comp_4798() / CLICK_GUI.scale, click.comp_4799() / CLICK_GUI.scale, d, e)
                 || super.mouseDragged(click, d, e);
     }
 
     @Override
-    public boolean mouseReleased(Click click) {
+    public boolean mouseReleased(MouseButtonEvent click) {
         console.mouseReleased(click.comp_4798() / CLICK_GUI.scale, click.comp_4799() / CLICK_GUI.scale, click.button());
         return super.mouseReleased(click);
     }
 
     @Override
-    public boolean keyPressed(KeyInput keyInput) {
+    public boolean keyPressed(KeyEvent keyInput) {
         int keycode = keyInput.getKeycode();
         int scancode = keyInput.comp_4796();
         int modifiers = keyInput.comp_4797();
@@ -144,7 +144,7 @@ public class LogScreen extends NamiScreen {
     }
 
     @Override
-    public boolean charTyped(CharInput charInput) {
+    public boolean charTyped(CharacterEvent charInput) {
         String character = charInput.asString();
         int modifiers = charInput.comp_4794();
 

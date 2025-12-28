@@ -3,9 +3,9 @@ package me.kiriyaga.nami.feature.gui.newgui.base;
 import me.kiriyaga.nami.feature.gui.newgui.widget.ActionWidget;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
 import me.kiriyaga.nami.util.render.ScissorUtil;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import static me.kiriyaga.nami.Nami.*;
 
 public class DataPanel<T extends BaseEntry> {
     protected final List<T> entries = new ArrayList<>();
-    protected final Function<T, Text> displayMapper;
+    protected final Function<T, Component> displayMapper;
 
     protected final PanelRenderer panelRenderer = new PanelRenderer();
     protected final ActionWidget actionWidget = new ActionWidget();
@@ -33,7 +33,7 @@ public class DataPanel<T extends BaseEntry> {
     protected int dragOffsetX = 0;
     protected int dragOffsetY = 0;
 
-    public DataPanel(String name, int x, int y, int width, int height, Function<T, Text> displayMapper) {
+    public DataPanel(String name, int x, int y, int width, int height, Function<T, Component> displayMapper) {
         this.name = name;
         this.x = x;
         this.y = y;
@@ -47,7 +47,7 @@ public class DataPanel<T extends BaseEntry> {
         entries.addAll(items);
     }
 
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphics context, Font textRenderer, int mouseX, int mouseY) {
         panelRenderer.renderPanel(context, x, y, width, height, headerHeight);
         panelRenderer.renderHeaderText(context, textRenderer, name, x, y, headerHeight, 4);
 
@@ -68,7 +68,7 @@ public class DataPanel<T extends BaseEntry> {
 
         for (int i = start; i < Math.min(entries.size(), start + maxVisible + 1); i++) {
             T item = entries.get(i);
-            Text display = displayMapper.apply(item);
+            Component display = displayMapper.apply(item);
             if (display != null) {
                 FONT_MANAGER.drawText(context, display, x + 4, drawY, 0xFFFFFFFF, true);
             }

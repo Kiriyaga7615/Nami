@@ -8,33 +8,33 @@ package me.kiriyaga.nami.core.cat;
 
 import dev.cattyn.catformat.text.Modifier;
 import dev.cattyn.catformat.text.TextWrapper;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 
-public class FabricWrapper implements TextWrapper<MutableText> {
+public class FabricWrapper implements TextWrapper<MutableComponent> {
     @Override
-    public MutableText colored(MutableText text, int color) {
+    public MutableComponent colored(MutableComponent text, int color) {
         return text.withColor(color);
     }
 
     @Override
-    public MutableText concat(MutableText text, MutableText text2) {
+    public MutableComponent concat(MutableComponent text, MutableComponent text2) {
         return text.append(text2);
     }
 
     @Override
-    public MutableText modify(MutableText text, int modifiers) {
-        if (Modifier.BOLD.isIn(modifiers)) text.formatted(Formatting.BOLD);
-        if (Modifier.ITALIC.isIn(modifiers)) text.formatted(Formatting.ITALIC);
-        if (Modifier.UNDERLINE.isIn(modifiers)) text.formatted(Formatting.UNDERLINE);
-        if (Modifier.STRIKETHROUGH.isIn(modifiers)) text.formatted(Formatting.STRIKETHROUGH);
-        if (Modifier.OBFUSCATED.isIn(modifiers)) text.formatted(Formatting.OBFUSCATED);
+    public MutableComponent modify(MutableComponent text, int modifiers) {
+        if (Modifier.BOLD.isIn(modifiers)) text.formatted(ChatFormatting.BOLD);
+        if (Modifier.ITALIC.isIn(modifiers)) text.formatted(ChatFormatting.ITALIC);
+        if (Modifier.UNDERLINE.isIn(modifiers)) text.formatted(ChatFormatting.UNDERLINE);
+        if (Modifier.STRIKETHROUGH.isIn(modifiers)) text.formatted(ChatFormatting.STRIKETHROUGH);
+        if (Modifier.OBFUSCATED.isIn(modifiers)) text.formatted(ChatFormatting.OBFUSCATED);
         return text;
     }
 
     @Override
-    public MutableText newText(String content) {
-        return Text.literal(content);
+    public MutableComponent newText(String content) {
+        return Component.literal(content);
     }
 }

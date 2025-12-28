@@ -4,9 +4,9 @@ import me.kiriyaga.nami.feature.gui.oldgui.screen.ClickGuiScreen;
 import me.kiriyaga.nami.feature.module.impl.client.ColorModule;
 import me.kiriyaga.nami.feature.module.impl.client.ClickGuiModule;
 import me.kiriyaga.nami.feature.gui.newgui.base.PanelRenderer;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 
 import java.awt.*;
 import java.util.LinkedHashMap;
@@ -41,7 +41,7 @@ public class NavigatePanelComponent {
         screens.put(name, screen);
     }
 
-    public void render(DrawContext context, TextRenderer textRenderer, int mouseX, int mouseY) {
+    public void render(GuiGraphics context, Font textRenderer, int mouseX, int mouseY) {
         context.getMatrices().pushMatrix();
         context.getMatrices().scale(CLICK_GUI.scale, CLICK_GUI.scale);
 
@@ -79,7 +79,7 @@ public class NavigatePanelComponent {
         context.getMatrices().popMatrix();
     }
 
-    public void mouseClicked(double mouseX, double mouseY, TextRenderer textRenderer) {
+    public void mouseClicked(double mouseX, double mouseY, Font textRenderer) {
         double scaledX = mouseX / CLICK_GUI.scale;
         double scaledY = mouseY / CLICK_GUI.scale;
 
