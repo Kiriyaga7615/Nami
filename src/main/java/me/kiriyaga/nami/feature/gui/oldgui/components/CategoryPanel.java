@@ -11,6 +11,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import java.awt.*;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static me.kiriyaga.nami.Nami.*;
 import static me.kiriyaga.nami.feature.gui.oldgui.components.ModulePanel.MODULE_SPACING;
@@ -27,14 +29,25 @@ public class CategoryPanel {
 
     private double scrollOffset = 0;
     private double targetScrollOffset = 0;
+    private Predicate<Module> moduleFilter = module -> true;
 
     public CategoryPanel(ModuleCategory moduleCategory) {
         this.moduleCategory = moduleCategory;
     }
 
+    public void setModuleFilter(Predicate<Module> filter) {
+        this.moduleFilter = filter;
+    }
+
+    private List<Module> getModules() {
+        return MODULE_MANAGER.getStorage().getByCategory(moduleCategory).stream()
+                .filter(moduleFilter)
+                .collect(Collectors.toList());
+    }
+
     public void render(GuiGraphics context, Font textRenderer, int x, int y, int mouseX, int mouseY, int screenHeight) {
 
-        List<Module> modules = MODULE_MANAGER.getStorage().getByCategory(moduleCategory);
+        List<Module> modules = getModules();
 
         int dynamicContentHeight = 0;
         for (Module module : modules) {
@@ -112,7 +125,7 @@ public class CategoryPanel {
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollDelta, int x, int y, int screenHeight) {
-        List<Module> modules = MODULE_MANAGER.getStorage().getByCategory(moduleCategory);
+        List<Module> modules = getModules();
 
         int dynamicContentHeight = 0;
         for (Module module : modules) {
@@ -154,7 +167,7 @@ public class CategoryPanel {
 
 
     public boolean isMouseOverContent(double mouseX, double mouseY, int x, int y, int screenHeight) {
-        List<Module> modules = MODULE_MANAGER.getStorage().getByCategory(moduleCategory);
+        List<Module> modules = getModules();
 
         int dynamicContentHeight = 0;
         for (Module module : modules) {

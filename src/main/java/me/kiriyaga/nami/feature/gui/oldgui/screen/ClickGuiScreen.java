@@ -14,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
 
@@ -34,12 +35,16 @@ public class ClickGuiScreen extends Screen {
     private static final long FADE_DURATION_MS = 122L;
     private long fadeStartMs = Util.getMillis();
     private boolean closing = false;
+    public boolean searchActive = false;
+    public String searchQuery = "";
+    private long lastCursorBlink = 0L;
 
     private ClickGuiModule getClickGuiModule() {
         return MODULE_MANAGER.getStorage().getByClass(ClickGuiModule.class);
     }
 
     private final List<Component> statusMessages = Arrays.asList(
+            Component.literal("Press Ctrl+F to search modules."),
             Component.literal("Middle-click a module to toggle its drawn state."),
             Component.literal("Middle-click a keybind to switch hold/toggle mode.")
     );
@@ -107,6 +112,11 @@ public class ClickGuiScreen extends Screen {
         int startY = (scaledHeight - 1);
         for (int i = statusMessages.size() - 1; i >= 0; i--) {
             Component message = statusMessages.get(i);
+
+            if (searchActive && message.getString().contains("Ctrl+F")) {
+                continue;
+            }
+
             int textWidth = FONT_MANAGER.getWidth(message);
             int textHeight = FONT_MANAGER.getHeight();
 
@@ -119,6 +129,10 @@ public class ClickGuiScreen extends Screen {
 
         int scaledMouseX = (int) (mouseX / scale);
         int scaledMouseY = (int) (mouseY / scale);
+
+        for (CategoryPanel panel : categoryPanels.values()) {
+            panel.setModuleFilter(this::matchesSearch);
+        }
 
         for (ModuleCategory moduleCategory : ModuleCategory.getAll()) {
             if ("hud".equalsIgnoreCase(moduleCategory.getName())) continue;
@@ -166,8 +180,7 @@ public class ClickGuiScreen extends Screen {
                             context.fill(descX - 2, descY - 2, descX + textWidth + 2, descY + textHeight + 2, 0x7F000000);
                             FONT_MANAGER.drawText(context, description, descX, descY, applyFade(MODULE_MANAGER.getStorage().getByClass(ColorModule.class).getStyledTextColor(255).getRGB()), true);
                         }
-                        context.pose().popMatrix();
-                        return;
+                        break;
                     }
 
                     curY += ModulePanel.HEIGHT + ModulePanel.MODULE_SPACING;
@@ -277,6 +290,33 @@ public class ClickGuiScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent keyInput) {
+        if (keyInput.input() == 70 && (keyInput.modifiers() & 2) != 0) {
+            searchActive = !searchActive;
+            if (!searchActive) {
+                searchQuery = "";
+            } else {
+                lastCursorBlink = Util.getMillis();
+            }
+            playClickSound();
+            return true;
+        }
+
+        if (searchActive) {
+            if (keyInput.input() == 256) {
+                searchActive = false;
+                searchQuery = "";
+                playClickSound();
+                return true;
+            }
+
+            if (keyInput.input() == 259 && !searchQuery.isEmpty()) {
+                searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+                return true;
+            }
+
+            return true;
+        }
+
         if (keyInput.input() == MODULE_MANAGER.getStorage().getByClass(ClickGuiModule.class).getKeyBind().get() && MC.screen == CLICK_GUI && MC.level != null) {
             beginClose();
             return true;
@@ -288,6 +328,18 @@ public class ClickGuiScreen extends Screen {
 
         if (SettingPanel.keyPressed(keyInput.input())) return true;
         return super.keyPressed(keyInput);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent charInput) {
+        if (searchActive) {
+            String character = charInput.codepointAsString();
+            if (character != null && !character.isEmpty()) {
+                searchQuery += character;
+                return true;
+            }
+        }
+        return super.charTyped(charInput);
     }
 
     private void beginClose() {
@@ -395,5 +447,16 @@ public class ClickGuiScreen extends Screen {
         if (newA < 0) newA = 0;
         if (newA > a) newA = a;
         return (newA << 24) | rgb;
+    }
+
+    public boolean matchesSearch(Module module) {
+        if (module instanceof me.kiriyaga.nami.feature.module.impl.client.ModuleSearchModule) {
+            return true;
+        }
+        if (!searchActive || searchQuery.isEmpty()) {
+            return true;
+        }
+        String query = searchQuery.toLowerCase();
+        return module.getName().toLowerCase().contains(query);
     }
 }
