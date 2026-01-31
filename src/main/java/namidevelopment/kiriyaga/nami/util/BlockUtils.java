@@ -1,13 +1,29 @@
 package namidevelopment.kiriyaga.nami.util;
 
+import namidevelopment.kiriyaga.nami.impl.feature.impl.combat.FeetTrapFeature;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+
+import static namidevelopment.kiriyaga.nami.Nami.MC;
+import static namidevelopment.kiriyaga.nami.util.InteractionUtils.isPlaceable;
+import static namidevelopment.kiriyaga.nami.util.InteractionUtils.isReplaceable;
 
 
 public class BlockUtils {
@@ -197,7 +213,167 @@ public class BlockUtils {
         }
         return blocks;
     }
-        public static Color getColorByBlockId(BlockState state) { // ai made
+
+    public static boolean isInHole1x1(Player player) {
+        Level level = player.level();
+        BlockPos pos = player.blockPosition();
+
+        BlockPos[] holeBlocks = new BlockPos[] {
+                pos.north(),
+                pos.south(),
+                pos.east(),
+                pos.west(),
+                pos.below()
+        };
+
+        for (BlockPos checkPos : holeBlocks) {
+            Block block = level.getBlockState(checkPos).getBlock();
+
+            if (!(block == Blocks.OBSIDIAN
+                    || block == Blocks.BEDROCK
+                    || block == Blocks.ENDER_CHEST)) {
+                return false;
+            }
+        }
+
+        if (!level.getBlockState(pos).isAir()) return false;
+        if (!level.getBlockState(pos.above()).isAir()) return false;
+
+        return true;
+    }
+
+    public static List<BlockPos> getSurround(Player player, boolean extension) {
+        Set<BlockPos> positions = new HashSet<>();
+
+        AABB bb = player.getBoundingBox();
+        int yLegs = (int) Math.floor(player.getY());
+        List<BlockPos> inside = new ArrayList<>();
+        for (int x = (int) Math.floor(bb.minX); x < Math.ceil(bb.maxX); x++) {
+            for (int z = (int) Math.floor(bb.minZ); z < Math.ceil(bb.maxZ); z++) {
+                inside.add(new BlockPos(x, yLegs, z));
+            }
+        }
+
+        for (BlockPos base : inside)
+            addSurroundForBase(base, positions);
+
+        expand(positions, player, extension);
+
+        java.util.List<BlockPos> result = new ArrayList<>();
+        for (BlockPos pos : positions)
+            if (!isPlaceable(pos))
+                result.add(pos);
+
+        return result;
+    }
+
+    private static void addSurroundForBase(BlockPos base, Set<BlockPos> positions) {
+        BlockPos below = base.below();
+        addIfValid(below, positions);
+
+        BlockPos north = base.north();
+        BlockPos south = base.south();
+        BlockPos east  = base.east();
+        BlockPos west  = base.west();
+
+        addIfValid(north, positions);
+        addIfValid(south, positions);
+        addIfValid(east, positions);
+        addIfValid(west, positions);
+    }
+
+    private static void addIfValid(BlockPos pos, Set<BlockPos> positions) {
+        if (isReplaceable(pos)) {
+            positions.add(pos);
+        }
+    }
+
+
+    private static void expand(Set<BlockPos> positions, Player player, boolean extension) {
+        if (!extension)
+            return;
+
+        Set<BlockPos> extra = new HashSet<>();
+
+        for (BlockPos pos : positions) {
+            AABB blockBox = new AABB(pos);
+            for (Entity entity : MC.level.entitiesForRendering()) {
+                if (entity.distanceToSqr(player) > 10) continue;
+                if (entity instanceof EndCrystal) continue;
+                if (entity instanceof ItemEntity) continue;
+
+                if (entity.getBoundingBox().intersects(blockBox)) {
+                    int entY = (int) Math.floor(entity.getY());
+                    AABB entBox = entity.getBoundingBox();
+                    for (int x = (int) Math.floor(entBox.minX); x < Math.ceil(entBox.maxX); x++) {
+                        for (int z = (int) Math.floor(entBox.minZ); z < Math.ceil(entBox.maxZ); z++) {
+                            BlockPos entBase = new BlockPos(x, entY, z);
+                            addSurroundForBase(entBase, extra);
+                        }
+                    }
+                }
+            }
+        }
+
+        positions.addAll(extra);
+    }
+    public static List<BlockPos> getSurroundPoses(Vec3 from) {
+        final BlockPos fromPos = BlockPos.containing(from);
+        final ArrayList<BlockPos> tempOffsets = new ArrayList<>();
+
+        final double decimalX = Math.abs(from.x() - Math.floor(from.x()));
+        final double decimalZ = Math.abs(from.z() - Math.floor(from.z()));
+
+        final int lengthXPos = calcLength(decimalX, false);
+        final int lengthXNeg = calcLength(decimalX, true);
+        final int lengthZPos = calcLength(decimalZ, false);
+        final int lengthZNeg = calcLength(decimalZ, true);
+
+        for (int x = 1; x <= lengthXPos + 1; x++) {
+            tempOffsets.add(addToPlayer(fromPos, x, 0, 1 + lengthZPos));
+            tempOffsets.add(addToPlayer(fromPos, x, 0, -(1 + lengthZNeg)));
+        }
+        for (int x = 0; x <= lengthXNeg; x++) {
+            tempOffsets.add(addToPlayer(fromPos, -x, 0, 1 + lengthZPos));
+            tempOffsets.add(addToPlayer(fromPos, -x, 0, -(1 + lengthZNeg)));
+        }
+        for (int z = 1; z <= lengthZPos + 1; z++) {
+            tempOffsets.add(addToPlayer(fromPos, 1 + lengthXPos, 0, z));
+            tempOffsets.add(addToPlayer(fromPos, -(1 + lengthXNeg), 0, z));
+        }
+        for (int z = 0; z <= lengthZNeg; z++) {
+            tempOffsets.add(addToPlayer(fromPos, 1 + lengthXPos, 0, -z));
+            tempOffsets.add(addToPlayer(fromPos, -(1 + lengthXNeg), 0, -z));
+        }
+
+        return tempOffsets;
+    }
+
+    public static int calcLength(double decimal, boolean negative) {
+        if (negative) return decimal <= 0.3 ? 1 : 0;
+        return decimal >= 0.7 ? 1 : 0;
+    }
+
+    public static BlockPos addToPlayer(BlockPos playerPos, int x, int y, int z) {
+        return playerPos.offset(x, y, z);
+    }
+
+    public static boolean isInHole(Player player, boolean extension) {
+        List<BlockPos> surround = getSurroundPoses(player.position());
+        if (surround.isEmpty()) return false;
+
+        for (BlockPos pos : surround) {
+            Block block = MC.level.getBlockState(pos).getBlock();
+            if (block != Blocks.OBSIDIAN
+                    && block != Blocks.BEDROCK
+                    && block != Blocks.ENDER_CHEST) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static Color getColorByBlockId(BlockState state) { // ai made
             Block block = state.getBlock();
             Identifier id = BuiltInRegistries.BLOCK.getKey(block);
 

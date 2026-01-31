@@ -11,6 +11,7 @@ import namidevelopment.kiriyaga.nami.impl.feature.RegisterFeature;
 import namidevelopment.kiriyaga.nami.impl.setting.impl.BoolSetting;
 import namidevelopment.kiriyaga.nami.impl.setting.impl.EnumSetting;
 import namidevelopment.kiriyaga.nami.impl.setting.impl.IntSetting;
+import namidevelopment.kiriyaga.nami.util.BlockUtils;
 import namidevelopment.kiriyaga.nami.util.EnchantmentUtils;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -32,6 +33,7 @@ public class AutoTotemFeature extends Feature {
     private enum Offhand { CRYSTAL, GAPPLE, ITEMFRAME, MENDING, TOTEM}
 
     public final IntSetting health = addSetting(new IntSetting("Health", 12, 2, 36));
+    public final IntSetting holeHealth = addSetting(new IntSetting("HoleHealth", 8, 2, 36));
     public final BoolSetting offhandOverride = addSetting(new BoolSetting("Override", false));
     public final EnumSetting<Offhand> overrideItem = addSetting(new EnumSetting<>("Item", Offhand.CRYSTAL));
     public final BoolSetting swordGap = addSetting(new BoolSetting("SwordGap", true));
@@ -51,6 +53,11 @@ public class AutoTotemFeature extends Feature {
         mainhandSlot.setShowCondition(mainhand::get);
         overrideItem.setShowCondition(offhandOverride::get);
         swordGap.setShowCondition(offhandOverride::get);
+    }
+
+    private int healthSetting() { //me couldn't think of better name
+        return BlockUtils.isInHole(MC.player, true) || BlockUtils.isInHole1x1(MC.player) ?
+                holeHealth.get() : health.get();
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -94,7 +101,7 @@ public class AutoTotemFeature extends Feature {
 
         if (offhandOverride.get()) {
             int effectiveHealth = (int) (player.getHealth() + player.getAbsorptionAmount());
-            if (effectiveHealth >= health.get()) {
+            if (effectiveHealth >= healthSetting()) {
                 targetStack = getOverrideStack();
                 if (targetStack != null) {
                     overrideActive = true;
@@ -142,7 +149,7 @@ public class AutoTotemFeature extends Feature {
             }
 
 
-            if (MC.player.getHealth() + MC.player.getAbsorptionAmount() <= health.get() && MC.player.getInventory().getItem(mainhandSlot.get()).getItem() == Items.TOTEM_OF_UNDYING)
+            if (MC.player.getHealth() + MC.player.getAbsorptionAmount() <= healthSetting() && MC.player.getInventory().getItem(mainhandSlot.get()).getItem() == Items.TOTEM_OF_UNDYING)
                 INVENTORY_SERVICE.getSlotHandler().attemptSwitch(mainhandSlot.get());
         }
 
@@ -184,9 +191,9 @@ public class AutoTotemFeature extends Feature {
         LocalPlayer player = MC.player;
 
         if (swordGap.get()
-        && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get()
-        && isItemAWeapon(MC.player.getInventory().getSelectedItem())
-        && MC.options.keyUse.isDown())
+                && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= healthSetting()
+                && isItemAWeapon(MC.player.getInventory().getSelectedItem())
+                && MC.options.keyUse.isDown())
             return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
 
         switch (type) {
