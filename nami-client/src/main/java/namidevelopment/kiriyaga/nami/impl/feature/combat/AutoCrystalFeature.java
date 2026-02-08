@@ -122,7 +122,7 @@ public class AutoCrystalFeature extends Feature {
         placeAntiFeetTrap.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
         placeAntiFeetTrapFactor.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE && placeAntiFeetTrap.get());
 
-        noSelfPop.setShowCondition(() ->  page.get() == Page.DAMAGES);
+        noSelfPop.setShowCondition(() -> page.get() == Page.DAMAGES);
         minDamage.setShowCondition(() -> page.get() == Page.DAMAGES);
         maxSelfDamage.setShowCondition(() -> page.get() == Page.DAMAGES);
         maxFriendDamage.setShowCondition(() -> page.get() == Page.DAMAGES);
@@ -287,7 +287,7 @@ public class AutoCrystalFeature extends Feature {
 
 
             float totalDamage = damageOthers(crystal);
-            if (totalDamage <= -0.9f)
+            if (totalDamage < minDamage.get())
                 continue;
 
             if (best == null || totalDamage > best.totalDamage)
