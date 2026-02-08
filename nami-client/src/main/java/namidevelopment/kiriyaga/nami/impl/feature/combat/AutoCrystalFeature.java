@@ -1,6 +1,8 @@
 package namidevelopment.kiriyaga.nami.impl.feature.combat;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.event.impl.AddEntityEvent;
@@ -94,7 +96,8 @@ public class AutoCrystalFeature extends Feature {
     private int breakTimer, placeTimer = 0; // i love it
     private PlaceTarget placeTarget = null;
     float lastTotalDamage, lastCalcTimeMs = 0;
-    private final Int2IntOpenHashMap crystalMap = new Int2IntOpenHashMap();
+    private final Int2IntOpenHashMap crystalHits = new Int2IntOpenHashMap();
+    private final Long2IntOpenHashMap crystalPlaces = new Long2IntOpenHashMap();
 
     public AutoCrystalFeature() {
         super("AutoCrystal", "Automatically places and break crystals to kill people, if you are good enough!.", FeatureCategory.of("Combat"), "autocrystal", "ac", "crystalaura");
@@ -137,14 +140,16 @@ public class AutoCrystalFeature extends Feature {
         placeTimer = 0;
         lastTotalDamage = 0;
         lastCalcTimeMs = 0;
+        crystalPlaces.clear();
+        crystalHits.clear();
     }
 
     @SubscribeEvent
     private void onRemoveEntityEvent(RemoveEntityEvent event) {
         ClientboundRemoveEntitiesPacket packet = event.getPacket();
         for (int id : packet.getEntityIds()) {
-            if (crystalMap.containsKey(id)) {
-                crystalMap.remove(id);
+            if (crystalHits.containsKey(id)) {
+                crystalHits.remove(id);
             }
         }
     }
@@ -172,6 +177,8 @@ public class AutoCrystalFeature extends Feature {
     public void onPreTickEvent(PreTickEvent event) {
         if (MC.player == null || MC.player.isDeadOrDying()) return;
         lastCalcTimeMs = 0;
+
+        updateMemory();
 
         if (doBreak.get()) {
             if (breakTimer > 0) {
@@ -250,7 +257,7 @@ public class AutoCrystalFeature extends Feature {
         if (!canBreak(target.crystal)) return;
 
         int id = target.crystal.getId();
-        int hits = crystalMap.get(id);
+        int hits = crystalHits.get(id);
 
         if (hits >= breakInhibit.get() && target.crystal.tickCount < 20)
             return;
@@ -260,8 +267,7 @@ public class AutoCrystalFeature extends Feature {
         if (breakSwing.get())
             MC.player.swing(InteractionHand.MAIN_HAND);
 
-        crystalMap.put(id, hits + 1);
-
+        crystalHits.put(id, hits + 1);
 
         breakTimer = breakDelay.get();
     }
@@ -274,6 +280,11 @@ public class AutoCrystalFeature extends Feature {
 
             if (e.tickCount < breakAge.get()) continue;
 
+            long posKey = crystal.blockPosition().asLong();
+
+            if (crystal.tickCount < 20 && !crystalPlaces.containsKey(posKey))
+                continue;
+
             //   if (MC.player.distanceToSqr(crystal) > 10 * 10) continue;
 
             Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), crystal.getBoundingBox());
@@ -284,8 +295,6 @@ public class AutoCrystalFeature extends Feature {
 
             if (!insideBox && perfect == null) continue;
 
-
-
             float totalDamage = damageOthers(crystal);
             if (totalDamage < minDamage.get())
                 continue;
@@ -293,6 +302,10 @@ public class AutoCrystalFeature extends Feature {
             if (best == null || totalDamage > best.totalDamage)
                 best = new BreakTarget(crystal, totalDamage);
         }
+
+        if (best != null && best.totalDamage < minDamage.get()/2)
+            return null;
+
         return best;
     }
 
@@ -343,6 +356,8 @@ public class AutoCrystalFeature extends Feature {
         if (placeTarget.totalDamage < minDamage.get()) return;
 
         InteractionUtils.interactBlockAt(placeTarget.pos.below(), Items.END_CRYSTAL, null, placeSwapBack.get(), placeMultitask.get(), placeRange.get(), placeRotate.get(), placeStrictDirection.get(), false, placeSwing.get(), AutoCrystalFeature.class.getName() + "_PLACE");
+
+        crystalPlaces.put(placeTarget.pos.asLong(), 0);
 
         placeTimer = placeDelay.get();
     }
@@ -451,7 +466,7 @@ public class AutoCrystalFeature extends Feature {
         AABB checkIntersects = new AABB(base.getX(), base.getY() + 1, base.getZ(), base.getX() + 1, base.getY() + 3, base.getZ() + 1);
 
         for (Entity e : MC.level.getEntities(null, checkIntersects)) {
-            if (placeIgnoreItems.get() && e instanceof ItemEntity && ((ItemEntity) e).getAge() > 3) continue;
+            if (placeIgnoreItems.get() && e instanceof ItemEntity item && item.getAge() <= 5) continue;
             if (placeIgnoreCrystals.get() && e instanceof EndCrystal crystal && crystal.tickCount < 5) continue;
             if (e instanceof EndCrystal crystal && crystal.blockPosition().equals(pos)) continue;
             fakeCrystal.remove(Entity.RemovalReason.DISCARDED);
@@ -505,6 +520,20 @@ public class AutoCrystalFeature extends Feature {
             totalDamage += dmg;
         }
         return totalDamage;
+    }
+
+    private void updateMemory() {
+        LongIterator it = crystalPlaces.keySet().iterator();
+        while (it.hasNext()) {
+            long key = it.nextLong();
+            int age = crystalPlaces.get(key) + 1;
+
+            if (age > 35) {
+                it.remove();
+            } else {
+                crystalPlaces.put(key, age);
+            }
+        }
     }
 
     private record PlaceTarget(BlockPos pos, float totalDamage) {}
