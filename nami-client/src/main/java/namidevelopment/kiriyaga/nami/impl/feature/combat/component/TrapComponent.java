@@ -13,6 +13,12 @@ import namidevelopment.kiriyaga.api.util.InteractionUtils;
 import namidevelopment.kiriyaga.api.util.render.RenderUtil;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ColorFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.client.TrapFeature;
+import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
+import namidevelopment.kiriyaga.api.util.InventoryUtils;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Items;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -54,6 +60,7 @@ public class TrapComponent {
 
     private final List<BlockPos> targetPositions = new ArrayList<>();
     private final List<BlockPos> placedPositions = new ArrayList<>(); // todo: finish this
+    private final List<BlockPos> pendingSimulations = new ArrayList<>();
 
     public TrapComponent(Feature feature) {
         range = feature.addSetting(new DoubleSetting("Range", 4.50, 1.0, 6.0));
@@ -99,6 +106,8 @@ public class TrapComponent {
 
         TrapFeature trapFeature = FEATURE_SERVICE.getStorage().getByClass(TrapFeature.class);
         tickTimer(trapFeature);
+
+        pendingSimulations.removeIf(pos -> !MC.level.getBlockState(pos).canBeReplaced());
 
 /*        if (simulate.get() && !placedPositions.isEmpty()) {
             Item handItem = MC.player.getMainHandItem().getItem();
@@ -314,5 +323,76 @@ public class TrapComponent {
                 }
             }
         }
+    }
+
+    public void handlePacket(PacketReceiveEvent event, Feature owner, List<BlockPos> currentTargets) {
+        if (!simulate.get()) return;
+        if (MC.player == null || MC.level == null) return;
+
+        if (event.getPacket() instanceof ClientboundAddEntityPacket packet &&
+                packet.getType() == EntityType.END_CRYSTAL) {
+            handleSequentialCrystals(packet, owner, currentTargets);
+        }
+    }
+
+    private void handleSequentialCrystals(ClientboundAddEntityPacket packet, Feature owner, List<BlockPos> currentTargets) {
+        Vec3 crystalPos = new Vec3(packet.getX(), packet.getY(), packet.getZ());
+        AABB crystalBox = new AABB(
+                crystalPos.add(-1.0, 0, -1.0),
+                crystalPos.add(1.0, 2.0, 1.0)
+        );
+
+        BlockPos targetPos = null;
+        for (BlockPos pos : currentTargets) {
+            if (new AABB(pos).intersects(crystalBox)) {
+                targetPos = pos;
+                break;
+            }
+        }
+
+        if (targetPos == null) return;
+        if (!multiTask.get() && MC.player.isUsingItem()) return;
+
+        int slot = findObsidianSlot();
+        if (slot == -1 && !(MC.player.getOffhandItem().getItem() instanceof BlockItem))
+            return;
+
+        boolean isOffhand = MC.player.getOffhandItem().getItem() instanceof BlockItem;
+        int previousSlot = MC.player.getInventory().getSelectedSlot();
+        boolean switched = false;
+
+        if (!isOffhand && slot != -1 && slot != previousSlot) {
+            InventoryUtils.attemptSwitch(slot);
+            switched = true;
+        }
+
+        EndCrystal tempCrystal = new EndCrystal(MC.level, packet.getX(), packet.getY(), packet.getZ());
+        tempCrystal.setId(packet.getId());
+        MC.gameMode.attack(MC.player, tempCrystal);
+
+        if (swing.get()) {
+            MC.player.swing(InteractionHand.MAIN_HAND);
+        }
+
+        Item item = isOffhand ? MC.player.getOffhandItem().getItem() : MC.player.getInventory().getItem(slot).getItem();
+
+        boolean placed = place(targetPos, item, airPlace.get(), grim.get(), owner);
+
+        if (placed) {
+            pendingSimulations.add(targetPos);
+        }
+
+        if (switched && swapBack.get()) {
+            InventoryUtils.attemptSwitch(previousSlot);
+        }
+    }
+
+    private int findObsidianSlot() {
+        for (int i = 0; i < 9; i++) {
+            if (MC.player.getInventory().getItem(i).getItem() == Items.OBSIDIAN) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
