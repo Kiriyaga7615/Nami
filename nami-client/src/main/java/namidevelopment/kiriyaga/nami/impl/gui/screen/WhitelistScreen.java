@@ -1,88 +1,72 @@
 package namidevelopment.kiriyaga.nami.impl.gui.screen;
 
-import namidevelopment.kiriyaga.api.model.feature.Feature;
-import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
-import namidevelopment.kiriyaga.nami.impl.feature.client.ClickGuiFeature;
-import namidevelopment.kiriyaga.nami.impl.gui.base.BasePanel;
+import namidevelopment.kiriyaga.api.model.setting.WhitelistSetting;
+import namidevelopment.kiriyaga.nami.impl.gui.base.BaseItemPanel;
 import namidevelopment.kiriyaga.nami.impl.gui.base.NamiScreen;
 import namidevelopment.kiriyaga.nami.impl.gui.component.panel.CategoryPanel;
-import namidevelopment.kiriyaga.nami.impl.gui.component.panel.FeaturePanel;
-import namidevelopment.kiriyaga.nami.impl.gui.component.panel.settings.KeyBindSettingPanel;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
-import static namidevelopment.kiriyaga.nami.Nami.NAVIGATE_PANEL;
 
-public class ClickGuiScreen extends NamiScreen {
+public class WhitelistScreen extends NamiScreen {
 
-    private final Map<FeatureCategory, Point> categoryPositions = new HashMap<>();
-    private final Map<FeatureCategory, CategoryPanel> categoryPanels = new HashMap<>();
+    private final WhitelistSetting setting;
+    private final Map<String, Point> categoryPositions = new HashMap<>();
+    private final Map<String, CategoryPanel> categoryPanels = new HashMap<>();
 
     private boolean draggingCategory = false;
-    private FeatureCategory draggedCategory = null;
-
+    private String draggedCategory = null;
     private int dragStartX, dragStartY;
     private int initialCategoryX, initialCategoryY;
 
     public float scale = 1;
 
-    public ClickGuiScreen() {
-        super(Component.literal("NamiGuiScreen"));
-        refreshPanels();
+    public WhitelistScreen(WhitelistSetting setting, List<String> allItems) {
+        super(Component.literal("NamiWhitelist"));
+        this.setting = setting;
+        refreshPanels(allItems);
     }
 
-    public void refreshPanels() {
-        Map<FeatureCategory, Point> oldPositions = new HashMap<>(categoryPositions);
+    public void refreshPanels(List<String> allItems) {
+        Map<String, Point> oldPositions = new HashMap<>(categoryPositions);
         categoryPositions.clear();
         categoryPanels.clear();
 
         int startX = 20;
         int startY = 20;
 
-        for (FeatureCategory category : FeatureCategory.getAll()) {
-            if ("hud".equalsIgnoreCase(category.getName())) continue;
-            Point pos = oldPositions.getOrDefault(category, new Point(startX, startY));
-            categoryPositions.put(category, pos);
+        String categoryName = "Whitelist";
+        Point pos = oldPositions.getOrDefault(categoryName, new Point(startX, startY));
+        categoryPositions.put(categoryName, pos);
 
-            CategoryPanel panel = new CategoryPanel(category.getName());
-
-            for (Feature feature : FEATURE_SERVICE.getStorage().getByCategory(category)) {
-                panel.addPanel(new FeaturePanel(feature));
-            }
-
-            categoryPanels.put(category, panel);
-
-            startX += CategoryPanel.WIDTH + 2;
+        CategoryPanel panel = new CategoryPanel(categoryName);
+        for (String item : allItems) {
+            BaseItemPanel itemPanel = new BaseItemPanel(item, setting);
+            panel.addPanel(itemPanel);
         }
+
+        categoryPanels.put(categoryName, panel);
     }
 
     @Override
     public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        if (FEATURE_SERVICE.getStorage().getByClass(ClickGuiFeature.class) != null && FEATURE_SERVICE.getStorage().getByClass(ClickGuiFeature.class).background.get()) {
-            renderMenuBackground(context);
-        }
-
-        NAVIGATE_PANEL.render(context, FONT_SERVICE.rendererProvider.getRenderer(), mouseX, mouseY);
-
         int scaledMouseX = (int) (mouseX / scale);
         int scaledMouseY = (int) (mouseY / scale);
 
         context.pose().pushMatrix();
         context.pose().scale(scale, scale);
 
-        for (FeatureCategory category : categoryPanels.keySet()) {
+        for (String category : categoryPanels.keySet()) {
             Point pos = categoryPositions.get(category);
             if (pos == null) continue;
-
             CategoryPanel panel = categoryPanels.get(category);
             panel.render(context, FONT_SERVICE.rendererProvider.getRenderer(), pos.x, pos.y, scaledMouseX, scaledMouseY);
         }
@@ -92,71 +76,34 @@ public class ClickGuiScreen extends NamiScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int i, int j, float f) {
-        if (MC.level != null && FEATURE_SERVICE.getStorage().getByClass(ClickGuiFeature.class).blur.get())
-            this.renderBlurredBackground(context);
-    }
-
-    @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean bl) {
-        NAVIGATE_PANEL.mouseClicked(click.x(), click.y(), FONT_SERVICE.rendererProvider.getRenderer());
-
         int scaledMouseX = (int) (click.x() / scale);
         int scaledMouseY = (int) (click.y() / scale);
 
-        for (FeatureCategory category : categoryPanels.keySet()) {
+        for (String category : categoryPanels.keySet()) {
             Point pos = categoryPositions.get(category);
             if (pos == null) continue;
-
             CategoryPanel panel = categoryPanels.get(category);
 
             if (panel.isHeaderHovered(scaledMouseX, scaledMouseY, pos.x, pos.y) && click.button() == 0) {
                 draggingCategory = true;
                 draggedCategory = category;
-
                 dragStartX = scaledMouseX;
                 dragStartY = scaledMouseY;
-
                 initialCategoryX = pos.x;
                 initialCategoryY = pos.y;
-
                 return true;
             }
         }
 
-        if (!draggingCategory) {
-            for (FeatureCategory category : categoryPanels.keySet()) {
-                Point pos = categoryPositions.get(category);
-                if (pos == null) continue;
-
-                CategoryPanel panel = categoryPanels.get(category);
-
-                if (panel.mouseClicked(scaledMouseX, scaledMouseY, click.button(), pos.x, pos.y)) {
-                    return true;
-                }
-            }
-        }
-        return super.mouseClicked(click, bl);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        int scaledMouseX = (int) (mouseX / scale);
-        int scaledMouseY = (int) (mouseY / scale);
-        int scaledHeight = (int) (this.height / scale);
-
-        for (FeatureCategory category : FeatureCategory.getAll()) {
-            if ("hud".equalsIgnoreCase(category.getName())) continue;
-
+        for (String category : categoryPanels.keySet()) {
             Point pos = categoryPositions.get(category);
             if (pos == null) continue;
             CategoryPanel panel = categoryPanels.get(category);
-            if (panel != null && panel.mouseScrolled(scaledMouseX, scaledMouseY, verticalAmount, pos.x, pos.y)) {
-                return true;
-            }
+            if (panel.mouseClicked(scaledMouseX, scaledMouseY, click.button(), pos.x, pos.y)) return true;
         }
 
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseClicked(click, bl);
     }
 
     @Override
@@ -174,16 +121,13 @@ public class ClickGuiScreen extends NamiScreen {
         }
 
         boolean handled = false;
-
-        for (FeatureCategory category : categoryPanels.keySet()) {
+        for (String category : categoryPanels.keySet()) {
             Point pos = categoryPositions.get(category);
             if (pos == null) continue;
-
             CategoryPanel panel = categoryPanels.get(category);
             panel.mouseDragged(scaledMouseX, scaledMouseY, event.button(), pos.x, pos.y);
             handled = true;
         }
-
         return handled || super.mouseDragged(event, dx, dy);
     }
 
@@ -195,15 +139,29 @@ public class ClickGuiScreen extends NamiScreen {
         draggingCategory = false;
         draggedCategory = null;
 
-        for (FeatureCategory category : categoryPanels.keySet()) {
+        for (String category : categoryPanels.keySet()) {
             Point pos = categoryPositions.get(category);
             if (pos == null) continue;
-
             CategoryPanel panel = categoryPanels.get(category);
             panel.mouseReleased(scaledMouseX, scaledMouseY, event.button(), pos.x, pos.y);
         }
 
         return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        int scaledMouseX = (int) (mouseX / scale);
+        int scaledMouseY = (int) (mouseY / scale);
+
+        for (String category : categoryPanels.keySet()) {
+            Point pos = categoryPositions.get(category);
+            if (pos == null) continue;
+            CategoryPanel panel = categoryPanels.get(category);
+            if (panel.mouseScrolled(scaledMouseX, scaledMouseY, verticalAmount, pos.x, pos.y)) return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
@@ -213,12 +171,9 @@ public class ClickGuiScreen extends NamiScreen {
             return true;
         }
         int keyCode = keyInput.input();
-
-        for (FeatureCategory category : categoryPanels.keySet()) {
+        for (String category : categoryPanels.keySet()) {
             CategoryPanel panel = categoryPanels.get(category);
-            if (panel != null) {
-                panel.keyPressed(keyCode);
-            }
+            if (panel != null) panel.keyPressed(keyCode);
         }
         return super.keyPressed(keyInput);
     }

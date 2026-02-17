@@ -61,11 +61,8 @@ import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isBroken;
 
 @RegisterFeature
 public class AutoCrystalFeature extends Feature {
-    public enum Page {PLACE, BREAK, DAMAGES, RENDER}
     public enum Sequential {NONE, FULL }
-
-    public final EnumSetting<Page> page = addSetting(new EnumSetting<>("Page", Page.PLACE));
-
+    
     //place
     public final BoolSetting doPlace = addSetting(new BoolSetting("Place", true));
     public final DoubleSetting placeRange = addSetting(new DoubleSetting("PlaceRange","Range", 6.0, 1.0, 6.0));
@@ -124,39 +121,25 @@ public class AutoCrystalFeature extends Feature {
         super("AutoCrystal", "Automatically places and break crystals to kill people, if you are good enough!.", FeatureCategory.of("Combat"), "autocrystal", "ac", "crystalaura");
         debug.setShow(false);
 
-        doBreak.setShowCondition(() -> page.get() == Page.BREAK);
-        breakRange.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakDelay.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakRotate.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakSwing.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakMultitask.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakAge.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakSequential.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
-        breakInhibit.setShowCondition(() -> doBreak.get() && page.get() == Page.BREAK);
+        breakRange.setShowCondition(() -> doBreak.get());
+        breakDelay.setShowCondition(() -> doBreak.get());
+        breakRotate.setShowCondition(() -> doBreak.get());
+        breakSwing.setShowCondition(() -> doBreak.get());
+        breakMultitask.setShowCondition(() -> doBreak.get());
+        breakAge.setShowCondition(() -> doBreak.get());
+        breakSequential.setShowCondition(() -> doBreak.get());
+        breakInhibit.setShowCondition(() -> doBreak.get());
 
-        doPlace.setShowCondition(() -> page.get() == Page.PLACE);
-        placeRange.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeDelay.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeRotate.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeSwing.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeIgnoreItems.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeMultitask.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeSwapBack.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeIgnoreCrystals.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeStrictDirection.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-        placeIgnoreTerrain.setShowCondition(() -> doPlace.get() && page.get() == Page.PLACE);
-
-        noSelfPop.setShowCondition(() ->  page.get() == Page.DAMAGES);
-        minDamage.setShowCondition(() -> page.get() == Page.DAMAGES);
-        maxSelfDamage.setShowCondition(() -> page.get() == Page.DAMAGES);
-        assumeBestArmor.setShowCondition(() -> page.get() == Page.DAMAGES);
-        balance.setShowCondition(() -> page.get() == Page.DAMAGES);
-        healthBalance.setShowCondition(() -> page.get() == Page.DAMAGES);
-        armorBalance.setShowCondition(() -> page.get() == Page.DAMAGES);
-        antiFeetTrap.setShowCondition(() -> doPlace.get() && page.get() == Page.DAMAGES);
-        antiFeetTrapFactor.setShowCondition(() -> doPlace.get() && page.get() == Page.DAMAGES && antiFeetTrap.get());
-
-        render.setShowCondition(() -> page.get() == Page.RENDER);
+        placeRange.setShowCondition(() -> doPlace.get());
+        placeDelay.setShowCondition(() -> doPlace.get());
+        placeRotate.setShowCondition(() -> doPlace.get());
+        placeSwing.setShowCondition(() -> doPlace.get());
+        placeIgnoreItems.setShowCondition(() -> doPlace.get());
+        placeMultitask.setShowCondition(() -> doPlace.get());
+        placeSwapBack.setShowCondition(() -> doPlace.get());
+        placeIgnoreCrystals.setShowCondition(() -> doPlace.get());
+        placeStrictDirection.setShowCondition(() -> doPlace.get());
+        placeIgnoreTerrain.setShowCondition(() -> doPlace.get());
     }
 
     @Override

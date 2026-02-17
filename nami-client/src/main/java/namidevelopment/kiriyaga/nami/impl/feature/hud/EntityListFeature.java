@@ -56,7 +56,7 @@ public class EntityListFeature extends HudElementFeature {
 
             if (whitelist.get()) {
                 Identifier entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-                if (entityId == null || !whitelist.isWhitelisted(entityId)) {
+                if (entityId == null || !whitelist.contains(entityId.toString())) {
                     continue;
                 }
             }

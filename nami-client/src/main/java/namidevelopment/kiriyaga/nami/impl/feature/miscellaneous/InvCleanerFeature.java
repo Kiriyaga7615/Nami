@@ -44,14 +44,14 @@ public class InvCleanerFeature extends Feature {
             Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
 
             if (blacklist.get()) {
-                if (blacklist.isWhitelisted(id)) {
+                if (blacklist.contains(id.toString())) {
                     INVENTORY_SERVICE.getClickHandler().throwSlot(i);
                     return;
                 }
             }
 
             if (whitelist.get()) {
-                if (!whitelist.isWhitelisted(id)) {
+                if (!whitelist.contains(id.toString())) {
                     INVENTORY_SERVICE.getClickHandler().throwSlot(i);
                     return;
                 }

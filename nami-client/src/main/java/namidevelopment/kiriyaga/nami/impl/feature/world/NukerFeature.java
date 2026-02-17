@@ -193,7 +193,7 @@ public class NukerFeature extends Feature {
         Block block = state.getBlock();
         if (block == Blocks.BEDROCK || state.isAir()) return false;
         if (flatten.get() && pos.getY() <= MC.player.getBlockY() - 1) return false;
-        if (whitelist.get() && !whitelist.isWhitelisted(BuiltInRegistries.BLOCK.getKey(block))) return false;
+        if (whitelist.get() && !whitelist.contains(BuiltInRegistries.BLOCK.getKey(block).toString())) return false;
 
         if (safeOnly.get()) {
             BlockState above = MC.level.getBlockState(pos.above());

@@ -12,7 +12,6 @@ import java.util.Arrays;
 public class WhitelistSetting extends BoolSetting {
     private final Set<Identifier> whitelist = new HashSet<>();
     public enum Type { ANY, BLOCK, ITEM, ENTITY, SOUND, PARTICLE }
-
     private final Set<Type> allowedTypes = new HashSet<>();
 
     public WhitelistSetting(String identifier, String name, boolean defaultValue) {
@@ -30,53 +29,37 @@ public class WhitelistSetting extends BoolSetting {
 
     public WhitelistSetting(String identifier, String name, boolean defaultValue, Type... types) {
         this(identifier, name, defaultValue);
-
         this.allowedTypes.clear();
-        if (types == null || types.length == 0) {
-            this.allowedTypes.add(Type.ANY);
-        } else {
-            this.allowedTypes.addAll(Arrays.asList(types));
-        }
+        if (types == null || types.length == 0) this.allowedTypes.add(Type.ANY);
+        else this.allowedTypes.addAll(Arrays.asList(types));
     }
 
-    public Set<Type> getAllowedTypes() {
-        return Set.copyOf(allowedTypes);
-    }
-
+    public Set<Type> getAllowedTypes() { return Set.copyOf(allowedTypes); }
     public void setAllowedTypes(Type... types) {
-        this.allowedTypes.clear();
-        if (types == null || types.length == 0) {
-            this.allowedTypes.add(Type.ANY);
-        } else {
-            this.allowedTypes.addAll(Arrays.asList(types));
-        }
+        allowedTypes.clear();
+        if (types == null || types.length == 0) allowedTypes.add(Type.ANY);
+        else allowedTypes.addAll(Arrays.asList(types));
+    }
+    public boolean allows(Type t) { return allowedTypes.contains(Type.ANY) || allowedTypes.contains(t); }
+
+    public boolean contains(String name) {
+        Identifier id = Identifier.tryParse(normalize(name));
+        return id != null && whitelist.contains(id);
     }
 
-    public boolean allows(Type t) {
-        if (allowedTypes.contains(Type.ANY)) return true;
-        return allowedTypes.contains(t);
-    }
-
-    public Set<Identifier> getWhitelist() {
-        return whitelist;
-    }
-
-    public boolean isWhitelisted(Identifier id) {
-        return whitelist.contains(id);
-    }
-
-    public boolean addToWhitelist(String idStr) {
-        Identifier id = Identifier.tryParse(normalize(idStr));
+    public boolean add(String name) {
+        Identifier id = Identifier.tryParse(normalize(name));
         if (id == null) return false;
         return whitelist.add(id);
     }
 
-    public boolean removeFromWhitelist(String idStr) {
-        Identifier id = Identifier.tryParse(normalize(idStr));
+    public boolean remove(String name) {
+        Identifier id = Identifier.tryParse(normalize(name));
         if (id == null) return false;
         return whitelist.remove(id);
     }
 
+    public Set<Identifier> getWhitelist() { return Set.copyOf(whitelist); }
     @Override
     public void fromJson(JsonElement json) {
         if (!json.isJsonObject()) return;
@@ -88,24 +71,19 @@ public class WhitelistSetting extends BoolSetting {
 
         if (obj.has("items") && obj.get("items").isJsonArray()) {
             whitelist.clear();
-            for (JsonElement element : obj.getAsJsonArray("items")) {
-                if (element.isJsonPrimitive()) {
-                    Identifier id = Identifier.tryParse(element.getAsString());
-                    if (id != null) whitelist.add(id);
-                }
+            for (JsonElement e : obj.getAsJsonArray("items")) {
+                Identifier id = Identifier.tryParse(e.getAsString());
+                if (id != null) whitelist.add(id);
             }
         }
+
         if (obj.has("types") && obj.get("types").isJsonArray()) {
-            this.allowedTypes.clear();
+            allowedTypes.clear();
             for (JsonElement e : obj.getAsJsonArray("types")) {
-                if (!e.isJsonPrimitive()) continue;
-                try {
-                    String s = e.getAsString();
-                    WhitelistSetting.Type t = WhitelistSetting.Type.valueOf(s.toUpperCase());
-                    this.allowedTypes.add(t);
-                } catch (Exception ignored) {}
+                try { allowedTypes.add(Type.valueOf(e.getAsString().toUpperCase())); }
+                catch (Exception ignored) {}
             }
-            if (this.allowedTypes.isEmpty()) this.allowedTypes.add(Type.ANY);
+            if (allowedTypes.isEmpty()) allowedTypes.add(Type.ANY);
         }
     }
 
@@ -114,9 +92,7 @@ public class WhitelistSetting extends BoolSetting {
         JsonObject obj = new JsonObject();
         obj.addProperty("enabled", value);
         JsonArray items = new JsonArray();
-        for (Identifier id : whitelist) {
-            items.add(id.toString());
-        }
+        for (Identifier id : whitelist) items.add(id.toString());
         obj.add("items", items);
         JsonArray types = new JsonArray();
         for (Type t : allowedTypes) types.add(t.name());
@@ -126,11 +102,7 @@ public class WhitelistSetting extends BoolSetting {
 
     private String normalize(String idStr) {
         idStr = idStr.trim().toLowerCase();
-
-        if (!idStr.contains(":")) {
-            idStr = "minecraft:" + idStr;
-        }
-
+        if (!idStr.contains(":")) idStr = "minecraft:" + idStr;
         return idStr;
     }
 }

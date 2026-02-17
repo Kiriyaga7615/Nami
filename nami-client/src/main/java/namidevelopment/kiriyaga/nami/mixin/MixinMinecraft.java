@@ -87,9 +87,9 @@ public abstract class MixinMinecraft {
         Identifier heldId = BuiltInRegistries.ITEM.getKey(heldItem);
         if (heldId == null) return;
 
-        if (fastPlace.whitelist.get() && !fastPlace.whitelist.isWhitelisted(heldId)) return;
+        if (fastPlace.whitelist.get() && !fastPlace.whitelist.contains(heldId.toString())) return;
 
-        if (fastPlace.blacklist.get() && fastPlace.blacklist.isWhitelisted(heldId)) return;
+        if (fastPlace.blacklist.get() && fastPlace.blacklist.contains(heldId.toString())) return;
 
         if (holdTicks >= fastPlace.startDelay.get()) {
             rightClickDelay = fastPlace.delay.get();

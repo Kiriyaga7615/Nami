@@ -50,7 +50,7 @@ public class NoInteractFeature extends Feature {
 
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
 
-        if (whitelist.get() && whitelist.isWhitelisted(blockId)) {
+        if (whitelist.get() && whitelist.contains(blockId.toString())) {
             event.cancel();
             return;
         }
@@ -102,7 +102,7 @@ public class NoInteractFeature extends Feature {
 
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
 
-        if (whitelist.get() && whitelist.isWhitelisted(blockId)) {
+        if (whitelist.get() && whitelist.contains(blockId.toString())) {
             ev.cancel();
             return;
         }

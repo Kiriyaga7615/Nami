@@ -54,7 +54,7 @@ public class BetterInventoryFeature extends Feature {
 
                 Identifier id = BuiltInRegistries.ITEM.getKey(slot.getItem().getItem());
 
-                if (highlightSlots.isWhitelisted(id)) {
+                if (highlightSlots.contains(id.toString())) {
                     int x = slot.x;
                     int y = slot.y;
                     ctx.fill(x, y, x + 16, y + 16, primary.getRGB());

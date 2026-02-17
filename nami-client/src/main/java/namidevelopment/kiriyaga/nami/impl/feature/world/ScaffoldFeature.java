@@ -132,7 +132,7 @@ public class ScaffoldFeature extends Feature {
             Block block = Block.byItem(offhand.getItem());
             if (block != Blocks.AIR) {
                 Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-                if (!whitelist.get() || whitelist.isWhitelisted(blockId)) {
+                if (!whitelist.get() || whitelist.contains(blockId.toString())) {
                     return offhand.getItem();
                 }
             }
@@ -142,7 +142,7 @@ public class ScaffoldFeature extends Feature {
             Block block = Block.byItem(mainhand.getItem());
             if (block != Blocks.AIR) {
                 Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-                if (!whitelist.get() || whitelist.isWhitelisted(blockId)) {
+                if (!whitelist.get() || whitelist.contains(blockId.toString())) {
                     return mainhand.getItem();
                 }
             }
@@ -156,7 +156,7 @@ public class ScaffoldFeature extends Feature {
             if (block == Blocks.AIR) continue;
 
             Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-            if (whitelist.get() && !whitelist.isWhitelisted(blockId)) continue;
+            if (whitelist.get() && !whitelist.contains(blockId.toString())) continue;
 
             return stack.getItem();
         }

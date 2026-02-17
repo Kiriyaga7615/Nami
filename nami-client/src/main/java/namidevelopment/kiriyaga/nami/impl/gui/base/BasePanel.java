@@ -4,6 +4,7 @@ import namidevelopment.kiriyaga.api.util.ColorUtils;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ClickGuiFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ColorFeature;
 import namidevelopment.kiriyaga.nami.impl.gui.component.panel.CategoryPanel;
+import namidevelopment.kiriyaga.nami.impl.gui.component.panel.FeaturePanel;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -24,20 +25,15 @@ public abstract class BasePanel {
     protected int width;
     public int height;
     public boolean expanded;
-
     private static final int PADDING = 3;
     private static final int GEAR_PADDING = 5;
-
     private List<BasePanel> subPanels = new ArrayList<>();
-    private float currentHeight = 0;
 
     public void setBounds(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        expanded = false;
-        this.currentHeight = height;
     }
 
     public void addSubPanel(BasePanel panel) {
@@ -52,7 +48,7 @@ public abstract class BasePanel {
     protected abstract boolean isEnabled();
 
     protected Color getTextColor() {
-        return new Color(255, 255, 255, 255);
+        return FEATURE_SERVICE.getStorage().getByClass(ColorFeature.class).getStyledTextColor(255);
     }
 
     protected ColorFeature getColorFeature() {
@@ -92,7 +88,7 @@ public abstract class BasePanel {
 
         FONT_SERVICE.drawText(context, getName(), textX, textY, toRGBA(getTextColor()), true);
 
-        if (!subPanels.isEmpty()) {
+        if (!subPanels.isEmpty() && getClickGuiFeature().gear.get()) {
             String gear = expanded ? "-" : "+";
             int gearWidth = FONT_SERVICE.getWidth(gear) + GEAR_PADDING;
 
@@ -100,26 +96,57 @@ public abstract class BasePanel {
         }
 
         if (expanded) {
-            int currentY = y + height + PADDING;
+            if (this instanceof FeaturePanel fPanel)
+                fPanel.refreshSettings();
+
+            int currentY = y + height;
+
             for (BasePanel panel : subPanels) {
                 panel.setBounds(x, currentY, width, panel.height);
                 panel.render(context, font, mouseX, mouseY);
-                currentY += panel.height + PADDING;
+
+                currentY += panel.getFullHeight();
             }
         }
     }
+
+    public int getFullHeight() {
+        if (!expanded || subPanels.isEmpty()) return height;
+
+        int full = height;
+
+        for (int i = 0; i < subPanels.size(); i++) {
+            BasePanel panel = subPanels.get(i);
+
+            full += panel.getFullHeight();
+        }
+
+        //full += PADDING;
+
+        return full;
+    }
+
 
     public void onLeftClick() {}
     public void onRightClick() {}
     public void onMiddleClick() {}
 
     public boolean mouseClicked(int mouseX, int mouseY, int button) {
+
+        if (expanded) {
+            for (BasePanel sub : subPanels) {
+                if (sub.mouseClicked(mouseX, mouseY, button)) return true;
+            }
+        }
+
         if (!isHovered(mouseX, mouseY)) return false;
+
         switch (button) {
             case 0 -> onLeftClick();
             case 1 -> onRightClick();
             case 2 -> onMiddleClick();
         }
+
         return true;
     }
 
@@ -135,5 +162,30 @@ public abstract class BasePanel {
             }
         }
         return false;
+    }
+
+    public boolean mouseReleased(int mouseX, int mouseY, int button) {
+        if (expanded) {
+            for (BasePanel sub : subPanels) {
+                if (sub.mouseReleased(mouseX, mouseY, button)) return true;
+            }
+        }
+        return false;
+    }
+
+    public void mouseDragged(int mouseX, int mouseY, int button) {
+        if (expanded) {
+            for (BasePanel sub : subPanels) {
+                sub.mouseDragged(mouseX, mouseY, button);
+            }
+        }
+    }
+
+    public void keyPressed(int keyCode) {
+        if (expanded) {
+            for (BasePanel sub : subPanels) {
+                sub.keyPressed(keyCode);
+            }
+        }
     }
 }

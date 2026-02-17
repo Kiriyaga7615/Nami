@@ -306,7 +306,7 @@ public class FeatureCommand extends Command {
                                                         return 0;
                                                     }
 
-                                                    if (!wl.addToWhitelist(id)) {
+                                                    if (!wl.add(id)) {
                                                         CHAT_SERVICE.sendPersistent("Feature", CAT_FORMAT.format("{red}Invalid identifier: {gray}" + id));
                                                         return 0;
                                                     }
@@ -344,7 +344,7 @@ public class FeatureCommand extends Command {
                                                         return 0;
                                                     }
 
-                                                    if (!wl.removeFromWhitelist(id)) {
+                                                    if (!wl.remove(id)) {
                                                         CHAT_SERVICE.sendPersistent("Feature", CAT_FORMAT.format("{red}Not in whitelist: {gray}" + id));
                                                         return 0;
                                                     }
@@ -472,7 +472,7 @@ public class FeatureCommand extends Command {
             }
 
             if (setting instanceof WhitelistSetting whitelist) {
-                return whitelist.addToWhitelist(input);
+                return whitelist.add(input);
             }
 
         } catch (Exception ignored) {
