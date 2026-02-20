@@ -52,6 +52,10 @@ import java.util.*;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
@@ -110,7 +114,10 @@ public class AutoCrystalFeature extends Feature {
     private final Set<Integer> deadIds = ConcurrentHashMap.newKeySet();
 
 
-    private PlaceTarget bestPlace;
+    private final ExecutorService calcExecutor = Executors.newSingleThreadExecutor();
+    private volatile Future<?> runningTask;
+    private final AtomicReference<PlaceTarget> asyncBest = new AtomicReference<>();
+    private volatile PlaceTarget bestPlace;
 
     private int cachedChunkX = Integer.MIN_VALUE;
     private int cachedChunkZ = Integer.MIN_VALUE;
@@ -160,13 +167,44 @@ public class AutoCrystalFeature extends Feature {
         update();
 
         long tickId = MC.level.getGameTime();
-        AutoCrystalSnapshot.debugInfo dbg = new AutoCrystalSnapshot.debugInfo(tickId);
-        AutoCrystalSnapshot snap = doSnapshot(tickId, dbg);
-        bestPlace = findNextPlaceTargetForSnapshot(snap, dbg);
 
-        if (debug.get()) {
-            float ms = (System.nanoTime() - dbg.startNs) / 1_000_000f;
-            CHAT_SERVICE.sendPersistent("AutoCrystalFeature#placeCalcs", dbg.buildMessage(ms));
+        if (runningTask == null || runningTask.isDone()) {
+            AutoCrystalSnapshot.AsyncDebugInfo dbg = new AutoCrystalSnapshot.AsyncDebugInfo(tickId);
+
+            AutoCrystalSnapshot snap = doSnapshot(tickId, dbg);
+            runningTask = calcExecutor.submit(() -> {
+                PlaceTarget best = findNextPlaceTargetForSnapshot(snap, dbg);
+                asyncBest.set(best);
+
+                if (debug.get()) {
+                    float ms = (System.nanoTime() - dbg.startNs) / 1_000_000f;
+
+                    MC.execute(() -> {
+                        CHAT_SERVICE.sendPersistent(
+                                "AutoCrystalFeature#asyncCalc",
+                                dbg.buildMessage(ms)
+                        );
+                    });
+                }
+            });
+        }
+
+        if (this.asyncBest.get() != null) {
+            BlockPos pos = this.asyncBest.get().pos;
+            BlockPos base = pos.below();
+
+            Vec3 crystalPos = new Vec3(base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5);
+
+            float realDamage = calculateDamage(crystalPos);
+
+            if (realDamage > 0.0f) {
+                bestPlace = new PlaceTarget(pos, realDamage);
+                lastTotalDamage = realDamage;
+            } else {
+                bestPlace = null;
+            }
+        } else {
+            bestPlace = null;
         }
 
         if (doBreak.get()) {
@@ -366,7 +404,7 @@ public class AutoCrystalFeature extends Feature {
         placeTimer = placeDelay.get();
     }
 
-    private AutoCrystalSnapshot doSnapshot(long tickId, AutoCrystalSnapshot.debugInfo dbg) {
+    private AutoCrystalSnapshot doSnapshot(long tickId, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
         Vec3 eyePos = MC.player.getEyePosition();
         BlockPos playerPos = MC.player.blockPosition();
 
@@ -497,7 +535,7 @@ public class AutoCrystalFeature extends Feature {
         return new AutoCrystalSnapshot(tickId, MC.player.getId(), eyePos, playerPos, pr, br, minDmg, assumeBestArmor.get(), MC.level.getDifficulty(), true, MC.level, targets.toArray(new AutoCrystalSnapshot.TargetData[0]), candidates.toArray(new BlockPos[0]), ignored);
     }
 
-    private PlaceTarget findNextPlaceTargetForSnapshot(AutoCrystalSnapshot snap, AutoCrystalSnapshot.debugInfo dbg) {
+    private PlaceTarget findNextPlaceTargetForSnapshot(AutoCrystalSnapshot snap, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
         PlaceTarget best = null;
 
         for (BlockPos pos : snap.candidatePos()) {
@@ -518,7 +556,7 @@ public class AutoCrystalFeature extends Feature {
         return best;
     }
 
-    private float calculateDamageForSnapshot(Vec3 explosionPos, AutoCrystalSnapshot snap, AutoCrystalSnapshot.debugInfo dbg) {
+    private float calculateDamageForSnapshot(Vec3 explosionPos, AutoCrystalSnapshot snap, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
         float total = 0.0f;
         boolean any = false;
 
