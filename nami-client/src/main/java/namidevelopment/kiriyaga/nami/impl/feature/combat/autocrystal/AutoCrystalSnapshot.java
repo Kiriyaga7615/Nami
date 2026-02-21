@@ -25,7 +25,7 @@ public record AutoCrystalSnapshot(long tickId, int selfId, Vec3 eyePos, BlockPos
             boolean armorBroken
     ) { }
 
-    public static final class AsyncDebugInfo {
+    public static final class debugInfo {
         final long tickId;
         final long startNs = System.nanoTime();
         int targetsTotal;
@@ -41,7 +41,7 @@ public record AutoCrystalSnapshot(long tickId, int selfId, Vec3 eyePos, BlockPos
         int dmgRejectedNoSelfPop;
         int bestFound;
 
-        AsyncDebugInfo(long tickId) {this.tickId = tickId;}
+        debugInfo(long tickId) {this.tickId = tickId;}
         String buildMessage(float totalMs) {return String.format(Locale.US, "AsyncCalc tick=%d time=%.3fms | targets=%d/%d | cand=%d (blocked=%d base=%d air=%d pr=%d br=%d) | rej(min=%d self=%d pop=%d) | best=%d", tickId, totalMs, targetsValid, targetsTotal, candidatesTotal, candidatesBlocked, candidatesBadBase, candidatesNotAir, candidatesOutPlaceRange, candidatesOutBreakRange, dmgRejectedMin, dmgRejectedSelf, dmgRejectedNoSelfPop, bestFound);
         }
     }
