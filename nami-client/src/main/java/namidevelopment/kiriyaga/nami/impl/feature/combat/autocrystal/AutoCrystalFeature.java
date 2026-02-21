@@ -76,9 +76,7 @@ public class AutoCrystalFeature extends Feature {
     public final BoolSetting placeStrictDirection = addSetting(new BoolSetting("PlaceStrictDirection","StrictDirection", true));
     public final BoolSetting placeSwapBack = addSetting(new BoolSetting("PlaceSwapBack","SwapBack", true));
     public final BoolSetting placeMultitask = addSetting(new BoolSetting("PlaceMultitask","Multitask", false));
-    public final BoolSetting placeIdPredict = addSetting(new BoolSetting("PlaceIdPredict","IdPredict", false));
-    public final IntSetting placeMinPredict = addSetting(new IntSetting("PlaceMinPredict","MinPredict", 0, 0, 20));
-    public final IntSetting placeMaxPredict = addSetting(new IntSetting("PlaceMaxPredict","MaxPredict", 0, 0, 20));
+    public final BoolSetting placeIgnoreTerrain = addSetting(new BoolSetting("PlaceIgnoreTerrain","IgnoreTerrain", true));
 
     //break
     public final BoolSetting doBreak = addSetting(new BoolSetting("Break", true));
@@ -101,7 +99,6 @@ public class AutoCrystalFeature extends Feature {
     public final DoubleSetting armorBalance = addSetting(new DoubleSetting("ArmorBalance", 0.20, 0.00, 1.00));
     public final BoolSetting antiFeetTrap = addSetting(new BoolSetting("AntiFeetTrap", true));
     public final DoubleSetting antiFeetTrapFactor = addSetting(new DoubleSetting("Factor", 0.80, 0.5, 1.00));
-    public final BoolSetting ignoreTerrain = addSetting(new BoolSetting("IgnoreTerrain","IgnoreTerrain", true));
 
     //render
     public final BoolSetting render = addSetting(new BoolSetting("Render", true));
@@ -111,7 +108,6 @@ public class AutoCrystalFeature extends Feature {
     private PlaceTarget lastPlaceTarget = null;
     public float lastTotalDamage;
     float lastCalcTimeMs = 0;
-    private volatile long predictId;
 
     private final Int2IntOpenHashMap crystalHits = new Int2IntOpenHashMap();
     private final Long2IntOpenHashMap crystalPlaces = new Long2IntOpenHashMap();
@@ -149,10 +145,7 @@ public class AutoCrystalFeature extends Feature {
         placeSwapBack.setShowCondition(() -> doPlace.get());
         placeIgnoreCrystals.setShowCondition(() -> doPlace.get());
         placeStrictDirection.setShowCondition(() -> doPlace.get());
-        ignoreTerrain.setShowCondition(() -> doPlace.get());
-
-        placeMinPredict.setShowCondition(placeIdPredict::get);
-        placeMaxPredict.setShowCondition(placeIdPredict::get);
+        placeIgnoreTerrain.setShowCondition(() -> doPlace.get());
     }
 
     @Override
@@ -237,24 +230,19 @@ public class AutoCrystalFeature extends Feature {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketReceive(PacketReceiveEvent event) {
-        if ((event.getPacket() instanceof ClientboundEntityEventPacket packet)) {
-            if (packet.getEventId() != 3) return;
+        if (!(event.getPacket() instanceof ClientboundEntityEventPacket packet)) return;
+        if (packet.getEventId() != 3) return;
 
-            // Author: cattyngmd
-            MC.execute(() -> {
-                Entity e = packet.getEntity(MC.level);
-                if (e instanceof LivingEntity living) {
-                    ((ILivingEntity) living).setServerSideDead(true);
-                }
-                if (e instanceof Player player) {
-                    deadIds.add(e.getId());
-                }
-            });
-        }
-
-        if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getId() > predictId) {
-            predictId = packet.getId();
-        }
+        // Author: cattyngmd
+        MC.execute(() -> {
+            Entity e = packet.getEntity(MC.level);
+            if (e instanceof LivingEntity living) {
+                ((ILivingEntity) living).setServerSideDead(true);
+            }
+            if (e instanceof Player player) {
+                deadIds.add(e.getId());
+            }
+        });
     }
 
     @SubscribeEvent
@@ -281,7 +269,7 @@ public class AutoCrystalFeature extends Feature {
             fake.setPos(pos);
             fake.setId(packet.getId());
 
-            doBreakSequential(fake, true);
+            doBreakOnNetty(fake);
         }
     }
 
@@ -296,7 +284,7 @@ public class AutoCrystalFeature extends Feature {
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
     }
 
-    private void doBreakSequential(EndCrystal crystal, boolean b) {
+    private void doBreakOnNetty(EndCrystal crystal) { // we are not on netty actually
         if (!breakMultitask.get() && MC.player.isUsingItem())  {
             return;
         }
@@ -310,7 +298,7 @@ public class AutoCrystalFeature extends Feature {
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AutoCrystalFeature.class.getName(), 9, yaw, pitch));
         }
 
-        if (b && !canBreak(crystal)) {
+        if (!canBreak(crystal)) {
             return;
         }
 
@@ -413,21 +401,6 @@ public class AutoCrystalFeature extends Feature {
         lastPlaceTarget = target;
 
         crystalPlaces.put(target.pos.asLong(), 0);
-
-        if (placeIdPredict.get()) {
-            for(int i = Math.min(placeMinPredict.get(), placeMaxPredict.get()); i <= Math.max(placeMinPredict.get(), placeMaxPredict.get()); i++) {
-                int id = (int) (predictId + i);
-                int hits = crystalHits.get(id);
-
-                if (hits >= breakInhibit.get())
-                    return;
-
-                EndCrystal crystal = new EndCrystal(MC.level, 0.0, 0.0, 0.0);
-                crystal.setId(id);
-                doBreakSequential(crystal, false);
-            }
-        }
-    
         placeTimer = placeDelay.get();
     }
 
@@ -535,11 +508,14 @@ public class AutoCrystalFeature extends Feature {
                         continue;
                     }
 
-                    AABB checkIntersects = new AABB(base.getX(), base.getY() + 1, base.getZ(), base.getX() + 1, base.getY() + 2, base.getZ() + 1);
+                    AABB checkIntersects = new AABB(
+                            base.getX(), base.getY() + 1, base.getZ(),
+                            base.getX() + 1, base.getY() + 2, base.getZ() + 1
+                    );
 
                     boolean blocked = false;
                     for (Entity e : MC.level.getEntities(null, checkIntersects)) {
-                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && (Math.abs(item.getDeltaMovement().x) > 1e-8 || Math.abs(item.getDeltaMovement().y) > 1e-8 || Math.abs(item.getDeltaMovement().z) > 1e-8)) continue;
+                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && item.getAge() <= 5) continue;
                         if (placeIgnoreCrystals.get() && e instanceof EndCrystal crystal && crystal.tickCount < 5) continue;
                         if (e instanceof EndCrystal crystal && crystal.blockPosition().equals(pos)) continue;
                         blocked = true;
@@ -713,7 +689,7 @@ public class AutoCrystalFeature extends Feature {
     private Set<BlockPos> ignoredBlocks() {
         Set<BlockPos> ignored = new HashSet<>();
 
-        if (ignoreTerrain.get()) {
+        if (placeIgnoreTerrain.get()) {
             int r = placeRange.get().intValue()+2;
             BlockPos center = MC.player.blockPosition();
 
