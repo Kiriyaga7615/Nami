@@ -41,7 +41,7 @@ public class AutoWebFeature extends Feature {
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", true));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
     public final BoolSetting strictDirection = addSetting(new BoolSetting("StrictDirection", true));
-    public final BoolSetting swapBack = addSetting(new BoolSetting("SwapBack", true));
+    public final BoolSetting swapSilent = addSetting(new BoolSetting("SwapSilent", true));
     public final BoolSetting multiTask = addSetting(new BoolSetting("MultiTask", false));
     public final BoolSetting simulate = addSetting(new BoolSetting("Simulate", false));
     public final BoolSetting render = addSetting(new BoolSetting("Render", true));
@@ -80,7 +80,7 @@ public class AutoWebFeature extends Feature {
         for (BlockPos pos : positions) {
             if (MC.level.getBlockState(pos).isAir()) {
                 renderPos = pos;
-                InteractionUtils.placeBlock(pos, item,swapBack.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get());
+                InteractionUtils.placeBlock(pos, item,swapSilent.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get());
                 placed++;
                 if (placed >= shiftTicks.get()) break;
             }

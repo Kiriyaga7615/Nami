@@ -35,7 +35,7 @@ public class MapSpammerFeature extends Feature {
     public final BoolSetting place = addSetting(new BoolSetting("Place", true));
     public final DoubleSetting placeRange = addSetting(new DoubleSetting("PlaceRange", "Range", 4.5, 1.0, 6.0));
     public final IntSetting placeDelay = addSetting(new IntSetting("PlaceDelay", "Delay", 0, 0, 20));
-    public final BoolSetting placeSwapBack = addSetting(new BoolSetting("PlaceSwapBack", "SwapBack", true));
+    public final BoolSetting placeswapSilent = addSetting(new BoolSetting("PlaceswapSilent", "SwapSilent", true));
     public final BoolSetting placeMultitask = addSetting(new BoolSetting("PlaceMultitask", "Multitask", false));
     public final BoolSetting placeSwing = addSetting(new BoolSetting("PlaceSwing", "Swing", true));
     public final BoolSetting placeRotate = addSetting(new BoolSetting("PlaceRotate", "Rotate", true));
@@ -60,7 +60,7 @@ public class MapSpammerFeature extends Feature {
         super("MapSpammer", "Automatically fills item frames with your maps.", FeatureCategory.of("World"));
         placeRange.setShowCondition(place::get);
         placeDelay.setShowCondition(place::get);
-        placeSwapBack.setShowCondition(place::get);
+        placeswapSilent.setShowCondition(place::get);
         placeMultitask.setShowCondition(place::get);
         placeSwing.setShowCondition(place::get);
         placeRotate.setShowCondition(place::get);
@@ -127,7 +127,7 @@ public class MapSpammerFeature extends Feature {
             if (place.get() && placeCD <= 0) {
                 if (inFrame.isEmpty()) {
 
-                    boolean success = interactWithEntity(frame, referenceItem, placeSwapBack.get(), placeMultitask.get(), placeRange.get(), placeSwing.get(), placeRotate.get(), this.name + "_place");
+                    boolean success = interactWithEntity(frame, referenceItem, placeswapSilent.get(), placeMultitask.get(), placeRange.get(), placeSwing.get(), placeRotate.get(), this.name + "_place");
 
                     if (success) {
                         placeCD = placeDelay.get();

@@ -24,7 +24,7 @@ public class AutoNametagFeature extends Feature {
     public final BoolSetting nametagged = addSetting(new BoolSetting("Nametagged", false));
     public final DoubleSetting range = addSetting(new DoubleSetting("Range", 3.0, 1.0, 10.0));
     public final IntSetting delay = addSetting(new IntSetting("Delay", 1, 0, 20));
-    public final BoolSetting swapBack = addSetting(new BoolSetting("SwapBack", true));
+    public final BoolSetting swapSilent = addSetting(new BoolSetting("SwapSilent", true));
     public final BoolSetting multitask = addSetting(new BoolSetting("Multitask", false));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", true));
@@ -50,7 +50,7 @@ public class AutoNametagFeature extends Feature {
             if (entity instanceof Villager || entity instanceof ThrownEnderpearl || entity instanceof EnderDragon) continue;
 
 
-            if (interactWithEntity(entity, Items.NAME_TAG, swapBack.get(), multitask.get(), range.get(), swing.get(), rotate.get(), this.name)) {
+            if (interactWithEntity(entity, Items.NAME_TAG, swapSilent.get(), multitask.get(), range.get(), swing.get(), rotate.get(), this.name)) {
                 cooldown = delay.get();
                 break;
             }

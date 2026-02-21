@@ -20,6 +20,7 @@ import namidevelopment.kiriyaga.api.util.InteractionUtils;
 import namidevelopment.kiriyaga.api.util.entity.DamageUtils;
 import namidevelopment.kiriyaga.api.util.entity.EntityUtils;
 import namidevelopment.kiriyaga.api.util.render.RenderUtil;
+import namidevelopment.kiriyaga.nami.impl.feature.combat.AuraFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.world.SpeedMineFeature;
 import namidevelopment.kiriyaga.nami.mixininterface.ILivingEntity;
 import net.minecraft.core.BlockPos;
@@ -56,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
 import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isBroken;
+import static namidevelopment.kiriyaga.nami.impl.feature.combat.AuraFeature.getWeapon;
 
 @RegisterFeature
 public class AutoCrystalFeature extends Feature {
@@ -70,7 +72,7 @@ public class AutoCrystalFeature extends Feature {
     public final BoolSetting placeIgnoreItems = addSetting(new BoolSetting("PlaceIgnoreItems","IgnoreItems", true));
     public final BoolSetting placeIgnoreCrystals = addSetting(new BoolSetting("PlaceIgnoreCrystals","IgnoreCrystals", true));
     public final BoolSetting placeStrictDirection = addSetting(new BoolSetting("PlaceStrictDirection","StrictDirection", true));
-    public final BoolSetting placeSwapBack = addSetting(new BoolSetting("PlaceSwapBack","SwapBack", true));
+    public final BoolSetting placeSwapSilent = addSetting(new BoolSetting("PlaceSwapSilent","SwapSilent", true));
     public final BoolSetting placeMultitask = addSetting(new BoolSetting("PlaceMultitask","Multitask", false));
     public final BoolSetting placeIdPredict = addSetting(new BoolSetting("PlaceIdPredict","IdPredict", false));
     public final IntSetting placeMinPredict = addSetting(new IntSetting("PlaceMinPredict","MinPredict", 0, 0, 20));
@@ -85,6 +87,8 @@ public class AutoCrystalFeature extends Feature {
     public final BoolSetting breakSwing = addSetting(new BoolSetting("BreakSwing","Swing", true));
     public final BoolSetting breakMultitask = addSetting(new BoolSetting("BreakMultitask","Multitask", false));
     public final IntSetting breakAge = addSetting(new IntSetting("Age", 0, 0, 20));
+    public final BoolSetting breakAntiWeak = addSetting(new BoolSetting("BreakAntiWeak","AntiWeak", false));
+    public final BoolSetting breakSwapSilent = addSetting(new BoolSetting("BreakSwapSilent","SwapSilent", true));
     public final EnumSetting<Sequential> breakSequential = addSetting(new EnumSetting<>("BreakSequential","Sequential", Sequential.NONE));
 
     //damages
@@ -132,6 +136,7 @@ public class AutoCrystalFeature extends Feature {
         breakAge.setShowCondition(() -> doBreak.get());
         breakSequential.setShowCondition(() -> doBreak.get());
         breakInhibit.setShowCondition(() -> doBreak.get());
+        breakSwapSilent.setShowCondition(() -> doBreak.get() && breakAntiWeak.get());
 
         placeRange.setShowCondition(() -> doPlace.get());
         placeDelay.setShowCondition(() -> doPlace.get());
@@ -139,7 +144,7 @@ public class AutoCrystalFeature extends Feature {
         placeSwing.setShowCondition(() -> doPlace.get());
         placeIgnoreItems.setShowCondition(() -> doPlace.get());
         placeMultitask.setShowCondition(() -> doPlace.get());
-        placeSwapBack.setShowCondition(() -> doPlace.get());
+        placeSwapSilent.setShowCondition(() -> doPlace.get());
         placeIgnoreCrystals.setShowCondition(() -> doPlace.get());
         placeStrictDirection.setShowCondition(() -> doPlace.get());
         ignoreTerrain.setShowCondition(() -> doPlace.get());
@@ -307,6 +312,15 @@ public class AutoCrystalFeature extends Feature {
         if (hits >= breakInhibit.get() && target.crystal.tickCount < 20)
             return;
 
+        if (breakAntiWeak.get()) {
+            var weakness = MC.player.getEffect(MobEffects.WEAKNESS);
+            var strength = MC.player.getEffect(MobEffects.STRENGTH);
+
+            int slot = getWeapon();
+            if (weakness.getAmplifier() - strength.getAmplifier() > 0 && slot != -1) {
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, breakSwapSilent.get());
+            }
+        }
         MC.gameMode.attack(MC.player, target.crystal);
 
         if (breakSwing.get())
@@ -370,10 +384,11 @@ public class AutoCrystalFeature extends Feature {
             return;
         }
 
-        InteractionUtils.interactBlockAt(target.pos.below(), Items.END_CRYSTAL, null, placeSwapBack.get(), placeMultitask.get(), placeRange.get(), placeRotate.get(), placeStrictDirection.get(), false, placeSwing.get(), AutoCrystalFeature.class.getName() + "_PLACE");
+        InteractionUtils.interactBlockAt(target.pos.below(), Items.END_CRYSTAL, null, placeSwapSilent.get(), placeMultitask.get(), placeRange.get(), placeRotate.get(), placeStrictDirection.get(), false, placeSwing.get(), AutoCrystalFeature.class.getName() + "_PLACE");
 
         lastPlaceTarget = target;
-
+        lastTotalDamage = target.totalDamage;
+        
         crystalPlaces.put(target.pos.asLong(), 0);
 
         if (placeIdPredict.get()) {
@@ -409,9 +424,9 @@ public class AutoCrystalFeature extends Feature {
         for (Player e : entities) {
             if (e.isDeadOrDying())
                 continue;
-            if (SOCIALS_SERVICE.isFriend(e.getName().getString()))
-                continue;
             if (((ILivingEntity) e).isServerSideDead())
+                continue;
+            if (deadIds.contains(e.getId()))
                 continue;
 
             dbg.targetsValid++;
@@ -501,7 +516,7 @@ public class AutoCrystalFeature extends Feature {
 
                     boolean blocked = false;
                     for (Entity e : MC.level.getEntities(null, checkIntersects)) {
-                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && (Math.abs(item.getDeltaMovement().x) > 1e-8 || Math.abs(item.getDeltaMovement().y) > 1e-8 || Math.abs(item.getDeltaMovement().z) > 1e-8)) continue;
+                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && !item.verticalCollisionBelow) continue;
                         if (placeIgnoreCrystals.get() && e instanceof EndCrystal crystal && crystal.tickCount < 5) continue;
                         if (e instanceof EndCrystal crystal && crystal.blockPosition().equals(pos)) continue;
                         blocked = true;
@@ -550,10 +565,6 @@ public class AutoCrystalFeature extends Feature {
             double dist = t.pos().distanceTo(explosionPos);
             if (dist > 12.0) continue;
 
-
-            if (deadIds.contains(t.id()))
-                continue;
-
             double exposure = calculateExposureForSnapshot(explosionPos, t.box(), snap);
             if (exposure <= 0.0) continue;
 
@@ -576,6 +587,10 @@ public class AutoCrystalFeature extends Feature {
 
                 continue;
             }
+
+            if (SOCIALS_SERVICE.isFriend(MC.level.getEntity(t.id()).getName().getString()))
+                continue;
+
             double dynMin = getMinDamage(t.health(), t.absorption(), t.armorBroken());
 
             if (dmg < dynMin) {
@@ -719,6 +734,12 @@ public class AutoCrystalFeature extends Feature {
 
         for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PLAYERS, 12)) {
             if (!(e instanceof Player player)) continue;
+            if (player.isDeadOrDying())
+                continue;
+            if (((ILivingEntity) player).isServerSideDead())
+                continue;
+            if (deadIds.contains(player.getId()))
+                continue;
 
             float dmg = DamageUtils.crystalDamage(player, player.position(), player.getBoundingBox(), crystalPos, DamageUtils.BLOCK_CHECK, assumeBestArmor.get(), ignored);
 

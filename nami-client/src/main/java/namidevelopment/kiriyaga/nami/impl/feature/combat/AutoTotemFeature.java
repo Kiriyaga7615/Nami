@@ -54,6 +54,7 @@ public class AutoTotemFeature extends Feature {
         mainhandSlot.setShowCondition(mainhand::get);
         overrideItem.setShowCondition(offhandOverride::get);
         swordGap.setShowCondition(offhandOverride::get);
+        mainhandGapple.setShowCondition(mainhand::get);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)

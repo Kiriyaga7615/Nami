@@ -39,7 +39,7 @@ public class TrapComponent {
     public final BoolSetting grim;
     public final BoolSetting rotate;
     public final BoolSetting strictDirection;
-    public final BoolSetting swapBack;
+    public final BoolSetting swapSilent;
     public final BoolSetting multiTask;
     public final BoolSetting simulate;
     public final BoolSetting antiBreak;
@@ -61,7 +61,7 @@ public class TrapComponent {
         grim = feature.addSetting(new BoolSetting("Grim", false));
         rotate = feature.addSetting(new BoolSetting("Rotate", true));
         strictDirection = feature.addSetting(new BoolSetting("StrictDirection", true));
-        swapBack = feature.addSetting(new BoolSetting("SwapBack", true));
+        swapSilent = feature.addSetting(new BoolSetting("SwapSilent", true));
         multiTask = feature.addSetting(new BoolSetting("MultiTask", false));
         simulate = feature.addSetting(new BoolSetting("Simulate", false));
         antiBreak = feature.addSetting(new BoolSetting("AntiBreak", false));
@@ -104,7 +104,7 @@ public class TrapComponent {
             Item handItem = MC.player.getMainHandItem().getItem();
 
             for (BlockPos pos : placedPositions) {
-                InteractionUtils.interactBlockAt(pos, handItem, null, swapBack.get(), multiTask.get(), range.get(), rotate.get(), strictDirection.get(), false, swing.get(), owner.getName()+"_interact");
+                InteractionUtils.interactBlockAt(pos, handItem, null, swapSilent.get(), multiTask.get(), range.get(), rotate.get(), strictDirection.get(), false, swing.get(), owner.getName()+"_interact");
             }
 
             placedPositions.clear();
@@ -122,9 +122,12 @@ public class TrapComponent {
             return;
 
         if (attack.get() && !targetPositions.isEmpty()) {
-            for (EndCrystal crystal : MC.level.getEntitiesOfClass(EndCrystal.class, new AABB(MC.player.blockPosition()).inflate(range.get() + 6.0))) {
+            for (EndCrystal crystal : MC.level.getEntitiesOfClass(EndCrystal.class, new AABB(MC.player.blockPosition()).inflate(range.get() + 3.0))) {
                 AABB crystalBox = crystal.getBoundingBox();
                 for (BlockPos pos : targetPositions) {
+                    if (!MC.level.getBlockState(pos).canBeReplaced())
+                        continue;
+
                     AABB blockBox = new AABB(pos);
                     if (blockBox.intersects(crystalBox)) {
                         if (crystal.tickCount >= attackAge.get())
@@ -264,9 +267,9 @@ public class TrapComponent {
 
     private boolean place(BlockPos pos, Item item, boolean airPlace, boolean grim, Feature owner) {
         if (airPlace)
-            return InteractionUtils.airPlace(pos, Direction.DOWN, item, swapBack.get(), range.get(), rotate.get(), grim, simulate.get(), swing.get(), owner.getName()+"_airplace", multiTask.get());
+            return InteractionUtils.airPlace(pos, Direction.DOWN, item, swapSilent.get(), range.get(), rotate.get(), grim, simulate.get(), swing.get(), owner.getName()+"_airplace", multiTask.get());
 
-        return InteractionUtils.placeBlock(pos, item, swapBack.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), owner.getName()+"_place", multiTask.get());
+        return InteractionUtils.placeBlock(pos, item, swapSilent.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), owner.getName()+"_place", multiTask.get());
     }
 
     private void doBreak(EndCrystal target, Feature owner) {
