@@ -13,14 +13,15 @@ import namidevelopment.kiriyaga.api.model.command.CommandArgument;
 import namidevelopment.kiriyaga.api.model.command.CommandRoute;
 import namidevelopment.kiriyaga.api.model.command.CommandSource;
 
+import namidevelopment.kiriyaga.api.model.feature.Feature;
+import namidevelopment.kiriyaga.api.model.setting.Setting;
 import namidevelopment.kiriyaga.api.util.KeyUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.player.Player;
-
-import java.util.Locale;
+import net.minecraft.resources.Identifier;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.*;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
+import static net.minecraft.commands.SharedSuggestionProvider.suggest;
 
 public class BrigadierCommandAdapter {
 
@@ -114,46 +115,6 @@ public class BrigadierCommandAdapter {
             return DoubleArgumentType.getDouble(ctx, name);
         }
 
-        if (arg instanceof CommandArgument.StringArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.ActionArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.FeatureArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.SettingArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.KeyBindArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.ConfigNameArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.IdentifierArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.OnlinePlayerArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.FriendArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
-        if (arg instanceof CommandArgument.FriendNameArg) {
-            return StringArgumentType.getString(ctx, name);
-        }
-
         return StringArgumentType.getString(ctx, name);
     }
 
@@ -167,46 +128,6 @@ public class BrigadierCommandAdapter {
             return DoubleArgumentType.doubleArg();
         }
 
-        if (arg instanceof CommandArgument.StringArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.ActionArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.FeatureArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.SettingArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.KeyBindArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.ConfigNameArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.IdentifierArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.OnlinePlayerArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.FriendArg) {
-            return last ? greedyString() : word();
-        }
-
-        if (arg instanceof CommandArgument.FriendNameArg) {
-            return last ? greedyString() : word();
-        }
-
         return last ? greedyString() : word();
     }
 
@@ -214,18 +135,14 @@ public class BrigadierCommandAdapter {
 
         if (arg instanceof CommandArgument.ActionArg actionArg) {
             builder.suggests((ctx, sb) -> {
-                for (String v : actionArg.getAllowedValues()) {
-                    sb.suggest(v);
-                }
-                return sb.buildFuture();
+                return suggest(actionArg.getAllowedValues(), sb);
             });
             return;
         }
 
         if (arg instanceof CommandArgument.FeatureArg) {
             builder.suggests((ctx, sb) -> {
-                FEATURE_SERVICE.getStorage().getAll().forEach(f -> sb.suggest(f.getName()));
-                return sb.buildFuture();
+                return suggest(FEATURE_SERVICE.getStorage().getAll().stream().map(Feature::getName), sb);
             });
             return;
         }
@@ -246,11 +163,11 @@ public class BrigadierCommandAdapter {
                 if (featureName != null) {
                     var feature = FEATURE_SERVICE.getStorage().getByName(featureName);
                     if (feature != null) {
-                        feature.getSettings().forEach(s -> sb.suggest(s.getName()));
-                        return sb.buildFuture();
+                        return suggest(feature.getSettings().stream().map(Setting::getName), sb);
                     }
                 }
 
+                // autism below
                 FEATURE_SERVICE.getStorage().getAll().forEach(f ->
                         f.getSettings().forEach(s -> sb.suggest(s.getName()))
                 );
@@ -262,25 +179,13 @@ public class BrigadierCommandAdapter {
 
         if (arg instanceof CommandArgument.KeyBindArg) {
             builder.suggests((ctx, sb) -> {
-                String rem = sb.getRemaining().toLowerCase();
-
-                for (String key : KeyUtils.getAllKeyNames()) {
-                    if (key.toLowerCase().startsWith(rem)) {
-                        sb.suggest(key);
-                    }
-                }
-                return sb.buildFuture();
+                return suggest(KeyUtils.getAllKeyNames().stream(), sb);
             });
         }
 
         if (arg instanceof CommandArgument.OnlinePlayerArg) {
             builder.suggests((ctx, sb) -> {
-                if (MC.getConnection() != null) {
-                    for (var info : MC.getConnection().getOnlinePlayers()) {
-                        sb.suggest(info.getProfile().name());
-                    }
-                }
-                return sb.buildFuture();
+                return suggest(MC.getConnection().getOnlinePlayers().stream().map(info -> info.getProfile().name()), sb);
             });
             return;
         }
@@ -297,16 +202,16 @@ public class BrigadierCommandAdapter {
 
     private static void suggestIdentifiers(SuggestionsBuilder sb, CommandArgument.IdentifierArg.Target target) {
         if (target == CommandArgument.IdentifierArg.Target.ANY || target == CommandArgument.IdentifierArg.Target.ITEM) {
-            BuiltInRegistries.ITEM.keySet().forEach(id -> sb.suggest(id.toString()));
+            suggest(BuiltInRegistries.ITEM.keySet().stream().map(Identifier::toString), sb);
         }
         if (target == CommandArgument.IdentifierArg.Target.ANY || target == CommandArgument.IdentifierArg.Target.BLOCK) {
-            BuiltInRegistries.BLOCK.keySet().forEach(id -> sb.suggest(id.toString()));
+            suggest(BuiltInRegistries.BLOCK.keySet().stream().map(Identifier::toString), sb);
         }
         if (target == CommandArgument.IdentifierArg.Target.ANY || target == CommandArgument.IdentifierArg.Target.SOUND) {
-            BuiltInRegistries.SOUND_EVENT.keySet().forEach(id -> sb.suggest(id.toString()));
+            suggest(BuiltInRegistries.SOUND_EVENT.keySet().stream().map(Identifier::toString), sb);
         }
         if (target == CommandArgument.IdentifierArg.Target.ANY || target == CommandArgument.IdentifierArg.Target.PARTICLE) {
-            BuiltInRegistries.PARTICLE_TYPE.keySet().forEach(id -> sb.suggest(id.toString()));
+            suggest(BuiltInRegistries.PARTICLE_TYPE.keySet().stream().map(Identifier::toString), sb);
         }
     }
 
