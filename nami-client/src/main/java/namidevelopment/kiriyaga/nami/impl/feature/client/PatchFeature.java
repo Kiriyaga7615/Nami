@@ -4,12 +4,15 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
+import namidevelopment.kiriyaga.api.event.impl.PacketSendEvent;
 import namidevelopment.kiriyaga.api.event.impl.SprintResetEvent;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.item.ItemStack;
 
 import static namidevelopment.kiriyaga.api.NamiApi.MC;
@@ -20,6 +23,7 @@ import static namidevelopment.kiriyaga.api.NamiApi.CHAT_SERVICE;
 public class PatchFeature extends Feature {
 
     public final BoolSetting grimAttackVelocity = addSetting(new BoolSetting("GrimAttackVelocity", true));
+    //public final BoolSetting grimNoSlowDisabler = addSetting(new BoolSetting("NoSlowDisabler", false));
     public final BoolSetting slotDragDesync = addSetting(new BoolSetting("SlotDragDesync", true));
     public final BoolSetting silentSwapFix = addSetting(new BoolSetting("SilentSwapFix", true));
     public final BoolSetting setSlotDebug = addSetting(new BoolSetting("SetSlotDebug", false));

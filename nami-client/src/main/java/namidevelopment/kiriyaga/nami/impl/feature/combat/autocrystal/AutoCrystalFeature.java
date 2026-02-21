@@ -100,7 +100,7 @@ public class AutoCrystalFeature extends Feature {
     public final DoubleSetting healthBalance = addSetting(new DoubleSetting("HealthBalance", 0.20, 0.00, 1.00));
     public final DoubleSetting armorBalance = addSetting(new DoubleSetting("ArmorBalance", 0.20, 0.00, 1.00));
     public final BoolSetting antiFeetTrap = addSetting(new BoolSetting("AntiFeetTrap", true));
-    public final DoubleSetting antiFeetTrapFactor = addSetting(new DoubleSetting("Factor", 0.80, 0.5, 1.00));
+    public final DoubleSetting antiFeetTrapFactor = addSetting(new DoubleSetting("Factor", 0.55, 0.3, 0.7));
     public final BoolSetting ignoreTerrain = addSetting(new BoolSetting("IgnoreTerrain","IgnoreTerrain", true));
 
     //render
@@ -334,7 +334,7 @@ public class AutoCrystalFeature extends Feature {
     private BreakTarget bestCrystal() {
         BreakTarget best = null;
 
-        for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.END_CRYSTALS, 10)) {
+        for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.END_CRYSTALS, 12)) {
             if (!(e instanceof EndCrystal crystal)) continue;
 
             if (e.tickCount < breakAge.get()) continue;
@@ -345,14 +345,10 @@ public class AutoCrystalFeature extends Feature {
                 continue;
 
             //   if (MC.player.distanceToSqr(crystal) > 10 * 10) continue;
+            Vec3 eyePos = MC.player.getEyePosition();
+            if (eyePos.distanceTo(getClampClosestPoint(MC.player.getEyePosition(), crystal.getBoundingBox())) > breakRange.get())
+                continue;
 
-            Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), crystal.getBoundingBox());
-            float yaw = (float) getYRotToVec(MC.player, pos);
-            float pitch = (float) getXRotToVec(MC.player, pos);
-            EntityHitResult perfect = raycastTarget(MC.player, crystal, breakRange.get(), yaw, pitch);
-            boolean insideBox = crystal.getBoundingBox().contains(MC.player.getEyePosition());
-
-            if (!insideBox && perfect == null) continue;
 
             float totalDamage = calculateDamage(crystal.position());
             if (totalDamage <= -0.9f)
