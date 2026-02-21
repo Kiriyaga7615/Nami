@@ -30,7 +30,7 @@ public class DamageUtils {
 
     public static final BlockRaycastProvider BLOCK_CHECK = (ctx, pos) -> {
         BlockState state = MC.level.getBlockState(pos);
-        if (state.getBlock().getExplosionResistance() < 600) return null;
+        if (!state.isSolid()) return null;
         return state.getCollisionShape(MC.level, pos).clip(ctx.start(), ctx.end(), pos);
     };
 
@@ -59,12 +59,10 @@ public class DamageUtils {
     }
 
     private static float computeExplosionDamage(LivingEntity target, Vec3 targetPos, AABB targetBox, Vec3 explosionPos, float strength, BlockRaycastProvider raycastProvider, boolean assumeBestArmor) {
-        Vec3 lookDir = getClosestPointToEye(explosionPos, target.getBoundingBox()).subtract(explosionPos).normalize();
-        Vec3 rayEnd = explosionPos.add(lookDir.scale(strength));
-
-        if (target.getBoundingBox().clip(explosionPos, rayEnd).isEmpty()) return 0f;
-
         double distance = targetPos.distanceTo(explosionPos);
+
+        if (distance > strength) return 0f;
+
         double exposure = calculateExposure(explosionPos, targetBox, raycastProvider);
         double impact = (1 - (distance / strength)) * exposure;
         float baseDamage = (float) ((impact * impact + impact) / 2 * 7 * 12 + 1);
