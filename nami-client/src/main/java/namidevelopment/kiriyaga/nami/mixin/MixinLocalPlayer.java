@@ -62,23 +62,20 @@ public abstract class MixinLocalPlayer {
         }
     }
 
-    @Inject(method = "modifyInput", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec2;scale(F)Lnet/minecraft/world/phys/Vec2;", ordinal = 1), cancellable = true)    private void onApplyMovementSpeedFactors(Vec2 vec2f, CallbackInfoReturnable<Vec2> cir) {
-        LivingEntity self = (LivingEntity)(Object)this;
+    // VFP has weird @Redirect in modifyInput so we can do no slow down only like this
+    @Inject(method = "itemUseSpeedMultiplier", at = @At("HEAD"), cancellable = true)
+    private void onItemUseSpeedMultiplier(CallbackInfoReturnable<Float> cir) {
+        LocalPlayer player = (LocalPlayer)(Object)this;
 
-        if (self instanceof Player player && player.isUsingItem() && !player.isPassenger()) {
-            ItemUseSlowEvent event = new ItemUseSlowEvent(player, player.getUseItem());
-            EVENT_SERVICE.post(event);
+        if (!player.isUsingItem())
+            return;
 
-            if (event.isCancelled()) {
-                Vec2 vec2f2 = vec2f.scale(0.98F);
-                cir.setReturnValue(modifyInputSpeedForSquareMovement(vec2f2));
-            }
+        ItemUseSlowEvent event = new ItemUseSlowEvent(player, player.getUseItem());
+
+        EVENT_SERVICE.post(event);
+        if (event.isCancelled()) {
+            cir.setReturnValue(1.0F);
         }
-    }
-
-    @Shadow
-    private static Vec2 modifyInputSpeedForSquareMovement(Vec2 vec2f) {
-        throw new AssertionError();
     }
 
     @Inject(method = "isMovingSlowly", at = @At("HEAD"), cancellable = true)
