@@ -308,10 +308,6 @@ public class HudEditorScreen extends NamiScreen {
 
     @Override
     public boolean keyPressed(KeyEvent keyInput) {
-        if (keyInput.input() == 256) {
-            this.onClose();
-            return true;
-        }
         int keyCode = keyInput.input();
         for (FeatureCategory category : categoryPanels.keySet()) {
             CategoryPanel panel = categoryPanels.get(category);

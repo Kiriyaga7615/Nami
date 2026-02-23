@@ -8,7 +8,6 @@ package namidevelopment.kiriyaga.api.core.rotation;
  *     <li>{@link RotationStateHandler} — Stores current state of rotations, read docs;</li>
  *     <li>{@link RotationRequestHandler} — as-is request handler;</li>
  *     <li>{@link RotationTickHandler} — rotation intorpolation, movement fix.</li>
- *     <li>{@link RotationRenderHandler} — rotation render.</li>
  * </ul>
  *
  * How it works:

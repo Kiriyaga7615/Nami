@@ -10,7 +10,6 @@ import namidevelopment.kiriyaga.nami.impl.feature.client.RotationsFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.core.rotation.model.RotationRequest;
-import namidevelopment.kiriyaga.api.util.InputCache;
 import net.minecraft.util.Mth;
 
 import static namidevelopment.kiriyaga.nami.Nami.*;
@@ -44,7 +43,7 @@ public class SpeedFeature extends Feature {
         this.addDisplayInfo(mode.get().toString());
 
         if (mode.get() == Mode.ROTATION && isMoving()) {
-            float yaw = getYaw();
+            float yaw = INPUT_SERVICE.getClientHandler().getDirection();
             float pitch = MC.player.getXRot();
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(SpeedFeature.class.getName(), 1, yaw, pitch, RotationsFeature.RotationMode.MOTION));
         }
@@ -55,31 +54,5 @@ public class SpeedFeature extends Feature {
                 MC.options.keyDown.isDown() ||
                 MC.options.keyLeft.isDown() ||
                 MC.options.keyRight.isDown();
-    }
-
-    private float getYaw() {
-        float realYaw = MC.player.getYRot();
-
-        boolean forward = InputCache.forward;
-        boolean back = InputCache.back;
-        boolean left = InputCache.left;
-        boolean right = InputCache.right;
-
-        int inputX = (right ? 1 : 0) - (left ? 1 : 0);
-        int inputZ = (forward ? 1 : 0) - (back ? 1 : 0);
-
-        if (inputX == 0 && inputZ == 0) return realYaw;
-
-        if (inputZ > 0) return realYaw;
-
-        if (inputZ < 0) return Mth.wrapDegrees(realYaw + 180);
-
-        if (inputX != 0 && inputZ == 0) return Mth.wrapDegrees(realYaw + (inputX > 0 ? 90 : -90));
-
-        if (inputZ > 0 && inputX != 0) return realYaw;
-
-        if (inputZ < 0 && inputX != 0) return Mth.wrapDegrees(realYaw + 180);
-
-        return realYaw;
     }
 }

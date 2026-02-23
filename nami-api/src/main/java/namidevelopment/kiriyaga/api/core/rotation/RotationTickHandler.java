@@ -6,7 +6,6 @@ import namidevelopment.kiriyaga.api.core.rotation.model.RotationRequest;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
-import namidevelopment.kiriyaga.api.util.InputCache;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.util.Mth;
 
@@ -59,35 +58,27 @@ public class RotationTickHandler {
 
         if (rotationsFeatureConfig.isMoveFixEnabled() && stateHandler.isRotating())
             fixMovementForSpoof();
+        else
+            INPUT_SERVICE.getClientHandler().clearOverride("movefix");
     }
 
     private void fixMovementForSpoof() {
-        if (MC.player == null || INPUT_SERVICE.isFrozen()) return;
+        if (MC.player == null) return;
 
         float realYRot = MC.player.getYRot();
         float spoofYRot = stateHandler.getRotationYRot();
         float delta = Mth.wrapDegrees(realYRot - spoofYRot);
 
         // theese are tick thread and render thread
-        boolean forward = INPUT_SERVICE.isForwardPressed();
-        boolean back = INPUT_SERVICE.isBackPressed();
-        boolean left = INPUT_SERVICE.isLeftPressed();
-        boolean right = INPUT_SERVICE.isRightPressed();
-
-        InputCache.update(
-                forward,
-                back,
-                left,
-                right
-        );
+        boolean forward = INPUT_SERVICE.getInputCache().forward();
+        boolean back = INPUT_SERVICE.getInputCache().back();
+        boolean left = INPUT_SERVICE.getInputCache().left();
+        boolean right = INPUT_SERVICE.getInputCache().right();
 
         float inputX = (right ? 1 : 0) - (left ? 1 : 0);
         float inputZ = (forward ? 1 : 0) - (back ? 1 : 0);
 
-        MC.options.keyUp.setDown(false);
-        MC.options.keyDown.setDown(false);
-        MC.options.keyLeft.setDown(false);
-        MC.options.keyRight.setDown(false);
+        INPUT_SERVICE.getClientHandler().overrideMovement("movefix",false, false, false, false);
 
         if (inputX == 0 && inputZ == 0) return;
 
@@ -96,16 +87,39 @@ public class RotationTickHandler {
         int sector = (int) Math.round(finalAngle / 45.0) & 7;
 
         // i hate myself its 02:28
-        switch (sector) {
-            case 0: MC.options.keyUp.setDown(true); break;
-            case 1: MC.options.keyUp.setDown(true); MC.options.keyRight.setDown(true); break;
-            case 2: MC.options.keyRight.setDown(true); break;
-            case 3: MC.options.keyDown.setDown(true); MC.options.keyRight.setDown(true); break;
-            case 4: MC.options.keyDown.setDown(true); break;
-            case 5: MC.options.keyDown.setDown(true); MC.options.keyLeft.setDown(true); break;
-            case 6: MC.options.keyLeft.setDown(true); break;
-            case 7: MC.options.keyUp.setDown(true); MC.options.keyLeft.setDown(true); break;
+        boolean f = false, b = false, l = false, r = false;
+
+        switch (sector & 7) {
+            case 0 -> {
+                f = true;
+            }
+            case 1 -> {
+                f = true;
+                r = true;
+            }
+            case 2 -> {
+                r = true;
+            }
+            case 3 -> {
+                b = true;
+                r = true;
+            }
+            case 4 -> {
+                b = true;
+            }
+            case 5 -> {
+                b = true;
+                l = true;
+            }
+            case 6 -> {
+                l = true;
+            }
+            case 7 -> {
+                f = true;
+                l = true;
+            }
         }
+        INPUT_SERVICE.getClientHandler().overrideMovement("movefix", f, b, l, r);
     }
 
     private void processRequest(RotationRequest request) {

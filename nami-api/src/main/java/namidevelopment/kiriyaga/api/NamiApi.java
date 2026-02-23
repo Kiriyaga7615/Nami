@@ -7,6 +7,7 @@ import namidevelopment.kiriyaga.api.core.command.CommandService;
 import namidevelopment.kiriyaga.api.core.config.ConfigService;
 import namidevelopment.kiriyaga.api.core.feature.FeatureService;
 import namidevelopment.kiriyaga.api.core.font.FontService;
+import namidevelopment.kiriyaga.api.core.input.InputService;
 import namidevelopment.kiriyaga.api.core.inventory.InventoryService;
 import namidevelopment.kiriyaga.api.core.macro.MacroService;
 import namidevelopment.kiriyaga.api.core.rotation.RotationService;
