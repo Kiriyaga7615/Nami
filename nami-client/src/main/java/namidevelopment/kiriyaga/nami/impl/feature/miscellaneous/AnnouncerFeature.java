@@ -40,11 +40,12 @@ public class AnnouncerFeature extends Feature {
 
     public AnnouncerFeature() {
         super("Announcer", "Announces in chat when a certain action happened.", FeatureCategory.of("Miscellaneous"), "joinannounce", "joins", "announce", "visualrange");
-        soundMode.setShowCondition(visualRange::get);
         joinEveryone.setShowCondition(joinAnnounce::get);
         joinFriends.setShowCondition(joinAnnounce::get);
+        joinEnemy.setShowCondition(joinAnnounce::get);
         rangeEveryone.setShowCondition(visualRange::get);
         rangeFriends.setShowCondition(visualRange::get);
+        soundMode.setShowCondition(visualRange::get);
         selfPop.setShowCondition(totemPopCounter::get);
         friendsPop.setShowCondition(totemPopCounter::get);
         othersPop.setShowCondition(totemPopCounter::get);
