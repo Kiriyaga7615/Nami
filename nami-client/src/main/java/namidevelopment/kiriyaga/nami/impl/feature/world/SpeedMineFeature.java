@@ -70,6 +70,7 @@ public class SpeedMineFeature extends Feature {
     public BlockBreakingTask doubleMineTask;
 
     private final Timer instantRemineTimer = new Timer();
+    private final Timer instantRemineResetTimer = new Timer();
 
     private int i = -1;
 
@@ -129,6 +130,7 @@ public class SpeedMineFeature extends Feature {
 
         currentTask = new BlockBreakingTask(event.blockPos, event.direction, speed.get().floatValue());
         instantRemineTimer.reset();
+        instantRemineResetTimer.reset();
         startMining(currentTask);
 
 /*        float damageDelta = calculateBlockDamage(currentTask.getStartState(), MC.level, currentTask.getBlockPos());
@@ -299,7 +301,13 @@ public class SpeedMineFeature extends Feature {
             }
         }
 
+        if (task.brokenCount != task.lastBrokenCount)
+            instantRemineResetTimer.reset();
+
         if (task.isInstantRemine() && !instantRemineTimer.hasElapsed(instantDelay.get()))
+            return;
+
+        if (task.isInstantRemine() && task.getBlockState().isAir() && instantRemineResetTimer.hasElapsed(250))
             return;
 
         Vec3 eyePos = MC.player.getEyePosition();
@@ -333,6 +341,8 @@ public class SpeedMineFeature extends Feature {
 
         if (task.isInstantRemine())
             instantRemineTimer.reset();
+
+        //CHAT_SERVICE.sendPersistent("1", "count: "+task.brokenCount);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)

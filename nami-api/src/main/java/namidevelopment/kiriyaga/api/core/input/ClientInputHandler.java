@@ -37,6 +37,8 @@ public class ClientInputHandler {
         this.back = back;
         this.left = left;
         this.right = right;
+        this.jump = cache.jump();
+        this.shift = cache.shift();
     }
 
     public void overrideEverything(String owner, boolean forward, boolean back, boolean left, boolean right, boolean jump, boolean shift) {
