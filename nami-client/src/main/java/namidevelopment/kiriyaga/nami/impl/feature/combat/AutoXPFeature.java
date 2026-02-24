@@ -36,8 +36,6 @@ public class AutoXPFeature extends Feature {
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", false));
     public final BoolSetting packet = addSetting(new BoolSetting("Packet", false));
     public final IntSetting packetShift = addSetting(new IntSetting("ShiftTicks", 2, 1, 6));
-    public final BoolSetting whenNoTarget = addSetting(new BoolSetting("NoTarget", false));
-    public final BoolSetting onlyPhased = addSetting(new BoolSetting("OnlyPhased", false));
     public final BoolSetting selfToggle = addSetting(new BoolSetting("SelfToggle", true));
     public final EnumSetting<SwapMode> swapMode = addSetting(new EnumSetting<>("Swap", SwapMode.SILENT));
     public final BoolSetting is1_12 = addSetting(new BoolSetting("1.12", false));
@@ -57,16 +55,9 @@ public class AutoXPFeature extends Feature {
             return;
         }
 
-        if (whenNoTarget.get() && TargetUtils.getTarget() != null) {
+        if (MC.player.isFallFlying()) {
             if (selfToggle.get())
                 toggle();
-            return;
-        }
-
-        if (onlyPhased.get() && !isPhased(MC.player)) {
-            if (selfToggle.get())
-                toggle();
-
             return;
         }
 
@@ -96,8 +87,6 @@ public class AutoXPFeature extends Feature {
 
             if (!ROTATION_SERVICE.getRequestHandler().isCompleted(this.name)) return;
         }
-
-        int prevSlot = MC.player.getInventory().getSelectedSlot();
 
         switch (swapMode.get()) {
             case NORMAL -> {
