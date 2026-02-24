@@ -26,6 +26,9 @@ public class KeyBindService {
         int key = event.getKey();
         boolean handled = false;
 
+        if (key == -1)
+            return;
+
         if (event.isPress()) {
             pressedKeys.add(key);
             handled = handlePress(key);
@@ -44,8 +47,12 @@ public class KeyBindService {
     public void onMouseHandler(MouseHandlerEvent event) {
         if (MC.screen != null)
             return;
+
         int key = event.getButton();
         boolean handled = false;
+
+        if (key == -1)
+            return;
 
         if (event.isPress()) {
             pressedKeys.add(key);
