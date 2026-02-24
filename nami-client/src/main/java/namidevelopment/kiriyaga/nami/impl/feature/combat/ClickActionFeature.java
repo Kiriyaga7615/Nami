@@ -45,7 +45,6 @@ public class ClickActionFeature extends Feature {
 
     @Override
     public void onEnable() {
-        useKey.setWasPressedLastTick(false);
         recall = false;
     }
 
@@ -53,14 +52,9 @@ public class ClickActionFeature extends Feature {
     private void onTick(PreTickEvent ev) {
         if (MC.level == null || MC.player == null) return;
 
-        boolean pressed = useKey.isPressed();
-        if (groundAction.get() == GroundAction.EXP && pressed && !MC.player.isFallFlying()) {
-            use();
-            useKey.setWasPressedLastTick(pressed);
-            return;
-        }
+        boolean pressed = KEYBIND_SERVICE.isPressedToggle(useKey);
 
-        if (pressed && !useKey.wasPressedLastTick() || recall) {
+        if (pressed || recall) {
             recall = false;
             if (MC.player.isFallFlying()) {
                 useGlide();
@@ -68,8 +62,6 @@ public class ClickActionFeature extends Feature {
                 use();
             }
         }
-
-        useKey.setWasPressedLastTick(pressed);
     }
 
     private void use() {

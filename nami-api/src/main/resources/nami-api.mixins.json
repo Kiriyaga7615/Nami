@@ -9,8 +9,10 @@
     "DuckMultiPlayerGameMode",
     "MixinClientPacketListener",
     "MixinCommandSuggestions",
+    "MixinKeyboardHandler",
     "MixinLocalPlayer",
     "MixinMinecraft",
+    "MixinMouseHandler",
     "MixinMultiPlayerGameMode"
   ],
   "injectors": {

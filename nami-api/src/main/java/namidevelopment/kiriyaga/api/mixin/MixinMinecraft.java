@@ -23,52 +23,6 @@ import namidevelopment.kiriyaga.api.model.feature.Feature;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 @Mixin(Minecraft.class)
 public abstract class MixinMinecraft {
-    @Shadow @Nullable public LocalPlayer player;
-    @Shadow public ClientLevel level;
-
-    @Inject(method = "handleKeybinds", at = @At("TAIL"))
-    private void onHandleInputEvents_TAIL(CallbackInfo ci) {
-        if (MC == null || MC.mouseHandler == null || MC.screen != null) return;
-
-        for (Feature Feature : FEATURE_SERVICE.getStorage().getAll()) {
-            if (Feature == null) continue;
-            KeyBindSetting bind = Feature.getKeyBind();
-            if (bind == null) continue;
-
-            if (bind.get() != KeyBindSetting.KEY_NONE) {
-                boolean currentlyPressed = bind.isPressed();
-
-                if (bind.isHoldMode()) {
-                    if (currentlyPressed && !Feature.isEnabled()) {
-                        Feature.setEnabled(true);
-                    } else if (!currentlyPressed && Feature.isEnabled()) {
-                        Feature.setEnabled(false);
-                    }
-                } else {
-                    if (currentlyPressed && !bind.wasPressedLastTick()) {
-                        Feature.toggle();
-                    }
-                }
-
-                bind.setWasPressedLastTick(currentlyPressed);
-            }
-        }
-
-        for (Macro macro : MACRO_SERVICE.getAll()) {
-            int keyCode = macro.getKeyCode();
-            boolean currentlyPressed = MACRO_SERVICE.isKeyPressed(keyCode);
-            boolean wasPressed = MACRO_SERVICE.wasKeyPressedLastTick(keyCode);
-
-            if (currentlyPressed && !wasPressed) {
-                if (MC.player != null) {
-                    MC.player.connection.sendChat(macro.getMessage());
-                }
-            }
-
-            MACRO_SERVICE.setKeyPressedLastTick(keyCode, currentlyPressed);
-        }
-    }
-
     @ModifyArg(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;logFrameDuration(J)V"),index = 0)
     private long runTick(long frameDurationNs) {
         SERVER_SERVICE.setLastFrameDurationNs(frameDurationNs);

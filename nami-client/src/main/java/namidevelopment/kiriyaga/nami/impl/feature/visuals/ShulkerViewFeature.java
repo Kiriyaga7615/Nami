@@ -109,7 +109,7 @@ public class ShulkerViewFeature extends Feature {
 
     private void renderSingle(RenderTooltipEvent event) {
         ItemStack hovered = event.hoveredStack();
-        boolean freezePressed = freezeKey.isPressed();
+        boolean freezePressed = KEYBIND_SERVICE.isPressed(freezeKey);
 
         if ((hovered == null || hovered.isEmpty()) && !frozen) return;
         if (!freezePressed) {

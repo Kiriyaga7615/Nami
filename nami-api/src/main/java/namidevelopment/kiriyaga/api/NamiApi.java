@@ -51,6 +51,7 @@ public class NamiApi implements ClientModInitializer {
     public static final PluginService PLUGIN_SERVICE = new PluginService();
     public static final BreakPredictionService BREAKPREDICT_SERVICE = new BreakPredictionService();
     public static final TotemCounterService TOTEMCOUNTER_SERVICE = new TotemCounterService();
+    public static final KeyBindService KEYBIND_SERVICE = new KeyBindService();
 
     public static NamiFormatService CAT_FORMAT = new NamiFormatService();
 
@@ -66,8 +67,10 @@ public class NamiApi implements ClientModInitializer {
         SERVER_SERVICE.init();
         CHAT_SERVICE.init();
         INPUT_SERVICE.init();
+        KEYBIND_SERVICE.init();
         BREAKPREDICT_SERVICE.init();
         TOTEMCOUNTER_SERVICE.init();
+
 
         CAT_FORMAT.add(new CatStyles());
 

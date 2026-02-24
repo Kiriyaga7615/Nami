@@ -23,7 +23,7 @@ public class ClickGuiFeature extends Feature {
 
     public ClickGuiFeature() {
         super("ClickGui", "Opens client UI.", FeatureCategory.of("Client"), "clickgui","click", "gui", "menu", "clckgui");
-        this.keyBind.setDefaultKey(80);
+        this.keyBind.set(80);
     }
 
     @Override
