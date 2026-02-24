@@ -59,6 +59,7 @@
     "MixinClientboundSetEntityMotionPacket",
     "MixinConnection",
     "MixinEntity",
+    "MixinItemCooldowns",
     "MixinLivingEntity",
     "MixinPlayer",
     "MixinServerboundInteractPacket",

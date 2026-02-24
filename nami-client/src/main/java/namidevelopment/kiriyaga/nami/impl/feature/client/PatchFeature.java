@@ -9,6 +9,7 @@ import namidevelopment.kiriyaga.api.event.impl.SprintResetEvent;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
+import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
@@ -22,11 +23,14 @@ import static namidevelopment.kiriyaga.api.NamiApi.CHAT_SERVICE;
 @RegisterFeature
 public class PatchFeature extends Feature {
 
-    public final BoolSetting grimAttackVelocity = addSetting(new BoolSetting("GrimAttackVelocity", true));
+    public enum TPSCooldownSync {DISABLED, LAST, AVERAGE}
+
+    public final BoolSetting grimAttackVelocity = addSetting(new BoolSetting("GrimAttackVelocity", false));
     //public final BoolSetting grimNoSlowDisabler = addSetting(new BoolSetting("NoSlowDisabler", false));
-    public final BoolSetting slotDragDesync = addSetting(new BoolSetting("SlotDragDesync", true));
-    public final BoolSetting silentSwapFix = addSetting(new BoolSetting("SilentSwapFix", true));
+    public final BoolSetting slotDragDesync = addSetting(new BoolSetting("SlotDragDesync", false));
+    public final BoolSetting silentSwapFix = addSetting(new BoolSetting("SilentSwapFix", false));
     public final BoolSetting setSlotDebug = addSetting(new BoolSetting("SetSlotDebug", false));
+    public final EnumSetting<TPSCooldownSync> tpsCooldownSync = addSetting(new EnumSetting<>("TPSCooldownSync", TPSCooldownSync.DISABLED));
 
     public PatchFeature() {
         super("Patch", "Any kind of hotfixes you should apply based on what server and ac u on.", FeatureCategory.of("Client"));
