@@ -42,18 +42,12 @@ public abstract class MixinConnection {
         }
     }
 
-    @Inject(method = "doSendPacket", at = @At("HEAD"), cancellable = true)
-    private void onDoSendPacket(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
+    @Inject(method = "sendPacket", at = @At("HEAD"), cancellable = true)
+    private void onPacketSend(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
         PacketSendEvent event = new PacketSendEvent(packet);
         EVENT_SERVICE.post(event);
         if (event.isCancelled()) {
             ci.cancel();
-            return;
-        }
-
-        if (event.getPacket() != packet) { // uhhh
-            ci.cancel();
-            ((DuckConnection) this).doSendPacket(event.getPacket(), listener, flush);
         }
     }
 
