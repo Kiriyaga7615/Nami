@@ -55,6 +55,7 @@
     "DuckClientboundExplodePacket",
     "DuckClientboundPlayerPositionPacket",
     "DuckClientboundSetEntityMotionPacket",
+    "DuckConnection",
     "DuckServerboundMovePlayerPacket",
     "MixinClientboundSetEntityMotionPacket",
     "MixinConnection",
