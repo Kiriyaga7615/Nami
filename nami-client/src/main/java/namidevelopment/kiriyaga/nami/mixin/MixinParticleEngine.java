@@ -14,21 +14,11 @@ import static namidevelopment.kiriyaga.api.NamiApi.EVENT_SERVICE;
 @Mixin(ParticleEngine.class)
 public abstract class MixinParticleEngine {
 
-    @Inject(method = "createParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)Lnet/minecraft/client/particle/Particle;", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "createParticle(Lnet/minecraft/core/particles/ParticleOptions;DDDDDD)Lnet/minecraft/client/particle/Particle;", at = @At("HEAD"), cancellable = true)
     private void onAddParticle(ParticleOptions particleOptions, double x, double y, double z, double vx, double vy, double vz, CallbackInfoReturnable<Particle> cir) {
-
-        Particle particle = cir.getReturnValue();
         ParticleEvent event = new ParticleEvent(particleOptions);
         EVENT_SERVICE.post(event);
-
-        if (event.isCancelled()) {
+        if (event.isCancelled())
             cir.setReturnValue(null);
-            return;
-        }
-
-        if (particle == null)
-            return;
-
-        cir.setReturnValue(particle);
     }
 }
