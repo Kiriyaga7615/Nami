@@ -13,19 +13,21 @@ import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
 import namidevelopment.kiriyaga.api.util.entity.PlayerUtils;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
-import static namidevelopment.kiriyaga.nami.Nami.*;
-import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isItemAWeapon;
 
 @RegisterFeature
 public class AutoTotemFeature extends Feature {
@@ -35,7 +37,7 @@ public class AutoTotemFeature extends Feature {
     public final IntSetting health = addSetting(new IntSetting("Health", 12, 2, 36));
     public final BoolSetting offhandOverride = addSetting(new BoolSetting("Override", false));
     public final EnumSetting<Offhand> overrideItem = addSetting(new EnumSetting<>("Item", Offhand.TOTEM));
-    public final BoolSetting swordGap = addSetting(new BoolSetting("SwordGap", true));
+    public final BoolSetting gapOverride = addSetting(new BoolSetting("GapOverride", true));
     public final BoolSetting fastSwap = addSetting(new BoolSetting("Alternative", true));
     public final BoolSetting mainhand = addSetting(new BoolSetting("Mainhand", false));
     public final BoolSetting mainhandGapple = addSetting(new BoolSetting("MainhandGapple", false));
@@ -53,7 +55,7 @@ public class AutoTotemFeature extends Feature {
         super("AutoTotem", "Automatically places totem in your hand.", FeatureCategory.of("Combat"), "autototem");
         mainhandSlot.setShowCondition(mainhand::get);
         overrideItem.setShowCondition(offhandOverride::get);
-        swordGap.setShowCondition(offhandOverride::get);
+        gapOverride.setShowCondition(offhandOverride::get);
         mainhandGapple.setShowCondition(mainhand::get);
     }
 
@@ -168,9 +170,21 @@ public class AutoTotemFeature extends Feature {
         Offhand type = overrideItem.get();
         LocalPlayer player = MC.player;
 
-        if (swordGap.get() && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get() && isItemAWeapon(MC.player.getInventory().getSelectedItem()) && MC.options.keyUse.isDown())
-            return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
+        if (gapOverride.get() && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get() && MC.options.keyUse.isDown()) {
 
+            if (MC.hitResult instanceof BlockHitResult blockHit) {
+                BlockPos pos = blockHit.getBlockPos();
+                BlockState state = MC.level.getBlockState(pos);
+
+                InteractionResult result = state.useWithoutItem(MC.level, MC.player, blockHit);
+
+                if (result.consumesAction()) {
+                    return null;
+                }
+            }
+
+            return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
+        }
         switch (type) {
             case TOTEM:
                 return new ItemStack(Items.TOTEM_OF_UNDYING);
