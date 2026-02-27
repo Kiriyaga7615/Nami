@@ -15,6 +15,7 @@ import namidevelopment.kiriyaga.api.util.entity.PlayerUtils;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -171,6 +172,10 @@ public class AutoTotemFeature extends Feature {
         LocalPlayer player = MC.player;
 
         if (gapOverride.get() && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get() && MC.options.keyUse.isDown()) {
+
+            if (!MC.player.getInventory().getSelectedItem().isEmpty() && MC.player.getInventory().getSelectedItem().getUseAnimation() != ItemUseAnimation.NONE) {
+                return null;
+            }
 
             if (MC.hitResult instanceof BlockHitResult blockHit) {
                 BlockPos pos = blockHit.getBlockPos();
