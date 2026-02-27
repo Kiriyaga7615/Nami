@@ -33,8 +33,11 @@ public class PotCounterHudFeature extends HudElementFeature {
         }
         int count = getPots();
         int seconds = getDuration();
-        String timeColor = ColorUtils.getHealthColor(MC.player);
-        String formatted = "{global}" + (count == 0 ? " " : count) + "  " + timeColor + (seconds == 0 ? " " : seconds);
+
+        String countColor = getCountColor(count);
+        String timeColor = getTimeColor(seconds);
+
+        String formatted = countColor + (count == 0 ? " " : count) + "  " + timeColor + (seconds == 0 ? " " : seconds);
 
         width = FONT_SERVICE.getWidth(formatted.replaceAll("\\{.*?}", ""));
         height = FONT_SERVICE.getHeight();
@@ -67,5 +70,23 @@ public class PotCounterHudFeature extends HudElementFeature {
         MobEffectInstance instance = MC.player.getEffect(target);
         if (instance == null) return 0;
         return instance.getDuration() / 20;
+    }
+
+    private String getCountColor(int count) {
+        if (count >= 8) return "{green}";
+        if (count >= 5) return "{yellow}";
+        if (count >= 3) return "{gold}";
+        if (count >= 1) return "{red}";
+        return "{dark_red}";
+    }
+
+    private String getTimeColor(int seconds) {
+        int clamped = Math.min(seconds, 60);
+
+        if (clamped >= 50) return "{green}";
+        if (clamped >= 35) return "{yellow}";
+        if (clamped >= 20) return "{gold}";
+        if (clamped >= 10) return "{red}";
+        return "{dark_red}";
     }
 }
