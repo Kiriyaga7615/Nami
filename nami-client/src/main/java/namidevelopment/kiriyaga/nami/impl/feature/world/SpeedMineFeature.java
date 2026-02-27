@@ -7,7 +7,6 @@ import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
 import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.event.impl.Render3DEvent;
 import namidevelopment.kiriyaga.api.event.impl.StartBreakingBlockEvent;
-import namidevelopment.kiriyaga.api.mixininterface.IClientPlayerInteractionManager;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
@@ -19,7 +18,6 @@ import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
 import namidevelopment.kiriyaga.api.util.Timer;
 import namidevelopment.kiriyaga.api.util.render.RenderUtil;
 import namidevelopment.kiriyaga.nami.impl.feature.combat.AutoTotemFeature;
-import namidevelopment.kiriyaga.nami.impl.feature.movement.SneakFeature;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -43,14 +41,14 @@ import net.minecraft.world.level.BlockGetter;
 import java.awt.*;
 
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
-import static namidevelopment.kiriyaga.nami.Nami.*;
-import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isBroken;
+import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.PacketUtils.sendSequencedPacket;
 
 @RegisterFeature
 public class SpeedMineFeature extends Feature {
     public enum Rotate { NORMAL, HOLD, NONE}
     public enum Swap { NONE, NORMAL, SILENT121, SILENT}
+    public enum is1_21Mode {OFFHAND, BOTH}
 
     public final DoubleSetting range = addSetting(new DoubleSetting("Range", 4.5, 2.0, 7.0));
     public final DoubleSetting speed = addSetting(new DoubleSetting("Speed", 1.0, 0.7, 1.0));
@@ -63,7 +61,7 @@ public class SpeedMineFeature extends Feature {
     public final BoolSetting simulate = addSetting(new BoolSetting("Simulate", true));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
     public final BoolSetting multitask = addSetting(new BoolSetting("Multitask", false));
-    public final BoolSetting allowOffhand = addSetting(new BoolSetting("AllowOffhand", false));
+    public final EnumSetting<is1_21Mode> is1_21 = addSetting(new EnumSetting<is1_21Mode>("1.21", is1_21Mode.OFFHAND));
 
 
     public BlockBreakingTask currentTask;
@@ -77,7 +75,7 @@ public class SpeedMineFeature extends Feature {
     // Thats first packet mine i made like in my whole life, its bad, and there is issues, im gonna finish it, and maybe rewrite from scratch later
     public SpeedMineFeature() {
         super("SpeedMine", "Increases speed of mining.", FeatureCategory.of("World"));
-        allowOffhand.setShowCondition(()-> !multitask.get());
+        is1_21.setShowCondition(()-> !multitask.get());
         instantDelay.setShowCondition(instant::get);
     }
 
@@ -296,7 +294,10 @@ public class SpeedMineFeature extends Feature {
     private void finishMining(BlockBreakingTask task) {
         if (!task.isStarted()) return;
         if (!multitask.get() && MC.player.isUsingItem()) {
-            if (!(allowOffhand.get() && MC.player.getUsedItemHand() == InteractionHand.OFF_HAND)) { // yo somehow on some paper servers we can do it
+            // on 1.21 servers we can offhand and actions
+            // on 1.20 server we can offhand and alternative swap actions TODO
+            // with grim v3 item reset disabler we can offhand and mainhand with actions
+            if (is1_21.get() == is1_21Mode.OFFHAND && MC.player.getUsedItemHand() != InteractionHand.OFF_HAND) {
                 return;
             }
         }

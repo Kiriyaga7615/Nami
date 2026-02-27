@@ -173,7 +173,7 @@ public class AutoTotemFeature extends Feature {
 
         if (gapOverride.get() && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get() && MC.options.keyUse.isDown()) {
 
-            if (!MC.player.getInventory().getSelectedItem().isEmpty() && MC.player.getInventory().getSelectedItem().getUseAnimation() != ItemUseAnimation.NONE) {
+            if (!MC.player.getInventory().getSelectedItem().isEmpty() && MC.player.getInventory().getSelectedItem().getUseAnimation() != ItemUseAnimation.NONE || MC.player.getInventory().getSelectedItem().getItem() == Items.TOTEM_OF_UNDYING) {
                 return null;
             }
 
