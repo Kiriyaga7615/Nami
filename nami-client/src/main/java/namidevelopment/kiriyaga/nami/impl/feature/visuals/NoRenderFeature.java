@@ -24,7 +24,6 @@ public class NoRenderFeature extends Feature {
     public final BoolSetting noFire = addSetting(new BoolSetting("NoFire", true));
     public final BoolSetting noBackground = addSetting(new BoolSetting("NoBackground", true));
     public final BoolSetting noTotemParticle = addSetting(new BoolSetting("NoPopParticle", false));
-    public final BoolSetting noFirework = addSetting(new BoolSetting("NoFirework", false));
     public final BoolSetting noWaterParticle = addSetting(new BoolSetting("NoWaterParticle", true));
     public final BoolSetting noExplosion = addSetting(new BoolSetting("NoExplosion", true));
     public final BoolSetting noBlockBreak = addSetting(new BoolSetting("NoBreakParticle", false)); // todo this shit broke
@@ -85,9 +84,6 @@ public class NoRenderFeature extends Feature {
             ev.cancel();
 
         if (noTotemParticle.get() && ev.getParticle().getType() == ParticleTypes.TOTEM_OF_UNDYING)
-            ev.cancel();
-
-        if (noFirework.get() && ev.getParticle().getType() == ParticleTypes.FIREWORK)
             ev.cancel();
 
         if (noWaterParticle.get() && (ev.getParticle().getType() == ParticleTypes.RAIN || ev.getParticle().getType() == ParticleTypes.DRIPPING_DRIPSTONE_WATER || ev.getParticle().getType() == ParticleTypes.DRIPPING_WATER || ev.getParticle().getType() == ParticleTypes.FALLING_DRIPSTONE_WATER || ev.getParticle().getType() == ParticleTypes.FALLING_WATER))
