@@ -6,24 +6,23 @@ plugins {
 }
 
 repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/NamiDevelopment/nami")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-
     maven { url = "https://maven.fabricmc.net/" }
-
     maven { url = "https://repo.spongepowered.org/maven" }
 
     mavenCentral()
-
 }
 
 loom {
     accessWidenerPath = file("src/main/resources/META-INF/nami.accesswidener")
+
+    mods {
+        "nami-api" {
+            sourceSet project(":nami-api").sourceSets.main
+        }
+        "nami-client" {
+            sourceSet sourceSets.main
+        }
+    }
 }
 
 processResources {
@@ -42,7 +41,6 @@ processResources {
 
 group = project.maven_group
 version = project.mod_version
-def namiApiVersion = project.nami_api
 
 tasks.register("printVersion") {
     doLast {
@@ -56,9 +54,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-
-    modImplementation "namidevelopment.kiriyaga:nami-api:${namiApiVersion}"
-    include "namidevelopment.kiriyaga:nami-api:${namiApiVersion}"
+    include implementation(project(path: ":nami-api", configuration: "namedElements"))
 }
 
 java {
