@@ -8,6 +8,7 @@ import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.event.impl.Render3DEvent;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
+import namidevelopment.kiriyaga.api.util.GrimUtils;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ColorFeature;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.client.RotationsFeature;
@@ -54,6 +55,7 @@ public class AuraFeature extends Feature {
     public enum Swap { NONE, REQUIRE, NORMAL, SILENT }
 
     public final DoubleSetting attackRange = addSetting(new DoubleSetting("Range", 3.00, 1.0, 6.0));
+    public final BoolSetting stanceAbuse = addSetting(new BoolSetting("StanceAbuse", false));
     public final DoubleSetting delay = addSetting(new DoubleSetting("Delay", 0.92, 0.00, 1.00));
     public final EnumSetting<Swap> swap = addSetting(new EnumSetting<>("Swap", Swap.REQUIRE));
     public final EnumSetting<TpsMode> tpsMode = addSetting(new EnumSetting<>("TPS", TpsMode.AVERAGE));
@@ -64,7 +66,6 @@ public class AuraFeature extends Feature {
     public final BoolSetting render = addSetting(new BoolSetting("Render", true));
 
     private Entity currentTarget = null;
-
     private float attackCooldownTicks = 0f;
 
     public AuraFeature() {
@@ -129,7 +130,6 @@ public class AuraFeature extends Feature {
         if (target instanceof ShulkerBullet) {
             skipCooldown = true;
         } else {
-            ItemStack held = stack;
             float attackDamage = 1.0f;
 
             if (MC.player.hasEffect(MobEffects.STRENGTH)) {
@@ -164,11 +164,28 @@ public class AuraFeature extends Feature {
             preRotate = 0.00; // rotation silent are instant and do not require pre rotate to reduce attack delay
 
         if ((skipCooldown || attackCooldownTicks <= preRotate * tps)) {
-            Vec3 eyePos = MC.player.getEyePosition(1.0f);
+            Vec3 eyePos;
+
+            if (stanceAbuse.get()) {
+                double foundDist = Double.MAX_VALUE;
+                Vec3 foundEye = MC.player.getEyePosition();
+                for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                    Vec3 closest = getClampClosestPoint(v, target.getBoundingBox());
+                    double dist = v.distanceTo(closest);
+                    if (dist < foundDist) {
+                        foundDist = dist;
+                        foundEye = v;
+                    }
+                }
+                eyePos = foundEye;
+            } else {
+                eyePos = MC.player.getEyePosition();
+            }
+
             Vec3 closestPoint = getClosestPointToEye(eyePos, target.getBoundingBox());
-            float idealYaw = (float) getYRotToVec(MC.player, closestPoint);
-            float idealPitch = (float) getXRotToVec(MC.player, closestPoint);
-            boolean insideBox = target.getBoundingBox().contains(MC.player.getEyePosition());
+            float pYRot = getYRotToVec(eyePos, closestPoint);
+            float pXRot = getXRotToVec(eyePos, closestPoint);
+            boolean insideBox = target.getBoundingBox().contains(eyePos);
 
             if (eyePos.distanceTo(getClampClosestPoint(eyePos, target.getBoundingBox())) > attackRange.get()) {
                 currentTarget = null;
@@ -178,25 +195,10 @@ public class AuraFeature extends Feature {
             boolean canAttack = rotate.get() == Rotate.NONE;
 
             if (rotate.get() != Rotate.NONE) {
-                ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(
-                        AuraFeature.class.getName(),
-                        5,
-                        idealYaw,
-                        idealPitch
-                ));
-
-                EntityHitResult serverCheck = raycastTarget(
-                        MC.player,
-                        target,
-                        attackRange.get(),
-                        ROTATION_SERVICE.getStateHandler().getServerYRot(),
-                        ROTATION_SERVICE.getStateHandler().getServerXRot()
-                );
+                ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AuraFeature.class.getName(), 6, pYRot, pXRot));
+                EntityHitResult serverCheck = raycastTarget(eyePos, target, attackRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
 
                 canAttack = serverCheck != null;
-
-                if (rotate.get() == Rotate.NONE)
-                    canAttack = true;
             }
 
             if (insideBox)
@@ -283,7 +285,6 @@ public class AuraFeature extends Feature {
         AABB box = entity.getBoundingBox().move(interpX - entity.getX(), interpY - entity.getY(), interpZ - entity.getZ());
 
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
-
     }
 
     private float getBaseCooldownTicks(ItemStack stack, float tps) {

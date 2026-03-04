@@ -122,9 +122,22 @@ public class RotationUtils {
         return (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
     }
 
-    public static EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yaw, float pitch) {
+    public static EntityHitResult raycastTarget(Vec3 eyePos, Entity target, double reach, float yRot, float xRot) {
+        Vec3 look = getLookVectorFromYRotXRot(yRot, xRot);
+        Vec3 reachEnd = eyePos.add(look.scale(reach));
+
+        AABB targetBox = target.getBoundingBox();
+
+        if (targetBox.clip(eyePos, reachEnd).isPresent()) {
+            return new EntityHitResult(target);
+        }
+
+        return null;
+    }
+
+    public static EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yRot, float xRot) {
         Vec3 eyePos = player.getEyePosition(1.0f);
-        Vec3 look = getLookVectorFromYRotXRot(yaw, pitch);
+        Vec3 look = getLookVectorFromYRotXRot(yRot, xRot);
         Vec3 reachEnd = eyePos.add(look.scale(reach));
 
         AABB targetBox = target.getBoundingBox();
