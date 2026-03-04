@@ -202,7 +202,7 @@ public class AutoCrystalFeature extends Feature {
 
         this.clearDisplayInfo();
         this.addDisplayInfo(String.format(Locale.US, "%.2f", lastTotalDamage));
-        this.addDisplayInfo(String.format(Locale.US, "%.4f", lastCalcTimeMs));
+        this.addDisplayInfo(String.format(Locale.US, "%.2f", lastCalcTimeMs) + "ms");
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
