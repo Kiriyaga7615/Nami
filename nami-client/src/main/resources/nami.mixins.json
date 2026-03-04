@@ -44,7 +44,8 @@
     "MixinParticleEngine",
     "MixinPlayerTabOverlay",
     "MixinScreen",
-    "MixinScreenEffectRenderer"
+    "MixinScreenEffectRenderer",
+    "MixinVisGraph"
   ],
   "injectors": {
     "defaultRequire": 1
