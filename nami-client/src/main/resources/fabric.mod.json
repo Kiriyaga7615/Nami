@@ -16,7 +16,8 @@
     ]
   },
   "mixins": [
-    "nami.mixins.json"
+    "nami.mixins.json",
+    "nami.mixins.sodium.json"
   ],
   "accessWidener": "META-INF/nami.accesswidener",
   "depends": {

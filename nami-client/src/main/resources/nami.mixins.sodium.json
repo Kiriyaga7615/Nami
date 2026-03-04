@@ -1,0 +1,7 @@
+{
+  "required": false,
+  "package": "namidevelopment.kiriyaga.nami.mixin.sodium",
+  "client": [
+    "SodiumWorldRendererMixin"
+  ]
+}
