@@ -168,7 +168,7 @@ public class AuraFeature extends Feature {
 
             if (stanceAbuse.get()) {
                 double foundDist = Double.MAX_VALUE;
-                Vec3 foundEye = MC.player.getEyePosition();
+                Vec3 foundEye = MC.player.getEyePosition(1.0f);
                 for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
                     Vec3 closest = getClampClosestPoint(v, target.getBoundingBox());
                     double dist = v.distanceTo(closest);
@@ -179,7 +179,7 @@ public class AuraFeature extends Feature {
                 }
                 eyePos = foundEye;
             } else {
-                eyePos = MC.player.getEyePosition();
+                eyePos = MC.player.getEyePosition(1.0f);
             }
 
             Vec3 closestPoint = getClosestPointToEye(eyePos, target.getBoundingBox());

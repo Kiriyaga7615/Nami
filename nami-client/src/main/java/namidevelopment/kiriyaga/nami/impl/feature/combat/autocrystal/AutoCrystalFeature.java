@@ -10,6 +10,7 @@ import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
+import namidevelopment.kiriyaga.api.util.GrimUtils;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ColorFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
@@ -81,6 +82,7 @@ public class AutoCrystalFeature extends Feature {
     //break
     public final BoolSetting doBreak = addSetting(new BoolSetting("Break", true));
     public final DoubleSetting breakRange = addSetting(new DoubleSetting("BreakRange","Range", 3.0, 1.0, 7.0));
+    public final BoolSetting breakStanceAbuse = addSetting(new BoolSetting("BreakStanceAbuse","StanceAbuse", false));
     public final IntSetting breakInhibit = addSetting(new IntSetting("Inhibit", 4, 1, 20));
     public final IntSetting breakDelay = addSetting(new IntSetting("BreakDelay","Delay", 0, 0, 20));
     public final BoolSetting breakRotate = addSetting(new BoolSetting("BreakRotate","Rotate", true));
@@ -137,6 +139,7 @@ public class AutoCrystalFeature extends Feature {
         breakSequential.setShowCondition(() -> doBreak.get());
         breakInhibit.setShowCondition(() -> doBreak.get());
         breakSwapSilent.setShowCondition(() -> doBreak.get() && breakAntiWeak.get());
+        breakStanceAbuse.setShowCondition(() -> doBreak.get());
 
         placeRange.setShowCondition(() -> doPlace.get());
         placeDelay.setShowCondition(() -> doPlace.get());
@@ -345,8 +348,24 @@ public class AutoCrystalFeature extends Feature {
                 continue;
 
             //   if (MC.player.distanceToSqr(crystal) > 10 * 10) continue;
-            Vec3 eyePos = MC.player.getEyePosition();
-            if (eyePos.distanceTo(getClampClosestPoint(MC.player.getEyePosition(), crystal.getBoundingBox())) > breakRange.get())
+            Vec3 eyePos;
+            if (breakStanceAbuse.get()) {
+                double foundDist = Double.MAX_VALUE;
+                Vec3 foundEye = MC.player.getEyePosition(1.0f);
+                for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                    Vec3 closest = getClampClosestPoint(v, crystal.getBoundingBox());
+                    double dist = v.distanceTo(closest);
+                    if (dist < foundDist) {
+                        foundDist = dist;
+                        foundEye = v;
+                    }
+                }
+                eyePos = foundEye;
+            } else {
+                eyePos = MC.player.getEyePosition(1.0f);
+            }
+
+            if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystal.getBoundingBox())) > breakRange.get())
                 continue;
 
 
@@ -368,9 +387,25 @@ public class AutoCrystalFeature extends Feature {
         if (!breakRotate.get())
             return true;
 
-      //  ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AutoCrystalFeature.class.getName(), 5, idealYaw, idealPitch));
-        boolean insideBox = crystal.getBoundingBox().contains(MC.player.getEyePosition(1.0f));
-        EntityHitResult serverCheck = raycastTarget(MC.player, crystal, breakRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
+        Vec3 eyePos;
+        if (breakStanceAbuse.get()) {
+            double foundDist = Double.MAX_VALUE;
+            Vec3 foundEye = MC.player.getEyePosition(1.0f);
+            for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                Vec3 closest = getClampClosestPoint(v, crystal.getBoundingBox());
+                double dist = v.distanceTo(closest);
+                if (dist < foundDist) {
+                    foundDist = dist;
+                    foundEye = v;
+                }
+            }
+            eyePos = foundEye;
+        } else {
+            eyePos = MC.player.getEyePosition(1.0f);
+        }
+
+        boolean insideBox = crystal.getBoundingBox().contains(eyePos);
+        EntityHitResult serverCheck = raycastTarget(eyePos, crystal, breakRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
         return serverCheck != null || insideBox;
     }
 
@@ -405,13 +440,8 @@ public class AutoCrystalFeature extends Feature {
     }
 
     private AutoCrystalSnapshot doSnapshot(long tickId, AutoCrystalSnapshot.debugInfo dbg) {
-        Vec3 eyePos = MC.player.getEyePosition();
+        Vec3 eyePos = MC.player.getEyePosition(1.0f);
         BlockPos playerPos = MC.player.blockPosition();
-
-        double pr = placeRange.get();
-        double br = breakRange.get();
-        double minDmg = minDamage.get();
-
         List<Player> entities = EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PLAYERS, 12).stream().filter(e -> e instanceof LivingEntity).map(e -> (Player) e).toList();
         dbg.targetsTotal = entities.size();
 
@@ -467,7 +497,7 @@ public class AutoCrystalFeature extends Feature {
             targets.add(new AutoCrystalSnapshot.TargetData(e.getId(), e.position(), e.getBoundingBox(), (float) Math.floor(e.getAttributeValue(Attributes.ARMOR)), (float) e.getAttributeValue(Attributes.ARMOR_TOUGHNESS), resistanceAmp, mask, prot, blastProt, e.getHealth(), e.getAbsorptionAmount(), broken));
         }
 
-        int r = (int) Math.ceil(pr);
+        int r = (int) Math.ceil(placeRange.get());
         int rr = r * r;
 
         ArrayList<BlockPos> candidates = new ArrayList<>();
@@ -495,7 +525,7 @@ public class AutoCrystalFeature extends Feature {
                     }
 
                     AABB blockBox = new AABB(pos);
-                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > pr) {
+                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > placeRange.get()) {
                         dbg.candidatesOutPlaceRange++;
                         continue;
                     }
@@ -503,7 +533,21 @@ public class AutoCrystalFeature extends Feature {
                     Vec3 crystalPos = new Vec3(base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5);
                     AABB crystalBox = new AABB(crystalPos.x-1, crystalPos.y, crystalPos.z-1, crystalPos.x+1, crystalPos.y + 2.0, crystalPos.z + 1.0);
 
-                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystalBox)) > br) {
+                    if (breakStanceAbuse.get()) {
+                        double foundDist = Double.MAX_VALUE;
+                        Vec3 foundEye = MC.player.getEyePosition(1.0f);
+                        for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                            Vec3 closest = getClampClosestPoint(v, crystalBox);
+                            double dist = v.distanceTo(closest);
+                            if (dist < foundDist) {
+                                foundDist = dist;
+                                foundEye = v;
+                            }
+                        }
+                        eyePos = foundEye;
+                    }
+
+                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystalBox)) > breakRange.get()) {
                         dbg.candidatesOutBreakRange++;
                         continue;
                     }
@@ -529,7 +573,7 @@ public class AutoCrystalFeature extends Feature {
             }
         }
 
-        return new AutoCrystalSnapshot(tickId, MC.player.getId(), eyePos, playerPos, pr, br, minDmg, assumeBestArmor.get(), MC.level.getDifficulty(), true, MC.level, targets.toArray(new AutoCrystalSnapshot.TargetData[0]), candidates.toArray(new BlockPos[0]), ignored);
+        return new AutoCrystalSnapshot(tickId, MC.player.getId(), eyePos, playerPos, placeRange.get(), breakRange.get(), minDamage.get(), assumeBestArmor.get(), MC.level.getDifficulty(), true, MC.level, targets.toArray(new AutoCrystalSnapshot.TargetData[0]), candidates.toArray(new BlockPos[0]), ignored);
     }
 
     private PlaceTarget findNextPlaceTargetForSnapshot(AutoCrystalSnapshot snap, AutoCrystalSnapshot.debugInfo dbg) {
