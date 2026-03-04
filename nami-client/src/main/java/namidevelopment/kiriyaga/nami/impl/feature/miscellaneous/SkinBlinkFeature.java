@@ -69,7 +69,7 @@ public class SkinBlinkFeature extends Feature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     private void onTick(PostTickEvent event) {
         if (MC.options == null) return;
 

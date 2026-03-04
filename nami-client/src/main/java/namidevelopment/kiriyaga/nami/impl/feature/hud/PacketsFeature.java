@@ -12,6 +12,8 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,7 +35,7 @@ public class PacketsFeature extends HudElementFeature {
         super("Packets", "Displays sended packets.", 0, 0, 100, 30);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketSend(PacketSendEvent event) {
         Packet<?> packet = event.getPacket();
         if (packet == null) return;
@@ -58,6 +60,14 @@ public class PacketsFeature extends HudElementFeature {
         return packets.size();
     }
 
+    private int countMove() {
+        return (int) packets.stream().filter(p -> p.packet instanceof ServerboundMovePlayerPacket).count();
+    }
+
+    private int countClick() {
+        return (int) packets.stream().filter(p -> p.packet instanceof ServerboundContainerClickPacket).count();
+    }
+
     private int countSwaps() {
         return (int) packets.stream().filter(p -> p.packet instanceof ServerboundSetCarriedItemPacket).count();
     }
@@ -70,9 +80,6 @@ public class PacketsFeature extends HudElementFeature {
         return (int) packets.stream().filter(p -> p.packet instanceof ServerboundInteractPacket).count();
     }
 
-    private int countInteractBlock() {
-        return (int) packets.stream().filter(p -> p.packet.getClass().getSimpleName().toLowerCase().contains("useitemon")).count();
-    }
 
     @Override
     public net.minecraft.network.chat.Component getDisplayText() {
@@ -80,11 +87,13 @@ public class PacketsFeature extends HudElementFeature {
 
         long now = System.currentTimeMillis();
         cleanup(now);
+        int move = countMove();
+        int click = countClick();
         int swaps = countSwaps();
-        int global = countGlobal();
         int action = countAction();
         int interact = countInteractEntity();
-        int block = countInteractBlock();
+        int global = countGlobal();
+
 
         String text = "";
 
@@ -92,7 +101,14 @@ public class PacketsFeature extends HudElementFeature {
             text += "{global}Packets ";
         }
 
-        text += "{secondary}({white}S:" + swaps + "{secondary}, {white}G:" + global + "{secondary}, {white}A:" + action + "{secondary}, {white}I:" + interact + "{secondary}, {white}B:" + block + "{secondary})";
+        text += "{secondary}({white}M:" + move +
+                "{secondary}, {white}C:" + click +
+                "{secondary}, {white}S:" + swaps +
+                "{secondary}, {white}A:" + action +
+                "{secondary}, {white}I:" + interact +
+                "{secondary}, {white}G:" + global +
+                "{secondary})";
+
         width = FONT_SERVICE.getWidth(text.replaceAll("\\{.*?}", ""));
         height = FONT_SERVICE.getHeight();
 
@@ -106,20 +122,24 @@ public class PacketsFeature extends HudElementFeature {
         }
         long now = System.currentTimeMillis();
         cleanup(now);
+        int move = countMove();
+        int click = countClick();
         int swaps = countSwaps();
-        int global = countGlobal();
         int action = countAction();
         int interact = countInteractEntity();
-        int block = countInteractBlock();
+        int global = countGlobal();
 
         List<TextElement> lines = new ArrayList<>();
         int lineHeight = FONT_SERVICE.getHeight() + 1;
         int offsetY = 0;
 
-        lines.add(new TextElement(CAT_FORMAT.format("{global}Swaps: {white}" + swaps), 0, offsetY));
+        lines.add(new TextElement(CAT_FORMAT.format("{global}Move: {white}" + move), 0, offsetY));
         offsetY += lineHeight;
 
-        lines.add(new TextElement(CAT_FORMAT.format("{global}Global: {white}" + global), 0, offsetY));
+        lines.add(new TextElement(CAT_FORMAT.format("{global}Click: {white}" + click), 0, offsetY));
+        offsetY += lineHeight;
+
+        lines.add(new TextElement(CAT_FORMAT.format("{global}Swap: {white}" + swaps), 0, offsetY));
         offsetY += lineHeight;
 
         lines.add(new TextElement(CAT_FORMAT.format("{global}Action: {white}" + action), 0, offsetY));
@@ -128,7 +148,7 @@ public class PacketsFeature extends HudElementFeature {
         lines.add(new TextElement(CAT_FORMAT.format("{global}Interact: {white}" + interact), 0, offsetY));
         offsetY += lineHeight;
 
-        lines.add(new TextElement(CAT_FORMAT.format("{global}Block: {white}" + block), 0, offsetY));
+        lines.add(new TextElement(CAT_FORMAT.format("{global}Global: {white}" + global), 0, offsetY));
         offsetY += lineHeight;
 
         int maxWidth = lines.stream().mapToInt(te -> FONT_SERVICE.getWidth(te.text().getString().replaceAll("\\{.*?}", ""))).max().orElse(0);
@@ -146,4 +166,26 @@ public class PacketsFeature extends HudElementFeature {
             this.time = time;
         }
     }
+
+    private Counts count() {
+        int move = 0;
+        int click = 0;
+        int swaps = 0;
+        int action = 0;
+        int interact = 0;
+
+        for (MsPacket p : packets) {
+            Packet<?> packet = p.packet;
+
+            if (packet instanceof ServerboundMovePlayerPacket) move++;
+            else if (packet instanceof ServerboundContainerClickPacket) click++;
+            else if (packet instanceof ServerboundSetCarriedItemPacket) swaps++;
+            else if (packet instanceof ServerboundPlayerActionPacket) action++;
+            else if (packet instanceof ServerboundInteractPacket) interact++;
+        }
+
+        return new Counts(move, click, swaps, action, interact, packets.size());
+    }
+
+    private record Counts(int move, int click, int swaps, int action, int interact, int global) {}
 }

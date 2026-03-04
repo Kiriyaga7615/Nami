@@ -1,5 +1,7 @@
 package namidevelopment.kiriyaga.nami.impl.feature.hud;
 
+import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
+import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.model.feature.HudElementFeature;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
@@ -20,11 +22,7 @@ import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopme
 @RegisterFeature
 public class EntityListFeature extends HudElementFeature {
 
-    public enum SortMode {
-        ALPHABETICAL,
-        DESCENDING,
-        ASCENDING
-    }
+    public enum SortMode {ALPHABETICAL, DESCENDING, ASCENDING}
 
     private final List<TextElement> elements = new ArrayList<>();
     private long lastUpdateTime = 0;
@@ -39,12 +37,16 @@ public class EntityListFeature extends HudElementFeature {
         super("EntityList", "Shows nearby entities", 0, 0, 50, 10);
     }
 
-    @Override
-    public List<TextElement> getTextElements() {
+    @SubscribeEvent
+    public void onPreTickEvent(PreTickEvent event) {
+        if (MC.level == null || MC.player == null)
+            return;
+
         long currentTime = System.currentTimeMillis();
-        if (currentTime - lastUpdateTime < updateIntervalMs) {
-            return elements;
-        }
+
+        if (currentTime - lastUpdateTime < updateIntervalMs)
+            return;
+
         lastUpdateTime = currentTime;
 
         elements.clear();
@@ -69,14 +71,8 @@ public class EntityListFeature extends HudElementFeature {
 
         switch (sortMode.get()) {
             case ALPHABETICAL -> sortedNames.sort(String::compareToIgnoreCase);
-            case DESCENDING -> sortedNames.sort((a, b) -> Integer.compare(
-                    getTextWidth(b, entityCounts.get(b)),
-                    getTextWidth(a, entityCounts.get(a))
-            ));
-            case ASCENDING -> sortedNames.sort((a, b) -> Integer.compare(
-                    getTextWidth(a, entityCounts.get(a)),
-                    getTextWidth(b, entityCounts.get(b))
-            ));
+            case DESCENDING -> sortedNames.sort((a, b) -> Integer.compare(getTextWidth(b, entityCounts.get(b)), getTextWidth(a, entityCounts.get(a))));
+            case ASCENDING -> sortedNames.sort((a, b) -> Integer.compare(getTextWidth(a, entityCounts.get(a)), getTextWidth(b, entityCounts.get(b))));
         }
 
         int yOffset = 0;
@@ -85,16 +81,23 @@ public class EntityListFeature extends HudElementFeature {
         for (String name : sortedNames) {
             int count = entityCounts.get(name);
             Component text = CAT_FORMAT.format("{global}" + name + (count > 1 ? " {secondary}(x" + count + ")" : ""));
+
             int textWidth = FONT_SERVICE.getWidth(text);
             elements.add(new TextElement(text, 0, yOffset));
-
             maxWidth = Math.max(maxWidth, textWidth);
             yOffset += FONT_SERVICE.getHeight();
         }
 
         this.width = maxWidth;
         this.height = yOffset;
+    }
 
+    @Override
+    public List<TextElement> getTextElements() {
+        if (MC.level == null || MC.player == null) {
+            elements.clear();
+            return elements;
+        }
         return elements;
     }
 

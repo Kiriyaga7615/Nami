@@ -64,13 +64,13 @@ public class BowAimFeature extends Feature {
         ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(
                 BowAimFeature.class.getName(),
                 6,
-                (float) getYawToVec(MC.player, aimPos),
-                (float) getPitchToVec(MC.player, aimPos),
+                (float) getYRotToVec(MC.player, aimPos),
+                (float) getXRotToVec(MC.player, aimPos),
                 RotationsFeature.RotationMode.MOTION
         ));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onRender3D(Render3DEvent event) {
         if (!render.get() || currentTarget == null) return;
 

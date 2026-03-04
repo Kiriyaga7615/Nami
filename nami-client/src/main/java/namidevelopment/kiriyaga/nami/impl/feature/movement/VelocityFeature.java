@@ -377,8 +377,8 @@ public class VelocityFeature extends Feature {
     }
 
     private void sendRotationFix() { // somehow it happens, needs tests on grim v2 asap
-        float yaw = ROTATION_SERVICE.getStateHandler().getServerYaw();
-        float pitch = ROTATION_SERVICE.getStateHandler().getServerPitch();
+        float yaw = ROTATION_SERVICE.getStateHandler().getServerYRot();
+        float pitch = ROTATION_SERVICE.getStateHandler().getServerXRot();
 
         float f = (float)((Math.random() * 2.0 - 1.0) * 0.001f);
         float f2 = Mth.clamp(pitch + f, -90.0F, 90.0F);

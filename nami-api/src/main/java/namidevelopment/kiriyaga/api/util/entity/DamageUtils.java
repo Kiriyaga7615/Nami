@@ -30,7 +30,7 @@ public class DamageUtils {
 
     public static final BlockRaycastProvider BLOCK_CHECK = (ctx, pos) -> {
         BlockState state = MC.level.getBlockState(pos);
-        if (state.getBlock().getExplosionResistance() < 600) return null;
+        if (!state.isSolid()) return null;
         return state.getCollisionShape(MC.level, pos).clip(ctx.start(), ctx.end(), pos);
     };
 
@@ -59,12 +59,10 @@ public class DamageUtils {
     }
 
     private static float computeExplosionDamage(LivingEntity target, Vec3 targetPos, AABB targetBox, Vec3 explosionPos, float strength, BlockRaycastProvider raycastProvider, boolean assumeBestArmor) {
-        Vec3 lookDir = getClosestPointToEye(explosionPos, target.getBoundingBox()).subtract(explosionPos).normalize();
-        Vec3 rayEnd = explosionPos.add(lookDir.scale(strength));
-
-        if (target.getBoundingBox().clip(explosionPos, rayEnd).isEmpty()) return 0f;
-
         double distance = targetPos.distanceTo(explosionPos);
+
+        if (distance > strength) return 0f;
+
         double exposure = calculateExposure(explosionPos, targetBox, raycastProvider);
         double impact = (1 - (distance / strength)) * exposure;
         float baseDamage = (float) ((impact * impact + impact) / 2 * 7 * 12 + 1);
@@ -154,11 +152,19 @@ public class DamageUtils {
         int steps = 2;
         int hits = 0, misses = 0;
 
+        ExposureContext ctx = new ExposureContext(Vec3.ZERO, Vec3.ZERO);
+
         for (double x = 0; x <= dx; x += dx / steps) {
             for (double y = 0; y <= dy; y += dy / steps) {
                 for (double z = 0; z <= dz; z += dz / steps) {
+
                     Vec3 pos = new Vec3(box.minX + x, box.minY + y, box.minZ + z);
-                    if (raycast(new ExposureContext(pos, source), provider) == null) misses++;
+
+                    ctx.set(pos, source);
+
+                    if (raycast(ctx, provider) == null)
+                        misses++;
+
                     hits++;
                 }
             }
@@ -171,7 +177,28 @@ public class DamageUtils {
         return BlockGetter.traverseBlocks(context.start, context.end, context, provider, ctx -> null);
     }
 
-    public record ExposureContext(Vec3 start, Vec3 end) {}
+    public static final class ExposureContext {
+        private Vec3 start;
+        private Vec3 end;
+
+        public ExposureContext(Vec3 start, Vec3 end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public void set(Vec3 start, Vec3 end) {
+            this.start = start;
+            this.end = end;
+        }
+
+        public Vec3 start() {
+            return start;
+        }
+
+        public Vec3 end() {
+            return end;
+        }
+    }
 
     @FunctionalInterface
     public interface BlockRaycastProvider extends BiFunction<ExposureContext, net.minecraft.core.BlockPos, BlockHitResult> {}

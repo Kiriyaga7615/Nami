@@ -12,7 +12,6 @@ import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import namidevelopment.kiriyaga.api.util.entity.TargetUtils;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -37,8 +36,6 @@ public class AutoXPFeature extends Feature {
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", false));
     public final BoolSetting packet = addSetting(new BoolSetting("Packet", false));
     public final IntSetting packetShift = addSetting(new IntSetting("ShiftTicks", 2, 1, 6));
-    public final BoolSetting whenNoTarget = addSetting(new BoolSetting("NoTarget", false));
-    public final BoolSetting onlyPhased = addSetting(new BoolSetting("OnlyPhased", false));
     public final BoolSetting selfToggle = addSetting(new BoolSetting("SelfToggle", true));
     public final EnumSetting<SwapMode> swapMode = addSetting(new EnumSetting<>("Swap", SwapMode.SILENT));
     public final BoolSetting is1_12 = addSetting(new BoolSetting("1.12", false));
@@ -48,7 +45,7 @@ public class AutoXPFeature extends Feature {
         packetShift.setShowCondition(packet::get);
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onPreTickEvent(PreTickEvent ev) {
         if (!isEnabled() || MC.player == null || MC.level == null) return;
 
@@ -58,16 +55,9 @@ public class AutoXPFeature extends Feature {
             return;
         }
 
-        if (whenNoTarget.get() && TargetUtils.getTarget() != null) {
+        if (MC.player.isFallFlying()) {
             if (selfToggle.get())
                 toggle();
-            return;
-        }
-
-        if (onlyPhased.get() && !isPhased(MC.player)) {
-            if (selfToggle.get())
-                toggle();
-
             return;
         }
 
@@ -98,31 +88,27 @@ public class AutoXPFeature extends Feature {
             if (!ROTATION_SERVICE.getRequestHandler().isCompleted(this.name)) return;
         }
 
-        int prevSlot = MC.player.getInventory().getSelectedSlot();
-
         switch (swapMode.get()) {
             case NORMAL -> {
-                InventoryUtils.attemptSwitch(xpSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(xpSlot, false);
                 MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
 
                 if (packet.get()) {
                     for (int l = 0; l < packetShift.get(); l++) {
-                      sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id, ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch()));
+                      sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id, ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot()));
                         }
                 }
 
             }
             case SILENT -> {
-                InventoryUtils.attemptSwitch(xpSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(xpSlot, true);
                 MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
 
                 if (packet.get()) {
                     for (int l = 0; l < packetShift.get(); l++) {
-                        sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id, ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch()));
+                        sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id, ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot()));
                     }
                 }
-
-                InventoryUtils.attemptSwitch(prevSlot);
             }
         }
     }

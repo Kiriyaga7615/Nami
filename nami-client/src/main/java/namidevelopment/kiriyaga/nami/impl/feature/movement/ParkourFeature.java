@@ -24,7 +24,7 @@ public class ParkourFeature extends Feature {
         setJumpHeld(false);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTick(PreTickEvent event) {
         if (MC.player == null || MC.level == null) return;
 

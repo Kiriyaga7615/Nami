@@ -8,7 +8,6 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import namidevelopment.kiriyaga.api.util.entity.EntityUtils;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.sheep.Sheep;
@@ -23,7 +22,7 @@ public class AutoSheepFeature extends Feature {
 
     public final DoubleSetting range = addSetting(new DoubleSetting("Range", 3.00, 1.0, 6.0));
     public final IntSetting delay = addSetting(new IntSetting("Delay", 1, 0, 20));
-    public final BoolSetting swapBack = addSetting(new BoolSetting("SwapBack", true));
+    public final BoolSetting swapSilent = addSetting(new BoolSetting("SwapSilent", true));
     public final BoolSetting multitask = addSetting(new BoolSetting("Multitask", false));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", true));
@@ -47,7 +46,7 @@ public class AutoSheepFeature extends Feature {
             if (!(entity instanceof Sheep sheep)) continue;
             if (!sheep.isAlive() || sheep.isSheared() || sheep.isBaby()) continue;
 
-            if (interactWithEntity(entity, Items.SHEARS, swapBack.get(), multitask.get(), range.get(), swing.get(), rotate.get(), this.name)) {
+            if (interactWithEntity(entity, Items.SHEARS, swapSilent.get(), multitask.get(), range.get(), swing.get(), rotate.get(), this.name)) {
                 swapCooldown = delay.get();
                 break;
             }

@@ -126,8 +126,8 @@ public class CriticalsFeature extends Feature {
                 return;
         }
 
-        float yaw = ROTATION_SERVICE.getStateHandler().getServerYaw();
-        float pitch = ROTATION_SERVICE.getStateHandler().getServerPitch();
+        float yaw = ROTATION_SERVICE.getStateHandler().getServerYRot();
+        float pitch = ROTATION_SERVICE.getStateHandler().getServerXRot();
 
         MC.getConnection().send(new ServerboundMovePlayerPacket.PosRot(x, y + 0.0625, z, yaw, pitch, false, false));
         MC.getConnection().send(new ServerboundMovePlayerPacket.PosRot(x, y + 0.0625013579, z, yaw, pitch, false, false));
@@ -156,8 +156,8 @@ public class CriticalsFeature extends Feature {
                 return;
         }
 
-        float yaw = ROTATION_SERVICE.getStateHandler().getServerYaw();
-        float pitch = ROTATION_SERVICE.getStateHandler().getServerPitch();
+        float yaw = ROTATION_SERVICE.getStateHandler().getServerYRot();
+        float pitch = ROTATION_SERVICE.getStateHandler().getServerXRot();
 
         float f = (float)((Math.random() * 2.0 - 1.0) * 0.001f);
         float f2 = Mth.clamp(pitch + f, -90.0F, 90.0F);

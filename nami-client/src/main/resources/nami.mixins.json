@@ -36,7 +36,6 @@
     "MixinItemInHandRenderer",
     "MixinKeyboardHandler",
     "MixinLevelRenderer",
-    "MixinLivingEntityRenderer",
     "MixinLocalPlayer",
     "MixinMinecraft",
     "MixinMultiPlayerGameMode",
@@ -45,7 +44,8 @@
     "MixinParticleEngine",
     "MixinPlayerTabOverlay",
     "MixinScreen",
-    "MixinScreenEffectRenderer"
+    "MixinScreenEffectRenderer",
+    "MixinVisGraph"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -60,6 +60,7 @@
     "MixinClientboundSetEntityMotionPacket",
     "MixinConnection",
     "MixinEntity",
+    "MixinItemCooldowns",
     "MixinLivingEntity",
     "MixinPlayer",
     "MixinServerboundInteractPacket",

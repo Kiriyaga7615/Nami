@@ -5,6 +5,7 @@
 */
 package namidevelopment.kiriyaga.nami.impl.feature.visuals;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.impl.MouseScrollEvent;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.item.DyeColor;
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -48,7 +50,6 @@ public class ShulkerViewFeature extends Feature {
     public final BoolSetting borders = addSetting(new BoolSetting("Borders", true));
     public final DoubleSetting scale = addSetting(new DoubleSetting("Scale", 1, 0.5, 1.5));
     public final DoubleSetting scrollSensitivity = addSetting(new DoubleSetting("Sensitivity", 1, 0.5, 3));
-    public final KeyBindSetting freezeKey = addSetting(new KeyBindSetting("FreezeKey", "LSHIFT"));
 
     private static final int GRID_WIDTH = 18;
     private static final int GRID_HEIGHT = 18;
@@ -71,11 +72,10 @@ public class ShulkerViewFeature extends Feature {
     public ShulkerViewFeature() {super("ShulkerView", "Shows shulker content preview.", FeatureCategory.of("Render"), "shulkerview");
         bothSides.setShowCondition(() -> mode.get() == Mode.MULTI);
         scrollSensitivity.setShowCondition(() -> mode.get() == Mode.MULTI);
-        freezeKey.setShowCondition(() -> mode.get() == Mode.SINGLE);
     }
 
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onTick(PreTickEvent event) {
         shulkerList.clear();
 
@@ -98,7 +98,7 @@ public class ShulkerViewFeature extends Feature {
             renderSingle(event);
         }
     }
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onRenderScreenEvent(RenderScreenEvent event) {
         if (!(MC.screen instanceof AbstractContainerScreen<?>)) return;
 
@@ -109,7 +109,7 @@ public class ShulkerViewFeature extends Feature {
 
     private void renderSingle(RenderTooltipEvent event) {
         ItemStack hovered = event.hoveredStack();
-        boolean freezePressed = freezeKey.isPressed();
+        boolean freezePressed = GLFW.glfwGetKey(MC.getWindow().handle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS || GLFW.glfwGetKey(MC.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
 
         if ((hovered == null || hovered.isEmpty()) && !frozen) return;
         if (!freezePressed) {
@@ -236,7 +236,7 @@ public class ShulkerViewFeature extends Feature {
         totalHeight = currentY - offset;
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onScroll(MouseScrollEvent event) {
         if (mode.get() != Mode.MULTI) return;
 

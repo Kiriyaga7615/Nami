@@ -23,7 +23,7 @@ import java.util.Date;
 import static namidevelopment.kiriyaga.api.NamiApi.LOGGER;
 import static namidevelopment.kiriyaga.api.NamiApi.CONFIG_SERVICE;
 
-@RegisterFeature
+//@RegisterFeature
 public class RandomFeature extends Feature {
 
     public final BoolSetting logReceive = addSetting(new BoolSetting("PacketReceiveLog", true));
@@ -48,7 +48,7 @@ public class RandomFeature extends Feature {
         this.sendFile = new File(logDir, "send.jsonl");
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!logReceive.get()) return;
 
@@ -56,7 +56,7 @@ public class RandomFeature extends Feature {
         logPacket(packet, "RECEIVE", receiveFile);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketSend(PacketSendEvent event) {
         if (!logSend.get()) return;
 

@@ -82,7 +82,7 @@ public class NukerFeature extends Feature {
     }
 
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onBlockStartBreak(StartBreakingBlockEvent event) {
         if (mode.get() != NukerMode.SELECTIVE) return;
 

@@ -19,8 +19,8 @@ public abstract class MixinEntity {
         if ((Object) this != MC.player) return;
         if (ROTATION_SERVICE == null || !ROTATION_SERVICE.getStateHandler().isRotating() || config.isFutureRotations()) return;
 
-        float spoofYaw = ROTATION_SERVICE.getStateHandler().getRotationYaw();
-        float spoofPitch = ROTATION_SERVICE.getStateHandler().getRotationPitch();
+        float spoofYaw = ROTATION_SERVICE.getStateHandler().getRotationYRot();
+        float spoofPitch = ROTATION_SERVICE.getStateHandler().getRotationXRot();
 
         cir.setReturnValue(((Entity) (Object) this).calculateViewVector(spoofPitch, spoofYaw));
     }

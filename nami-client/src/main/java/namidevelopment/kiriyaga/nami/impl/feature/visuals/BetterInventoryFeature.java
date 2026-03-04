@@ -38,7 +38,7 @@ public class BetterInventoryFeature extends Feature {
         super("BetterInventory", "Quality of life features to improve inventory managment.", FeatureCategory.of("Render"), "betterinventory");
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onRenderSlots(RenderSlotsEvent event) {
         if (!(MC.screen instanceof AbstractContainerScreen<?>)) return;
 

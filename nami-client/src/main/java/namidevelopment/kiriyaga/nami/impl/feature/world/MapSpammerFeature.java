@@ -35,7 +35,7 @@ public class MapSpammerFeature extends Feature {
     public final BoolSetting place = addSetting(new BoolSetting("Place", true));
     public final DoubleSetting placeRange = addSetting(new DoubleSetting("PlaceRange", "Range", 4.5, 1.0, 6.0));
     public final IntSetting placeDelay = addSetting(new IntSetting("PlaceDelay", "Delay", 0, 0, 20));
-    public final BoolSetting placeSwapBack = addSetting(new BoolSetting("PlaceSwapBack", "SwapBack", true));
+    public final BoolSetting placeswapSilent = addSetting(new BoolSetting("PlaceswapSilent", "SwapSilent", true));
     public final BoolSetting placeMultitask = addSetting(new BoolSetting("PlaceMultitask", "Multitask", false));
     public final BoolSetting placeSwing = addSetting(new BoolSetting("PlaceSwing", "Swing", true));
     public final BoolSetting placeRotate = addSetting(new BoolSetting("PlaceRotate", "Rotate", true));
@@ -60,7 +60,7 @@ public class MapSpammerFeature extends Feature {
         super("MapSpammer", "Automatically fills item frames with your maps.", FeatureCategory.of("World"));
         placeRange.setShowCondition(place::get);
         placeDelay.setShowCondition(place::get);
-        placeSwapBack.setShowCondition(place::get);
+        placeswapSilent.setShowCondition(place::get);
         placeMultitask.setShowCondition(place::get);
         placeSwing.setShowCondition(place::get);
         placeRotate.setShowCondition(place::get);
@@ -127,7 +127,7 @@ public class MapSpammerFeature extends Feature {
             if (place.get() && placeCD <= 0) {
                 if (inFrame.isEmpty()) {
 
-                    boolean success = interactWithEntity(frame, referenceItem, placeSwapBack.get(), placeMultitask.get(), placeRange.get(), placeSwing.get(), placeRotate.get(), this.name + "_place");
+                    boolean success = interactWithEntity(frame, referenceItem, placeswapSilent.get(), placeMultitask.get(), placeRange.get(), placeSwing.get(), placeRotate.get(), this.name + "_place");
 
                     if (success) {
                         placeCD = placeDelay.get();
@@ -178,8 +178,8 @@ public class MapSpammerFeature extends Feature {
         boolean rotated = false;
         if (attackRotate.get()) {
             Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), frame.getBoundingBox());
-            float yaw = (float) getYawToVec(MC.player, pos);
-            float pitch = (float) getPitchToVec(MC.player, pos);
+            float yaw = (float) getYRotToVec(MC.player, pos);
+            float pitch = (float) getXRotToVec(MC.player, pos);
 
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name + "_attack", 9, yaw, pitch));
 
@@ -188,7 +188,7 @@ public class MapSpammerFeature extends Feature {
 
         if (rotated) {
             boolean insideBox = frame.getBoundingBox().contains(MC.player.getEyePosition(1.0f));
-            EntityHitResult serverCheck = raycastTarget(MC.player, frame, attackRange.get(), ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch());
+            EntityHitResult serverCheck = raycastTarget(MC.player, frame, attackRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
 
             if (serverCheck == null && !insideBox) return false;
         }

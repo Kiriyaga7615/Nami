@@ -41,7 +41,7 @@ public class RespawnFeature extends Feature {
             }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onOpenScreen(OpenScreenEvent event) {
         if (!(event.getScreen() instanceof DeathScreen)) return;
         if (MC == null) return;

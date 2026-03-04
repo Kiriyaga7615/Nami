@@ -11,8 +11,7 @@ import namidevelopment.kiriyaga.nami.mixin.DuckKeyMapping;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 
-import static namidevelopment.kiriyaga.api.NamiApi.MC;
-import static namidevelopment.kiriyaga.api.NamiApi.SERVER_SERVICE;
+import static namidevelopment.kiriyaga.api.NamiApi.*;
 
 @RegisterFeature
 public class AutoWalkFeature extends Feature {
@@ -28,10 +27,11 @@ public class AutoWalkFeature extends Feature {
         if (MC.player == null || MC.level == null)
             return;
 
-        setWalkHeld(false);
+        INPUT_SERVICE.getClientHandler().clearOverride(this.name);
+        INPUT_SERVICE.getInputCache().setForward(false);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTick(PreTickEvent event) {
         if (MC.player == null || MC.level == null)
             return;
@@ -39,14 +39,7 @@ public class AutoWalkFeature extends Feature {
         if (setbackStop.get() && !SERVER_SERVICE.hasElapsedSinceSetback(5000))
             return;
 
-        setWalkHeld(true);
-    }
-
-    private void setWalkHeld(boolean held) {
-        KeyMapping walkKey = MC.options.keyUp;
-        InputConstants.Key boundKey = ((DuckKeyMapping) walkKey).getKey();
-        int keyCode = boundKey.getValue();
-        boolean physicallyPressed = InputConstants.isKeyDown(MC.getWindow(), keyCode);
-        walkKey.setDown(physicallyPressed || held);
+        INPUT_SERVICE.getClientHandler().overrideMovement(this.name, true, false, false, false);
+        INPUT_SERVICE.getInputCache().setForward(true);
     }
 }

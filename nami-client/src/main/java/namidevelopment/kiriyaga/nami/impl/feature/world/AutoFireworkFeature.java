@@ -9,7 +9,7 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -22,6 +22,7 @@ import static namidevelopment.kiriyaga.api.NamiApi.MC;
 public class AutoFireworkFeature extends Feature {
 
     public final BoolSetting deployLaunch = addSetting(new BoolSetting("DeployLaunch", false));
+    public final BoolSetting autoDeploy = addSetting(new BoolSetting("AutoDeploy", false));
     public final BoolSetting autoLaunch = addSetting(new BoolSetting("AutoLaunch", false));
     public final DoubleSetting delaySeconds = addSetting(new DoubleSetting("Delay", 4.5, 0.1, 25.0));
     public final IntSetting onLevel = addSetting(new IntSetting("OnLevel", -64, -64, 360));
@@ -44,9 +45,13 @@ public class AutoFireworkFeature extends Feature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onTick(PreTickEvent ev) {
         if (MC.level == null || MC.player == null) return;
+
+        if (MC.getConnection() != null && autoDeploy.get() && !MC.player.isFallFlying() && !MC.player.onGround() && MC.player.tryToStartFallFlying()) {
+            MC.getConnection().send(new ServerboundPlayerCommandPacket(MC.player, ServerboundPlayerCommandPacket.Action.START_FALL_FLYING)); // lol they still use theese
+        }
 
         boolean isElytra = MC.player.isFallFlying();
 
@@ -77,10 +82,8 @@ public class AutoFireworkFeature extends Feature {
         int hotbarSlot = getSlotInHotbar(item);
 
         if (hotbarSlot != -1) {
-            int prevSlot = MC.player.getInventory().getSelectedSlot();
-            InventoryUtils.attemptSwitch(hotbarSlot);
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(hotbarSlot, true);
             MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
-            InventoryUtils.attemptSwitch(prevSlot);
             return true;
         }
 

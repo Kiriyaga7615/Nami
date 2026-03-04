@@ -17,8 +17,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
-import static namidevelopment.kiriyaga.api.util.RotationUtils.getPitchToVec;
-import static namidevelopment.kiriyaga.api.util.RotationUtils.getYawToVec;
+import static namidevelopment.kiriyaga.api.util.RotationUtils.getXRotToVec;
+import static namidevelopment.kiriyaga.api.util.RotationUtils.getYRotToVec;
 import static namidevelopment.kiriyaga.nami.Nami.*;
 import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.entity.HostileUtils.isAggressiveNow;
 
@@ -68,8 +68,8 @@ public class AgroFeature extends Feature {
                     new RotationRequest(
                             AgroFeature.class.getName(),
                             2,
-                            (float) getYawToVec(MC.player, eyes),
-                            (float) getPitchToVec(MC.player, eyes),
+                            (float) getYRotToVec(MC.player, eyes),
+                            (float) getXRotToVec(MC.player, eyes),
                             RotationsFeature.RotationMode.MOTION
                     )
             );

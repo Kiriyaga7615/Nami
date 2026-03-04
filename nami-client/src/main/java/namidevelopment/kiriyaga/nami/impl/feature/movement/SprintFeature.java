@@ -33,7 +33,7 @@ public class SprintFeature extends Feature {
         return shouldSprintTicks > 0;
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onPreTickEvent(PreTickEvent event) {
         LocalPlayer player = MC.player;
         if (player == null) return;

@@ -38,7 +38,7 @@ public class SneakFeature extends Feature {
         safeWalk.onDisable();
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTickEvent(PreTickEvent event) {
         safeWalk.onTick();
 

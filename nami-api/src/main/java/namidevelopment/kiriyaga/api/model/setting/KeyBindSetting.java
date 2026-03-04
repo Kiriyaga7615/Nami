@@ -2,15 +2,13 @@ package namidevelopment.kiriyaga.api.model.setting;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import namidevelopment.kiriyaga.api.util.KeyUtils;
-import org.lwjgl.glfw.GLFW;
 
-import static namidevelopment.kiriyaga.api.NamiApi.MC;
+import static namidevelopment.kiriyaga.api.util.KeyUtils.parseKey;
 
 public class KeyBindSetting extends Setting<Integer> {
 
     public static final int KEY_NONE = -1;
-    private boolean wasPressedLastTick = false;
+
     private boolean holdMode = false;
 
     public KeyBindSetting(String identifier, String name, int defaultKey) {
@@ -18,7 +16,7 @@ public class KeyBindSetting extends Setting<Integer> {
     }
 
     public KeyBindSetting(String identifier, String name, String defaultKeyName) {
-        this(identifier, name, defaultKeyName != null ? KeyUtils.parseKey(defaultKeyName) : KEY_NONE);
+        this(identifier, name, defaultKeyName != null ? parseKey(defaultKeyName) : KEY_NONE);
     }
 
     public KeyBindSetting(String name) {
@@ -33,26 +31,8 @@ public class KeyBindSetting extends Setting<Integer> {
         this(name, name, defaultKeyName);
     }
 
-
-    public void setDefaultKey(String keyName) {
-        this.value = KeyUtils.parseKey(keyName);
-    }
-
-    public void setDefaultKey(int keyCode) {
-        this.value = keyCode;
-    }
-
-
-    public boolean isPressed() {
-        if (value == KEY_NONE) return false;
-
-        long window = MC.getWindow().handle();
-
-        if (value >= GLFW.GLFW_MOUSE_BUTTON_1 && value <= GLFW.GLFW_MOUSE_BUTTON_8) {
-            return GLFW.glfwGetMouseButton(window, value) == GLFW.GLFW_PRESS;
-        }
-
-        return GLFW.glfwGetKey(window, value) == GLFW.GLFW_PRESS;
+    public boolean isBound() {
+        return value != null && value != KEY_NONE;
     }
 
     public boolean isHoldMode() {
@@ -61,14 +41,6 @@ public class KeyBindSetting extends Setting<Integer> {
 
     public void setHoldMode(boolean holdMode) {
         this.holdMode = holdMode;
-    }
-
-    public boolean wasPressedLastTick() {
-        return wasPressedLastTick;
-    }
-
-    public void setWasPressedLastTick(boolean val) {
-        this.wasPressedLastTick = val;
     }
 
     @Override
@@ -88,10 +60,13 @@ public class KeyBindSetting extends Setting<Integer> {
     public void fromJson(JsonElement json) {
         if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
-            this.value = obj.has("value") ? obj.get("value").getAsInt() : KEY_NONE;
+
+            this.value = obj.has("value") ? obj.get("value").getAsInt() : super.value;
+
             this.holdMode = obj.has("holdMode") && obj.get("holdMode").getAsBoolean();
+
         } else {
-            this.value = KEY_NONE;
+            this.value = super.value;
             this.holdMode = false;
         }
     }

@@ -64,7 +64,7 @@ public class ESPFeature extends Feature {
         showCrystals.setShowCondition(() -> renderMode.get() == RenderMode.GLOW);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onRender3D(Render3DEvent event) {
         if (MC == null || MC.level == null || MC.player == null) return;
         this.clearDisplayInfo();
@@ -111,7 +111,7 @@ public class ESPFeature extends Feature {
 
         if (renderMode.get() == RenderMode.GLOW) {
             double maxDistSq = outlineDistance.get() * outlineDistance.get();
-            entities.removeIf(entity -> MC.player.distanceToSqr(entity) > maxDistSq);
+            entities.removeIf(entity -> MC.gameRenderer.getMainCamera().position().distanceTo(entity.position()) > maxDistSq);
         }
 
         return entities;
@@ -166,10 +166,7 @@ public class ESPFeature extends Feature {
         ColorFeature colors = FEATURE_SERVICE.getStorage().getByClass(ColorFeature.class);
         if (colors == null) return null;
         double maxDist = esp.outlineDistance.get();
-        if (MC.getCameraEntity() != null && MC.getCameraEntity().distanceTo(entity) > maxDist)
-            return null;
-
-        if (FEATURE_SERVICE.getStorage().getByClass(FreecamFeature.class).getCameraPos() != null && FEATURE_SERVICE.getStorage().getByClass(FreecamFeature.class).getCameraPos().distanceTo(entity.position()) > maxDist)
+        if (MC.gameRenderer.getMainCamera().position().distanceTo(entity.position()) > maxDist)
             return null;
 
         if (entity instanceof Player player) {

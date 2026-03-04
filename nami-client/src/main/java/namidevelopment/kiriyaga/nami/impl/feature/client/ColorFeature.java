@@ -68,7 +68,7 @@ public class ColorFeature extends Feature implements ColorFeatureConfig {
         return new Color(adjusted.getRed(), adjusted.getGreen(), adjusted.getBlue(), getAlpha255());
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     private void onRender(Render2DEvent ev){
         if (!rainbowEnabled.get()) return;
 

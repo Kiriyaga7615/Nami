@@ -30,7 +30,7 @@ package namidevelopment.kiriyaga.nami.impl.feature.visuals;
             amount.setShowCondition(() -> mode.get() == Mode.GAMMA);
         }
 
-        @SubscribeEvent(priority = EventPriority.LOWEST)
+        @SubscribeEvent(priority = EventPriority.LOW)
         private void onTick(PostTickEvent ev) {
             if (MC.options == null || MC.player == null) return;
 

@@ -37,6 +37,7 @@ public class RotationsFeature extends Feature implements RotationsFeatureConfig 
         rotationThreshold.setShow(false);
         ticksBeforeRelease.setShow(false);
         render.setShow(false);
+
 //        jitterAmount.setShow(false);
 //        jitterSpeed.setShow(false);
 //        jitterMaxYaw.setShow(false);

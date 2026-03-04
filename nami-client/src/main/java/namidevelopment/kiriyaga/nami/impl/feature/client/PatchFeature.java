@@ -4,12 +4,16 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
+import namidevelopment.kiriyaga.api.event.impl.PacketSendEvent;
 import namidevelopment.kiriyaga.api.event.impl.SprintResetEvent;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
+import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.item.ItemStack;
 
 import static namidevelopment.kiriyaga.api.NamiApi.MC;
@@ -19,10 +23,14 @@ import static namidevelopment.kiriyaga.api.NamiApi.CHAT_SERVICE;
 @RegisterFeature
 public class PatchFeature extends Feature {
 
-    public final BoolSetting grimAttackVelocity = addSetting(new BoolSetting("GrimAttackVelocity", true));
-    public final BoolSetting slotDragDesync = addSetting(new BoolSetting("SlotDragDesync", true));
-    public final BoolSetting silentSwapFix = addSetting(new BoolSetting("SilentSwapFix", true));
+    public enum TPSCooldownSync {DISABLED, LAST, AVERAGE}
+
+    public final BoolSetting grimAttackVelocity = addSetting(new BoolSetting("GrimAttackVelocity", false));
+    //public final BoolSetting grimNoSlowDisabler = addSetting(new BoolSetting("NoSlowDisabler", false));
+    public final BoolSetting slotDragDesync = addSetting(new BoolSetting("SlotDragDesync", false));
+    public final BoolSetting silentSwapFix = addSetting(new BoolSetting("SilentSwapFix", false));
     public final BoolSetting setSlotDebug = addSetting(new BoolSetting("SetSlotDebug", false));
+    public final EnumSetting<TPSCooldownSync> tpsCooldownSync = addSetting(new EnumSetting<>("TPSCooldownSync", TPSCooldownSync.DISABLED));
 
     public PatchFeature() {
         super("Patch", "Any kind of hotfixes you should apply based on what server and ac u on.", FeatureCategory.of("Client"));
@@ -37,13 +45,13 @@ public class PatchFeature extends Feature {
             this.toggle();
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onSprintResetEvent(SprintResetEvent event) {
         if (grimAttackVelocity.get() && !event.isCancelled())
                 event.cancel();
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onPacketReceiveEvent(PacketReceiveEvent event) {
         Packet<?> p = event.getPacket();
 

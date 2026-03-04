@@ -7,7 +7,6 @@ import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
 import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.event.impl.Render3DEvent;
 import namidevelopment.kiriyaga.api.event.impl.StartBreakingBlockEvent;
-import namidevelopment.kiriyaga.api.mixininterface.IClientPlayerInteractionManager;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
@@ -16,9 +15,9 @@ import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
+import namidevelopment.kiriyaga.api.util.Timer;
 import namidevelopment.kiriyaga.api.util.render.RenderUtil;
-import namidevelopment.kiriyaga.nami.impl.feature.movement.SneakFeature;
+import namidevelopment.kiriyaga.nami.impl.feature.combat.AutoTotemFeature;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -42,14 +41,14 @@ import net.minecraft.world.level.BlockGetter;
 import java.awt.*;
 
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
-import static namidevelopment.kiriyaga.nami.Nami.*;
-import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isBroken;
+import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.PacketUtils.sendSequencedPacket;
 
 @RegisterFeature
 public class SpeedMineFeature extends Feature {
     public enum Rotate { NORMAL, HOLD, NONE}
     public enum Swap { NONE, NORMAL, SILENT121, SILENT}
+    public enum is1_21Mode {OFFHAND, BOTH}
 
     public final DoubleSetting range = addSetting(new DoubleSetting("Range", 4.5, 2.0, 7.0));
     public final DoubleSetting speed = addSetting(new DoubleSetting("Speed", 1.0, 0.7, 1.0));
@@ -58,20 +57,26 @@ public class SpeedMineFeature extends Feature {
     public final BoolSetting grim = addSetting(new BoolSetting("Grim", false));
     public final BoolSetting doubleMine = addSetting(new BoolSetting("DoubleMine", false));
     public final BoolSetting instant = addSetting(new BoolSetting("Instant", true));
+    public final IntSetting instantDelay = addSetting(new IntSetting("InstantDelay", 0, 0, 1000));
+    public final BoolSetting simulate = addSetting(new BoolSetting("Simulate", true));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
     public final BoolSetting multitask = addSetting(new BoolSetting("Multitask", false));
-    public final BoolSetting allowOffhand = addSetting(new BoolSetting("AllowOffhand", false));
+    public final EnumSetting<is1_21Mode> is1_21 = addSetting(new EnumSetting<is1_21Mode>("1.21", is1_21Mode.OFFHAND));
 
 
     public BlockBreakingTask currentTask;
     public BlockBreakingTask doubleMineTask;
 
-    private int shouldSwapBack = -1;
+    private final Timer instantRemineTimer = new Timer();
+    private final Timer instantRemineResetTimer = new Timer();
+
+    private int i = -1;
 
     // Thats first packet mine i made like in my whole life, its bad, and there is issues, im gonna finish it, and maybe rewrite from scratch later
     public SpeedMineFeature() {
         super("SpeedMine", "Increases speed of mining.", FeatureCategory.of("World"));
-        allowOffhand.setShowCondition(()-> !multitask.get());
+        is1_21.setShowCondition(()-> !multitask.get());
+        instantDelay.setShowCondition(instant::get);
     }
 
     @Override
@@ -81,18 +86,12 @@ public class SpeedMineFeature extends Feature {
         }
         currentTask = null;
         doubleMineTask = null;
-        shouldSwapBack = -1;
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onTick(PreTickEvent event) {
         if (MC.level == null || MC.player == null)
             return;
-
-        if (shouldSwapBack != -1)
-            InventoryUtils.attemptSwitch(shouldSwapBack);
-
-        shouldSwapBack = -1;
 
         if (currentTask != null)
             handleMiningTick(currentTask);
@@ -101,7 +100,7 @@ public class SpeedMineFeature extends Feature {
             handleDoubleMine(doubleMineTask);
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onBlockStartBreak(StartBreakingBlockEvent event) {
         BlockState state = MC.level.getBlockState(event.blockPos);
 
@@ -128,11 +127,13 @@ public class SpeedMineFeature extends Feature {
         }
 
         currentTask = new BlockBreakingTask(event.blockPos, event.direction, speed.get().floatValue());
+        instantRemineTimer.reset();
+        instantRemineResetTimer.reset();
         startMining(currentTask);
 
-        float damageDelta = calculateBlockDamage(currentTask.getStartState(), MC.level, currentTask.getBlockPos());
+/*        float damageDelta = calculateBlockDamage(currentTask.getStartState(), MC.level, currentTask.getBlockPos());
         if (damageDelta >= 0.100f)
-            finishMining(currentTask);
+            finishMining(currentTask);*/
     }
 
     @SubscribeEvent
@@ -192,13 +193,9 @@ public class SpeedMineFeature extends Feature {
     private void handleMiningTick(BlockBreakingTask task) {
         Vec3 eyePos = MC.player.getEyePosition();
         AABB blockBox = new AABB(task.getBlockPos());
-        Vec3 lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
-        Vec3 reachEnd = eyePos.add(lookDir.scale(range.get()));
-        boolean insideBox = blockBox.contains(eyePos);
 
-        if (!insideBox && blockBox.clip(eyePos, reachEnd).isEmpty()) {
-            abortMining(task);
-            currentTask = null;
+        if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > range.get()) {
+            doubleMineTask = null;
             return;
         }
 
@@ -215,7 +212,7 @@ public class SpeedMineFeature extends Feature {
             MC.player.swing(InteractionHand.MAIN_HAND);
 
         if (rotate.get() == Rotate.HOLD)
-            ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name, 8, getYawToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getPitchToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
+            ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name, 8, getYRotToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getXRotToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
 
 
         float damageDelta = calculateBlockDamage(task.getStartState(), MC.level, task.getBlockPos());
@@ -228,18 +225,17 @@ public class SpeedMineFeature extends Feature {
         if (!doubleMine.get())
             return;
 
-        if (task.getDoublemineHoldTicks() > 2) {
+        if (task.getDoublemineHoldTicks() >= 3) {
             doubleMineTask = null;
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(i, false);
+            i = -1;
             return;
         }
 
         Vec3 eyePos = MC.player.getEyePosition();
         AABB blockBox = new AABB(task.getBlockPos());
-        Vec3 lookDir = getClosestPointToEye(eyePos, blockBox).subtract(eyePos).normalize();
-        Vec3 reachEnd = eyePos.add(lookDir.scale(range.get()));
-        boolean insideBox = blockBox.contains(eyePos);
 
-        if (!insideBox && blockBox.clip(eyePos, reachEnd).isEmpty()) {
+        if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > range.get()) {
             doubleMineTask = null;
             return;
         }
@@ -252,30 +248,26 @@ public class SpeedMineFeature extends Feature {
         float damageDelta = calculateBlockDamage(task.getBlockState(), MC.level, task.getBlockPos());
 
         if (task.incrementProgress(damageDelta) >= task.getTargetSpeed()) {
-            if (!multitask.get() && MC.player.isUsingItem())return;
+            if (!multitask.get() && MC.player.isUsingItem())
+                return;
 
-            if (swap.get() == Swap.SILENT121 || swap.get() == Swap.SILENT) {
-                int slot = getSlot(task.getStartState());
-                task.setDoublemineHoldTicks(task.doublemineHoldTicks+1);
-                if (slot == MC.player.getInventory().getSelectedSlot())
-                    return;
+            if (FEATURE_SERVICE.getStorage().getByClass(AutoTotemFeature.class).isEnabled() && FEATURE_SERVICE.getStorage().getByClass(AutoTotemFeature.class).mainhandActive)
+                return;
 
-                shouldSwapBack = MC.player.getInventory().getSelectedSlot();
-                InventoryUtils.attemptSwitch(slot);
-            }
+            if (i == -1)
+                i = INVENTORY_SERVICE.getSwapHandler().lastSlot;
+
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(getSlot(task.getStartState()), false);
+
+            task.setDoublemineHoldTicks(task.getDoublemineHoldTicks() + 1);
         }
-
-//        if (swap.get() == Swap.SILENT) {
-//            InventoryUtils.attemptSwitch(prev);
-//            shouldSwapBack = -1;
-//        }
     }
 
     private void startMining(BlockBreakingTask task) {
         if (task.getBlockState().isAir()) return;
 
         if (swap.get() == Swap.NORMAL)
-            InventoryUtils.attemptSwitch(getSlot(task.getStartState()));
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(getSlot(task.getStartState()), false);
 
         if (grim.get())
             sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
@@ -302,29 +294,36 @@ public class SpeedMineFeature extends Feature {
     private void finishMining(BlockBreakingTask task) {
         if (!task.isStarted()) return;
         if (!multitask.get() && MC.player.isUsingItem()) {
-            if (!(allowOffhand.get() && MC.player.getUsedItemHand() == InteractionHand.OFF_HAND)) { // yo somehow on some paper servers we can do it
+            // on 1.21 servers we can offhand and actions
+            // on 1.20 server we can offhand and alternative swap actions TODO
+            // with grim v3 item reset disabler we can offhand and mainhand with actions
+            if (is1_21.get() == is1_21Mode.OFFHAND && MC.player.getUsedItemHand() != InteractionHand.OFF_HAND) {
                 return;
             }
         }
+
+        if (task.brokenCount != task.lastBrokenCount)
+            instantRemineResetTimer.reset();
+
+        if (task.isInstantRemine() && !instantRemineTimer.hasElapsed(instantDelay.get()))
+            return;
+
+        if (task.isInstantRemine() && task.getBlockState().isAir() && instantRemineResetTimer.hasElapsed(250))
+            return;
 
         Vec3 eyePos = MC.player.getEyePosition();
         AABB blockBox = new AABB(task.getBlockPos());
 
         if (rotate.get() == Rotate.NORMAL)
-            ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name, 8, getYawToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getPitchToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
+            ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name, 8, getYRotToVec(MC.player, getClosestPointToEye(eyePos, blockBox)), getXRotToVec(MC.player, getClosestPointToEye(eyePos, blockBox))));
 
         if (rotate.get() == Rotate.NORMAL && !ROTATION_SERVICE.getRequestHandler().isCompleted(this.name))
             return;
 
-        int prev = MC.player.getInventory().getSelectedSlot();
         if (swap.get() == Swap.SILENT121 || swap.get() == Swap.SILENT) {
             int slot = getSlot(task.getStartState());
             if (slot != MC.player.getInventory().getSelectedSlot()) {
-                if (currentTask.brokenCount < 2 || !currentTask.isInstantRemine())
-                    if (swap.get() != Swap.SILENT)
-                        shouldSwapBack = MC.player.getInventory().getSelectedSlot();
-
-                InventoryUtils.attemptSwitch(slot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, (swap.get() == Swap.SILENT121 && currentTask.isInstantRemine() && currentTask.brokenCount >= 3) || (swap.get() == Swap.SILENT));
             }
         }
 
@@ -335,17 +334,16 @@ public class SpeedMineFeature extends Feature {
             MC.player.swing(InteractionHand.MAIN_HAND);
 
         sendDestroyPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, task);
-        //MC.level.destroyBlock(task.blockPos, false, MC.player, 512);
 
-        if (swap.get() == Swap.SILENT121 && currentTask.isInstantRemine() && currentTask.brokenCount >= 2) {
-            InventoryUtils.attemptSwitch(prev);
-
-        }
-
-        if (swap.get() == Swap.SILENT && shouldSwapBack == -1)
-            InventoryUtils.attemptSwitch(prev);
+        if (simulate.get())
+            MC.level.destroyBlock(task.blockPos, false, MC.player, 512);
 
         currentTask.markLastBroken();
+
+        if (task.isInstantRemine())
+            instantRemineTimer.reset();
+
+        //CHAT_SERVICE.sendPersistent("1", "count: "+task.brokenCount);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
@@ -379,7 +377,7 @@ public class SpeedMineFeature extends Feature {
             if (swap.get() == Swap.SILENT121 || swap.get() == Swap.SILENT) {
                 held = MC.player.getInventory().getItem(getSlot(state));
             }
-                return held.isCorrectToolForDrops(state);
+            return held.isCorrectToolForDrops(state);
         }
         return true;
     }

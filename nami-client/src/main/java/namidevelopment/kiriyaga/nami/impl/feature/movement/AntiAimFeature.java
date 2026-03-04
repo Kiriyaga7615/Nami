@@ -30,7 +30,7 @@ public class AntiAimFeature extends Feature {
         currentYaw = MC.player != null ? MC.player.getYRot() : 0.0f;
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTick(PreTickEvent event) {
         if (MC.player == null) return;
 

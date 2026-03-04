@@ -9,7 +9,6 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
@@ -73,14 +72,14 @@ public class AutoEatFeature extends Feature {
             if (swapCooldown > 0) {
                 swapCooldown--;
             } else {
-                InventoryUtils.attemptSwitch(bestSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(bestSlot, false);
                 swapCooldown = swapDelayTicksSetting.get();
             }
             eating.set(false);
         }
     }
 
-//            @SubscribeEvent(priority = EventPriority.HIGHEST)
+//            @SubscribeEvent(priority = EventPriority.HIGH)
 //        private void onPlaceBlock(PlaceBlockEvent event) {
 //            if (MC.player != null && MC.world != null && eating.get())
 //                event.cancel();

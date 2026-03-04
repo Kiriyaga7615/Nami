@@ -75,7 +75,7 @@ public class NoSoundLagFeature extends Feature { // TODO whitelist sounds
         elytra.setShowCondition(always::get );
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!isEnabled()) return;
 
@@ -111,7 +111,7 @@ public class NoSoundLagFeature extends Feature { // TODO whitelist sounds
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTick(PreTickEvent event) {
         if (!isEnabled() || !elytra.get()) return;
 

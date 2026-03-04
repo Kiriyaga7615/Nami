@@ -1,7 +1,5 @@
 package namidevelopment.kiriyaga.api.util;
 
-import namidevelopment.kiriyaga.api.contract.FeatureContractService;
-import namidevelopment.kiriyaga.api.contract.feature.RotationsFeatureConfig;
 import namidevelopment.kiriyaga.api.core.rotation.model.RotationRequest;
 import namidevelopment.kiriyaga.api.mixin.DuckMultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
@@ -23,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
+import static namidevelopment.kiriyaga.api.util.BlockUtils.withinLevelHeight;
 import static namidevelopment.kiriyaga.api.util.PacketUtils.sendSequencedPacket;
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
 import static net.minecraft.world.InteractionHand.MAIN_HAND;
@@ -42,14 +41,14 @@ public class InteractionUtils {
         if (MC.player.getOffhandItem().is(item))
             isOffhand = true;
 
-        int slot = InventoryUtils.findHotbarItem(stack -> stack.is(item));
+        int slot = INVENTORY_SERVICE.getSwapHandler().findHotbarItem(stack -> stack.is(item));
         if (slot == -1 && !isOffhand)
             return false;
         
         Vec3 eyePos = MC.player.getEyePosition(1.0f);
         Vec3 closestPoint = getClosestPointToEye(eyePos, entity.getBoundingBox());
-        float idealYaw = (float) getYawToVec(MC.player, closestPoint);
-        float idealPitch = (float) getPitchToVec(MC.player, closestPoint);
+        float idealYaw = (float) getYRotToVec(MC.player, closestPoint);
+        float idealPitch = (float) getXRotToVec(MC.player, closestPoint);
 
         if (eyePos.distanceTo(getClampClosestPoint(eyePos, entity.getBoundingBox())) > range)
             return false;
@@ -58,7 +57,7 @@ public class InteractionUtils {
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(rotationId, 4, idealYaw, idealPitch));
 
         boolean insideBox = entity.getBoundingBox().contains(MC.player.getEyePosition());
-        EntityHitResult hitResult = raycastTarget(MC.player, entity, range, ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch());
+        EntityHitResult hitResult = raycastTarget(MC.player, entity, range, ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
 
         boolean completed = !rotate || insideBox || hitResult != null;
 
@@ -74,17 +73,13 @@ public class InteractionUtils {
 
 
         if (!isOffhand) {
-            int prev = MC.player.getInventory().getSelectedSlot();
-            InventoryUtils.attemptSwitch(slot);
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, swapBack);
 
             MC.gameMode.interactAt(MC.player, entity, hitResult, MAIN_HAND);
             MC.gameMode.interact(MC.player, entity, MAIN_HAND);
 
             if (swing)
                 MC.player.swing(MAIN_HAND);
-
-            if (swapBack)
-                InventoryUtils.attemptSwitch(prev);
         }
         else {
             MC.gameMode.interactAt(MC.player, entity, hitResult, OFF_HAND);
@@ -116,6 +111,9 @@ public class InteractionUtils {
         if (!MC.level.getBlockState(pos).canBeReplaced())
             return false;
 
+        if (!withinLevelHeight(pos))
+            return false;
+
         if (!multitask && MC.player.isUsingItem())
             return false;
 
@@ -129,7 +127,7 @@ public class InteractionUtils {
         if (MC.player.getOffhandItem().is(item))
             isOffhand = true;
 
-        int slot = InventoryUtils.findHotbarItem(stack -> stack.is(item));
+        int slot = INVENTORY_SERVICE.getSwapHandler().findHotbarItem(stack -> stack.is(item));
         if (slot == -1 && !isOffhand)
             return false;
 
@@ -199,8 +197,8 @@ public class InteractionUtils {
         boolean canPlace = true;
 
         if (rotate) {
-            float yaw = (float) getYawToVec(MC.player, neighbor.getCenter());
-            float pitch = (float) getPitchToVec(MC.player, neighbor.getCenter());
+            float yaw = (float) getYRotToVec(MC.player, neighbor.getCenter());
+            float pitch = (float) getXRotToVec(MC.player, neighbor.getCenter());
 
          //   if (getDefaultRotationMode() == RotationFeature.RotationMode.SILENT)
                 ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(rotationId, 8, yaw, pitch));
@@ -217,8 +215,8 @@ public class InteractionUtils {
                     MC.player,
                     b,
                     range,
-                    ROTATION_SERVICE.getStateHandler().getServerYaw(),
-                    ROTATION_SERVICE.getStateHandler().getServerPitch()
+                    ROTATION_SERVICE.getStateHandler().getServerYRot(),
+                    ROTATION_SERVICE.getStateHandler().getServerXRot()
             );
 
 
@@ -229,8 +227,7 @@ public class InteractionUtils {
         if (canPlace) {
 
             if (!isOffhand) {
-                int prev = MC.player.getInventory().getSelectedSlot();
-                InventoryUtils.attemptSwitch(slot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, swapBack);
 
                 if (simulate)
                     MC.gameMode.useItemOn(MC.player, MAIN_HAND, hitResult);
@@ -241,9 +238,6 @@ public class InteractionUtils {
                     MC.player.swing(MAIN_HAND);
 
                 result = true;
-
-                if (swapBack)
-                    InventoryUtils.attemptSwitch(prev);
             }
             else {
                 if (simulate)
@@ -278,7 +272,7 @@ public class InteractionUtils {
         if (MC.player.getOffhandItem().is(item))
             isOffhand = true;
 
-        int slot = InventoryUtils.findHotbarItem(stack -> stack.is(item));
+        int slot = INVENTORY_SERVICE.getSwapHandler().findHotbarItem(stack -> stack.is(item));
         if (slot == -1 && !isOffhand)
             return false;
 
@@ -336,8 +330,8 @@ public class InteractionUtils {
         boolean canInteract = true;
 
         if (rotate) {
-            float yaw = (float) getYawToVec(MC.player, pos.getCenter());
-            float pitch = (float) getPitchToVec(MC.player, pos.getCenter());
+            float yaw = (float) getYRotToVec(MC.player, pos.getCenter());
+            float pitch = (float) getXRotToVec(MC.player, pos.getCenter());
 
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(rotationId, 8, yaw, pitch));
             // else
@@ -353,8 +347,8 @@ public class InteractionUtils {
                     MC.player,
                     b,
                     range,
-                    ROTATION_SERVICE.getStateHandler().getServerYaw(),
-                    ROTATION_SERVICE.getStateHandler().getServerPitch()
+                    ROTATION_SERVICE.getStateHandler().getServerYRot(),
+                    ROTATION_SERVICE.getStateHandler().getServerXRot()
             );
 
 
@@ -367,8 +361,7 @@ public class InteractionUtils {
         }
 
         if (!isOffhand) {
-            int prev = MC.player.getInventory().getSelectedSlot();
-            InventoryUtils.attemptSwitch(slot);
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, swapBack);
 
             if (simulate)
                 MC.gameMode.useItemOn(MC.player, MAIN_HAND, hit);
@@ -377,8 +370,6 @@ public class InteractionUtils {
 
             if (swing)
                 MC.player.swing(MAIN_HAND);
-            if (swapBack)
-                InventoryUtils.attemptSwitch(prev);
         } else {
             if (simulate)
                 MC.gameMode.useItemOn(MC.player, OFF_HAND, hit);
@@ -430,6 +421,7 @@ public class InteractionUtils {
         return dirs;
     }
 
+    @Deprecated
     public static void airPlace(BlockHitResult target, boolean grim, boolean swing) {
         if (grim) {
             MC.getConnection().send(new ServerboundPlayerActionPacket(
@@ -457,6 +449,9 @@ public class InteractionUtils {
         if (!MC.level.getBlockState(pos).canBeReplaced())
             return false;
 
+        if (!withinLevelHeight(pos))
+            return false;
+
         if (!multitask && MC.player.isUsingItem())
             return false;
 
@@ -465,7 +460,7 @@ public class InteractionUtils {
         if (grim)
             isOffhand = false;
 
-        int slot = InventoryUtils.findHotbarItem(stack -> stack.is(item));
+        int slot = INVENTORY_SERVICE.getSwapHandler().findHotbarItem(stack -> stack.is(item));
         if (slot == -1 && !isOffhand)
             return false;
 
@@ -478,13 +473,13 @@ public class InteractionUtils {
 
         boolean canPlace = true;
         if (rotate) {
-            float yaw = (float) getYawToVec(MC.player, center);
-            float pitch = (float) getPitchToVec(MC.player, center);
+            float yaw = (float) getYRotToVec(MC.player, center);
+            float pitch = (float) getXRotToVec(MC.player, center);
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(rotationId, 8, yaw, pitch));
 
             boolean insideBox = blockBox.contains(MC.player.getEyePosition());
 
-            EntityHitResult serverCheck = raycastAABBFromPlayer(MC.player, blockBox, range, ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch());
+            EntityHitResult serverCheck = raycastAABBFromPlayer(MC.player, blockBox, range, ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
 
 
             canPlace = insideBox || serverCheck != null;
@@ -496,8 +491,7 @@ public class InteractionUtils {
 
         if (canPlace) {
             if (!isOffhand) {
-                int prev = MC.player.getInventory().getSelectedSlot();
-                InventoryUtils.attemptSwitch(slot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, swapBack);
 
                 if (grim) {
                     MC.getConnection().send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.SWAP_ITEM_WITH_OFFHAND, BlockPos.ZERO, Direction.DOWN));
@@ -526,10 +520,6 @@ public class InteractionUtils {
 
                     result = true;
                 }
-
-                if (swapBack)
-                    InventoryUtils.attemptSwitch(prev);
-
             } else {
                     if (simulate)
                         MC.gameMode.useItemOn(MC.player, InteractionHand.OFF_HAND, hitResult);
@@ -605,8 +595,8 @@ public class InteractionUtils {
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(
                     rotationId,
                     3,
-                    (float) getYawToVec(MC.player, center),
-                    (float) getPitchToVec(MC.player, center)
+                    (float) getYRotToVec(MC.player, center),
+                    (float) getXRotToVec(MC.player, center)
             ));
 
             if (!ROTATION_SERVICE.getRequestHandler().isCompleted(rotationId)) {

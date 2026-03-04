@@ -44,7 +44,7 @@ public class SpeedFeature extends HudElementFeature {
     }
 
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     private void onTick(PreTickEvent event) {
         if (MC.player == null  || !MC.player.isAlive()) {
             speedSamples = new double[samples.get()];

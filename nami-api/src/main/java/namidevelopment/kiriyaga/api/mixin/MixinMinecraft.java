@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -24,52 +23,6 @@ import namidevelopment.kiriyaga.api.model.feature.Feature;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 @Mixin(Minecraft.class)
 public abstract class MixinMinecraft {
-    @Shadow @Nullable public LocalPlayer player;
-    @Shadow public ClientLevel level;
-
-    @Inject(method = "handleKeybinds", at = @At("TAIL"))
-    private void onHandleInputEvents_TAIL(CallbackInfo ci) {
-        if (MC == null || MC.mouseHandler == null || MC.screen != null) return;
-
-        for (Feature Feature : FEATURE_SERVICE.getStorage().getAll()) {
-            if (Feature == null) continue;
-            KeyBindSetting bind = Feature.getKeyBind();
-            if (bind == null) continue;
-
-            if (bind.get() != KeyBindSetting.KEY_NONE) {
-                boolean currentlyPressed = bind.isPressed();
-
-                if (bind.isHoldMode()) {
-                    if (currentlyPressed && !Feature.isEnabled()) {
-                        Feature.setEnabled(true);
-                    } else if (!currentlyPressed && Feature.isEnabled()) {
-                        Feature.setEnabled(false);
-                    }
-                } else {
-                    if (currentlyPressed && !bind.wasPressedLastTick()) {
-                        Feature.toggle();
-                    }
-                }
-
-                bind.setWasPressedLastTick(currentlyPressed);
-            }
-        }
-
-        for (Macro macro : MACRO_SERVICE.getAll()) {
-            int keyCode = macro.getKeyCode();
-            boolean currentlyPressed = MACRO_SERVICE.isKeyPressed(keyCode);
-            boolean wasPressed = MACRO_SERVICE.wasKeyPressedLastTick(keyCode);
-
-            if (currentlyPressed && !wasPressed) {
-                if (MC.player != null) {
-                    MC.player.connection.sendChat(macro.getMessage());
-                }
-            }
-
-            MACRO_SERVICE.setKeyPressedLastTick(keyCode, currentlyPressed);
-        }
-    }
-
     @ModifyArg(method = "runTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;logFrameDuration(J)V"),index = 0)
     private long runTick(long frameDurationNs) {
         SERVER_SERVICE.setLastFrameDurationNs(frameDurationNs);
@@ -90,8 +43,8 @@ public abstract class MixinMinecraft {
         if (!ROTATION_SERVICE.getStateHandler().isRotating() || !config.isFutureRotations()) {
             return;
         }
-        float yaw = ROTATION_SERVICE.getStateHandler().getRotationYaw();
-        float pitch = ROTATION_SERVICE.getStateHandler().getRotationPitch();
+        float yaw = ROTATION_SERVICE.getStateHandler().getRotationYRot();
+        float pitch = ROTATION_SERVICE.getStateHandler().getRotationXRot();
         targetRotation.set(new Vec2(yaw, pitch));
         var request = ROTATION_SERVICE.getRequestHandler().getActiveRequest();
         if (request == null) {
@@ -121,7 +74,7 @@ public abstract class MixinMinecraft {
             return;
         }
 
-        ROTATION_SERVICE.getStateHandler().setServerYaw(rot.x);
-        ROTATION_SERVICE.getStateHandler().setServerPitch(rot.y);
+        ROTATION_SERVICE.getStateHandler().setServerYRot(rot.x);
+        ROTATION_SERVICE.getStateHandler().setServerXRot(rot.y);
     }
 }

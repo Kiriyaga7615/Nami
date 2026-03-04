@@ -35,7 +35,7 @@ public class SelfWebFeature extends Feature {
     public final EnumSetting<PlaceMode> placeMode = addSetting(new EnumSetting<>("PlaceMode", PlaceMode.LEGS));
     public final BoolSetting selfToggle = addSetting(new BoolSetting("SelfToggle", true));
     public final BoolSetting onlyTarget = addSetting(new BoolSetting("OnlyTarget", false));
-    public final BoolSetting swapBack = addSetting(new BoolSetting("SwapBack", true));
+    public final BoolSetting swapSilent = addSetting(new BoolSetting("SwapSilent", true));
     public final BoolSetting multiTask = addSetting(new BoolSetting("MultiTask", false));
     public final IntSetting delay = addSetting(new IntSetting("Delay", 1, 0, 5));
     public final IntSetting shiftTicks = addSetting(new IntSetting("ShiftTicks", 1, 1, 8));
@@ -73,7 +73,7 @@ public class SelfWebFeature extends Feature {
         for (BlockPos pos : positions) {
             if (MC.level.getBlockState(pos).isAir()) {
                 renderPos = pos;
-                if (InteractionUtils.placeBlock(pos, Items.COBWEB, swapBack.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get()))
+                if (InteractionUtils.placeBlock(pos, Items.COBWEB, swapSilent.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get()))
                     placed++;
                 if (placed >= shiftTicks.get()) break;
             }

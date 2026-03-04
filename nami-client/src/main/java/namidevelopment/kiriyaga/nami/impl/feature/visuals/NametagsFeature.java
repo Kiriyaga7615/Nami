@@ -122,82 +122,95 @@ public class NametagsFeature extends Feature {
             }
 
             Component display = CAT_FORMAT.format(colored);
-            float scale = 1.0f;if (dynamicScale.get()) {
-                float dist = (float) FEATURE_SERVICE.getStorage().getByClass(FreecamFeature.class).pos.distanceTo(ent.position());
-                scale = Math.max(0.5f, Math.min(1.0f, 20.0f / dist));
+            float scale = 1.0f;
+
+            if (dynamicScale.get()) {
+                Vec3 camPos = MC.gameRenderer.getMainCamera().position();
+                Vec3 entPos = vec3d;
+                float dist = (float) camPos.distanceTo(entPos);
+                float start = 10f;
+                float end = 0.5f;
+                float maxScale = 4f;
+
+                if (dist < start) {
+                    float t = (start - dist) / (start - end);
+                    t = Math.max(0.0f, Math.min(1.0f, t));
+                    t = (float) Math.pow(t, 4);
+                    scale = 1.0f + t * (maxScale - 1.0f);
+                } else {
+                    scale = 1.0f;
+                }
             }
 
-            scale = scale * scaling.get().floatValue();
+            scale *= scaling.get().floatValue();
 
             matrices.pushMatrix();
             matrices.translate((float) projected.x, (float) projected.y);
             matrices.scale(scale, scale);
 
             if (rectangle.get()) {
-                    GuiGraphics ctx = event.getDrawContext();
-                    int x1 = (int) (-width / 2f - 1);
-                    int y1 = (int) (-FONT_SERVICE.getHeight());
-                    int x2 = (int) (width / 2 + 2);
-                    int y2 = 0;
-                    ctx.fill(x1, y1, x2, y2, 0x64000000);
-                    int outlineColor = (140 << 24) | (19 << 16) | (19 << 8) | 19;
-                    ctx.fill(x1, y1, x2, y1 + 1, outlineColor);
-                    ctx.fill(x1, y2 - 1, x2, y2, outlineColor);
-                    ctx.fill(x1, y1, x1 + 1, y2, outlineColor);
-                    ctx.fill(x2 - 1, y1, x2, y2, outlineColor);
+                GuiGraphics ctx = event.getDrawContext();
+                int x1 = (int) (-width / 2f - 1);
+                int y1 = (int) (-FONT_SERVICE.getHeight());
+                int x2 = (int) (width / 2 + 2);
+                int y2 = 0;
+                ctx.fill(x1, y1, x2, y2, 0x64000000);
+                int color = (140 << 24) | (19 << 16) | (19 << 8) | 19;
+                int thick = 1;
+                ctx.fill(x1 + 1, y1, x2 - 1, y1 + thick, color);
+                ctx.fill(x1 + 1, y2 - thick, x2 - 1, y2, color);
+                ctx.fill(x1, y1, x1 + thick, y2, color);
+                ctx.fill(x2 - thick, y1, x2, y2, color);
+            }
+
+            FONT_SERVICE.drawText(event.getDrawContext(), display, (int) (-FONT_SERVICE.getWidth(text) / 2.f), -FONT_SERVICE.getHeight(), true);
+
+            if (armor.get()) {
+                List<ItemStack> stacks = new ArrayList<>();
+                ItemStack[] all = new ItemStack[]{
+                        ((Player) ent).getItemBySlot(EquipmentSlot.MAINHAND),
+                        ((Player) ent).getItemBySlot(EquipmentSlot.FEET),
+                        ((Player) ent).getItemBySlot(EquipmentSlot.LEGS),
+                        ((Player) ent).getItemBySlot(EquipmentSlot.CHEST),
+                        ((Player) ent).getItemBySlot(EquipmentSlot.HEAD),
+                        ((Player) ent).getItemBySlot(EquipmentSlot.OFFHAND)
+                };
+
+                for (ItemStack stack : all) {
+                    if (!stack.isEmpty()) stacks.add(stack);
                 }
 
-                FONT_SERVICE.drawText(event.getDrawContext(), display, (int) (-FONT_SERVICE.getWidth(text) / 2.f), -FONT_SERVICE.getHeight(), true);
+                if (!stacks.isEmpty()) {
+                    int totalWidth = (stacks.size() * 16) + ((stacks.size() - 1) * 2);
+                    int x = -totalWidth / 2;
+                    int y = -30;
 
-                if (armor.get()) {
-                    List<ItemStack> stacks = new ArrayList<>();
-                    ItemStack[] all = new ItemStack[]{
-                            ((Player) ent).getItemBySlot(EquipmentSlot.MAINHAND),
-                            ((Player) ent).getItemBySlot(EquipmentSlot.FEET),
-                            ((Player) ent).getItemBySlot(EquipmentSlot.LEGS),
-                            ((Player) ent).getItemBySlot(EquipmentSlot.CHEST),
-                            ((Player) ent).getItemBySlot(EquipmentSlot.HEAD),
-                            ((Player) ent).getItemBySlot(EquipmentSlot.OFFHAND)
-                    };
+                    for (int i = stacks.size() - 1; i >= 0; i--) {
+                        ItemStack stack = stacks.get(i);
+                        event.getDrawContext().renderItem(stack, x, y);
+                        event.getDrawContext().renderItemDecorations(FONT_SERVICE.rendererProvider.getRenderer(), stack, x, y);
 
-                    for (ItemStack stack : all) {
-                        if (!stack.isEmpty()) stacks.add(stack);
-                    }
+                        if (durability.get()) {
+                            int damage = stack.getDamageValue();
+                            int maxDamage = stack.getMaxDamage();
 
-                    if (!stacks.isEmpty()) {
-                        int totalWidth = (stacks.size() * 16) + ((stacks.size() - 1) * 2);
-                        int x = -totalWidth / 2;
-                        int y = -30;
-
-                        for (int i = stacks.size() - 1; i >= 0; i--) {
-                            ItemStack stack = stacks.get(i);
-                            event.getDrawContext().renderItem(stack, x, y);
-                            event.getDrawContext().renderItemDecorations(FONT_SERVICE.rendererProvider.getRenderer(), stack, x, y);
-
-                            if (durability.get()) {
-                                int damage = stack.getDamageValue();
-                                int maxDamage = stack.getMaxDamage();
-
-                                if (maxDamage > 0) {
-                                    event.getDrawContext().pose().pushMatrix();
-                                    event.getDrawContext().pose().translate(x + 8 - (FONT_SERVICE.getWidth((((maxDamage - damage) * 100) / maxDamage) + "%") * 0.75f) / 2.0F, y - (6 * 0.75f));
-                                    event.getDrawContext().pose().pushMatrix();
-                                    event.getDrawContext().pose().scale(0.75f, 0.75f);
-                                    float ratio = (maxDamage - damage) / (float) maxDamage;
-                                    int color = new Color(1.0f - ratio, ratio, 0).getRGB();
-
-                                    FONT_SERVICE.drawText(event.getDrawContext(), (((maxDamage - damage) * 100) / maxDamage) + "%", 0, 0, true, color);
-                                    event.getDrawContext().pose().popMatrix();
-                                    event.getDrawContext().pose().popMatrix();
-                                }
+                            if (maxDamage > 0) {
+                                event.getDrawContext().pose().pushMatrix();
+                                event.getDrawContext().pose().translate(x + 8 - (FONT_SERVICE.getWidth((((maxDamage - damage) * 100) / maxDamage) + "%") * 0.75f) / 2.0F, y - (6 * 0.75f));
+                                event.getDrawContext().pose().pushMatrix();
+                                event.getDrawContext().pose().scale(0.75f, 0.75f);
+                                float ratio = (maxDamage - damage) / (float) maxDamage;
+                                int color = new Color(1.0f - ratio, ratio, 0).getRGB();
+                                FONT_SERVICE.drawText(event.getDrawContext(), (((maxDamage - damage) * 100) / maxDamage) + "%", 0, 0, true, color);
+                                event.getDrawContext().pose().popMatrix();
+                                event.getDrawContext().pose().popMatrix();
                             }
-
-                            x += 16 + 2;
                         }
+                        x += 16 + 2;
                     }
                 }
-
-                matrices.popMatrix();
+            }
+            matrices.popMatrix();
         }
 
         if (items.get()) {
@@ -217,8 +230,21 @@ public class NametagsFeature extends Feature {
 
                     float scale = 1.0f;
                     if (dynamicScale.get()) {
-                        float dist = (float) FEATURE_SERVICE.getStorage().getByClass(FreecamFeature.class).pos.distanceTo(item.position());
-                        scale = Math.max(0.5f, Math.min(1.0f, 20.0f / dist));
+                        Vec3 camPos = MC.gameRenderer.getMainCamera().position();
+                        Vec3 entPos = pos;
+                        float dist = (float) camPos.distanceTo(entPos);
+                        float start = 10f;
+                        float end = 0.5f;
+                        float maxScale = 4f;
+
+                        if (dist < start) {
+                            float t = (start - dist) / (start - end);
+                            t = Math.max(0.0f, Math.min(1.0f, t));
+                            t = (float) Math.pow(t, 4);
+                            scale = 1.0f + t * (maxScale - 1.0f);
+                        } else {
+                            scale = 1.0f;
+                        }
                     }
 
                     scale = scale * scaling.get().floatValue();
@@ -245,8 +271,21 @@ public class NametagsFeature extends Feature {
 
                         float scale = 1.0f;
                         if (dynamicScale.get()) {
-                            float dist = MC.getCameraEntity().distanceTo(pearl);
-                            scale = Math.max(0.5f, Math.min(1.0f, 20.0f / dist));
+                            Vec3 camPos = MC.gameRenderer.getMainCamera().position();
+                            Vec3 entPos = pos;
+                            float dist = (float) camPos.distanceTo(entPos);
+                            float start = 10f;
+                            float end = 0.5f;
+                            float maxScale = 4f;
+
+                            if (dist < start) {
+                                float t = (start - dist) / (start - end);
+                                t = Math.max(0.0f, Math.min(1.0f, t));
+                                t = (float) Math.pow(t, 4);
+                                scale = 1.0f + t * (maxScale - 1.0f);
+                            } else {
+                                scale = 1.0f;
+                            }
                         }
 
                         matrices.pushMatrix();

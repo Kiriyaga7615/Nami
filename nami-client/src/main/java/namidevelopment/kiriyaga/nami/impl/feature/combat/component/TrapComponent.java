@@ -45,7 +45,7 @@ public class TrapComponent {
     public final BoolSetting grim;
     public final BoolSetting rotate;
     public final BoolSetting strictDirection;
-    public final BoolSetting swapBack;
+    public final BoolSetting swapSilent;
     public final BoolSetting multiTask;
     public final BoolSetting simulate;
     public final BoolSetting antiBreak;
@@ -68,7 +68,7 @@ public class TrapComponent {
         grim = feature.addSetting(new BoolSetting("Grim", false));
         rotate = feature.addSetting(new BoolSetting("Rotate", true));
         strictDirection = feature.addSetting(new BoolSetting("StrictDirection", true));
-        swapBack = feature.addSetting(new BoolSetting("SwapBack", true));
+        swapSilent = feature.addSetting(new BoolSetting("SwapSilent", true));
         multiTask = feature.addSetting(new BoolSetting("MultiTask", false));
         simulate = feature.addSetting(new BoolSetting("Simulate", false));
         antiBreak = feature.addSetting(new BoolSetting("AntiBreak", false));
@@ -113,7 +113,7 @@ public class TrapComponent {
             Item handItem = MC.player.getMainHandItem().getItem();
 
             for (BlockPos pos : placedPositions) {
-                InteractionUtils.interactBlockAt(pos, handItem, null, swapBack.get(), multiTask.get(), range.get(), rotate.get(), strictDirection.get(), false, swing.get(), owner.getName()+"_interact");
+                InteractionUtils.interactBlockAt(pos, handItem, null, swapSilent.get(), multiTask.get(), range.get(), rotate.get(), strictDirection.get(), false, swing.get(), owner.getName()+"_interact");
             }
 
             placedPositions.clear();
@@ -131,9 +131,12 @@ public class TrapComponent {
             return;
 
         if (attack.get() && !targetPositions.isEmpty()) {
-            for (EndCrystal crystal : MC.level.getEntitiesOfClass(EndCrystal.class, new AABB(MC.player.blockPosition()).inflate(range.get() + 6.0))) {
+            for (EndCrystal crystal : MC.level.getEntitiesOfClass(EndCrystal.class, new AABB(MC.player.blockPosition()).inflate(range.get() + 3.0))) {
                 AABB crystalBox = crystal.getBoundingBox();
                 for (BlockPos pos : targetPositions) {
+                    if (!MC.level.getBlockState(pos).canBeReplaced())
+                        continue;
+
                     AABB blockBox = new AABB(pos);
                     if (blockBox.intersects(crystalBox)) {
                         if (crystal.tickCount >= attackAge.get())
@@ -273,9 +276,9 @@ public class TrapComponent {
 
     private boolean place(BlockPos pos, Item item, boolean airPlace, boolean grim, Feature owner) {
         if (airPlace)
-            return InteractionUtils.airPlace(pos, Direction.DOWN, item, swapBack.get(), range.get(), rotate.get(), grim, simulate.get(), swing.get(), owner.getName()+"_airplace", multiTask.get());
+            return InteractionUtils.airPlace(pos, Direction.DOWN, item, swapSilent.get(), range.get(), rotate.get(), grim, simulate.get(), swing.get(), owner.getName()+"_airplace", multiTask.get());
 
-        return InteractionUtils.placeBlock(pos, item, swapBack.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), owner.getName()+"_place", multiTask.get());
+        return InteractionUtils.placeBlock(pos, item, swapSilent.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), owner.getName()+"_place", multiTask.get());
     }
 
     private void doBreak(EndCrystal target, Feature owner) {
@@ -287,8 +290,8 @@ public class TrapComponent {
 
         if (attackRotate.get()) {
             Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), target.getBoundingBox());
-            float yaw = (float) getYawToVec(MC.player, pos);
-            float pitch = (float) getPitchToVec(MC.player, pos);
+            float yaw = (float) getYRotToVec(MC.player, pos);
+            float pitch = (float) getXRotToVec(MC.player, pos);
 
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(owner.getName()+"_attack", 9, yaw, pitch));
 
@@ -297,7 +300,7 @@ public class TrapComponent {
 
         if (rotated) {
             boolean insideBox = target.getBoundingBox().contains(MC.player.getEyePosition(1.0f));
-            EntityHitResult serverCheck = raycastTarget(MC.player, target, attackRange.get(), ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch());
+            EntityHitResult serverCheck = raycastTarget(MC.player, target, attackRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
             if (serverCheck == null && !insideBox) return;
         }
 

@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static namidevelopment.kiriyaga.api.NamiApi.MC;
 import static namidevelopment.kiriyaga.nami.Nami.*;
 
-@RegisterFeature
+//@RegisterFeature
 public class FunFeature extends Feature {
 
     public final BoolSetting interactDebug = addSetting(new BoolSetting("ShowInteract", false));
@@ -47,7 +47,7 @@ public class FunFeature extends Feature {
 
     private final Map<AABB, Integer> interactTargets = new ConcurrentHashMap<>();
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketSend(PacketSendEvent event) {
         if (!interactDebug.get()) return;
         if (MC.level == null || MC.player == null) return;
@@ -60,7 +60,7 @@ public class FunFeature extends Feature {
     }
 
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onRender3D(Render3DEvent event) {
         if (MC.level == null || MC.player == null) return;
 

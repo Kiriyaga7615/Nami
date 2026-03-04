@@ -1,153 +1,71 @@
 package namidevelopment.kiriyaga.api.util;
-import org.lwjgl.glfw.GLFW;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KeyUtils {
+
+    private static final int MAX_KEY = 350;
+    private static final int MAX_MOUSE = 8;
+
     public static int parseKey(String keyName) {
+        if (keyName == null || keyName.equalsIgnoreCase("NONE"))
+            return -1;
+
         keyName = keyName.toUpperCase();
 
         try {
             return Integer.parseInt(keyName);
         } catch (NumberFormatException ignored) {}
 
-        switch (keyName) {
-            case "LCTRL": return GLFW.GLFW_KEY_LEFT_CONTROL;
-            case "RCTRL": return GLFW.GLFW_KEY_RIGHT_CONTROL;
-            case "LSHIFT": return GLFW.GLFW_KEY_LEFT_SHIFT;
-            case "RSHIFT": return GLFW.GLFW_KEY_RIGHT_SHIFT;
-            case "LALT": return GLFW.GLFW_KEY_LEFT_ALT;
-            case "RALT": return GLFW.GLFW_KEY_RIGHT_ALT;
-            case "SPACE": return GLFW.GLFW_KEY_SPACE;
-            case "ENTER": return GLFW.GLFW_KEY_ENTER;
-            case "TAB": return GLFW.GLFW_KEY_TAB;
-            case "ESC": case "ESCAPE": return GLFW.GLFW_KEY_ESCAPE;
-            case "UP": return GLFW.GLFW_KEY_UP;
-            case "DOWN": return GLFW.GLFW_KEY_DOWN;
-            case "LEFT": return GLFW.GLFW_KEY_LEFT;
-            case "RIGHT": return GLFW.GLFW_KEY_RIGHT;
-            case "BACKSPACE": return GLFW.GLFW_KEY_BACKSPACE;
-            case "DELETE": return GLFW.GLFW_KEY_DELETE;
-            case "INSERT": return GLFW.GLFW_KEY_INSERT;
-            case "HOME": return GLFW.GLFW_KEY_HOME;
-            case "END": return GLFW.GLFW_KEY_END;
-            case "PAGEUP": return GLFW.GLFW_KEY_PAGE_UP;
-            case "PAGEDOWN": return GLFW.GLFW_KEY_PAGE_DOWN;
-
-            case "MOUSELEFT":
-            case "MOUSE_1":
-            case "MBUTTON1":
-            case "LEFTCLICK": return GLFW.GLFW_MOUSE_BUTTON_LEFT;
-
-            case "MOUSERIGHT":
-            case "MOUSE_2":
-            case "MBUTTON2":
-            case "RIGHTCLICK": return GLFW.GLFW_MOUSE_BUTTON_RIGHT;
-
-            case "MOUSEMIDDLE":
-            case "MOUSE_3":
-            case "MBUTTON3":
-            case "MIDDLECLICK": return GLFW.GLFW_MOUSE_BUTTON_MIDDLE;
-
-            case "MOUSE4": return GLFW.GLFW_MOUSE_BUTTON_4;
-            case "MOUSE5": return GLFW.GLFW_MOUSE_BUTTON_5;
-        }
-
-        if (keyName.length() == 1) {
-            char c = keyName.charAt(0);
-            if (c >= 'A' && c <= 'Z') {
-                return GLFW.GLFW_KEY_A + (c - 'A');
-            }
-            if (c >= '0' && c <= '9') {
-                return GLFW.GLFW_KEY_0 + (c - '0');
+        for (int key = 0; key <= MAX_KEY; key++) {
+            String name = getKeyName(key);
+            if (name.equalsIgnoreCase(keyName)) {
+                return key;
             }
         }
-
+        for (int button = 0; button <= MAX_MOUSE; button++) {
+            String name = getMouseName(button);
+            if (name.equalsIgnoreCase(keyName)) {
+                return button;
+            }
+        }
         return -1;
     }
 
     public static String getKeyName(int keyCode) {
-        switch (keyCode) {
-            case GLFW.GLFW_KEY_LEFT_CONTROL: return "LCTRL";
-            case GLFW.GLFW_KEY_RIGHT_CONTROL: return "RCTRL";
-            case GLFW.GLFW_KEY_LEFT_SHIFT: return "LSHIFT";
-            case GLFW.GLFW_KEY_RIGHT_SHIFT: return "RSHIFT";
-            case GLFW.GLFW_KEY_LEFT_ALT: return "LALT";
-            case GLFW.GLFW_KEY_RIGHT_ALT: return "RALT";
-            case GLFW.GLFW_KEY_SPACE: return "SPACE";
-            case GLFW.GLFW_KEY_ENTER: return "ENTER";
-            case GLFW.GLFW_KEY_TAB: return "TAB";
-            case GLFW.GLFW_KEY_ESCAPE: return "ESC";
-            case GLFW.GLFW_KEY_UP: return "UP";
-            case GLFW.GLFW_KEY_DOWN: return "DOWN";
-            case GLFW.GLFW_KEY_LEFT: return "LEFT";
-            case GLFW.GLFW_KEY_RIGHT: return "RIGHT";
-            case GLFW.GLFW_KEY_BACKSPACE: return "BACKSPACE";
-            case GLFW.GLFW_KEY_DELETE: return "DELETE";
-            case GLFW.GLFW_KEY_INSERT: return "INSERT";
-            case GLFW.GLFW_KEY_HOME: return "HOME";
-            case GLFW.GLFW_KEY_END: return "END";
-            case GLFW.GLFW_KEY_PAGE_UP: return "PAGEUP";
-            case GLFW.GLFW_KEY_PAGE_DOWN: return "PAGEDOWN";
-
-            case GLFW.GLFW_MOUSE_BUTTON_LEFT: return "MOUSELEFT";
-            case GLFW.GLFW_MOUSE_BUTTON_RIGHT: return "MOUSERIGHT";
-            case GLFW.GLFW_MOUSE_BUTTON_MIDDLE: return "MOUSEMIDDLE";
-            case GLFW.GLFW_MOUSE_BUTTON_4: return "MOUSE4";
-            case GLFW.GLFW_MOUSE_BUTTON_5: return "MOUSE5";
-        }
-
-        if (keyCode >= GLFW.GLFW_KEY_A && keyCode <= GLFW.GLFW_KEY_Z) {
-            return String.valueOf((char)('A' + (keyCode - GLFW.GLFW_KEY_A)));
-        }
-        if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-            return String.valueOf((char)('0' + (keyCode - GLFW.GLFW_KEY_0)));
-        }
-
         if (keyCode == -1)
             return "NONE";
 
-        return "KEY_" + keyCode;
+        InputConstants.Key key = InputConstants.Type.KEYSYM.getOrCreate(keyCode);
+        String name = key.getName();
+        if (name.startsWith("key.keyboard.")) {
+            return name.replace("key.keyboard.", "").toUpperCase();
+        }
+        return name.toUpperCase();
+    }
+
+    public static String getMouseName(int button) {
+        InputConstants.Key key = InputConstants.Type.MOUSE.getOrCreate(button);
+        String name = key.getName();
+        if (name.startsWith("key.mouse.")) {
+            return name.replace("key.mouse.", "MOUSE").toUpperCase();
+        }
+        return name.toUpperCase();
     }
 
     public static List<String> getAllKeyNames() {
         List<String> list = new ArrayList<>();
-
         list.add("NONE");
-        list.add("MOUSELEFT");
-        list.add("MOUSERIGHT");
-        list.add("MOUSEMIDDLE");
-        list.add("MOUSE4");
-        list.add("MOUSE5");
-        list.add("LCTRL");
-        list.add("RCTRL");
-        list.add("LSHIFT");
-        list.add("RSHIFT");
-        list.add("LALT");
-        list.add("RALT");
-        list.add("SPACE");
-        list.add("ENTER");
-        list.add("TAB");
-        list.add("ESC");
-        list.add("UP");
-        list.add("DOWN");
-        list.add("LEFT");
-        list.add("RIGHT");
-        list.add("BACKSPACE");
-        list.add("DELETE");
-        list.add("INSERT");
-        list.add("HOME");
-        list.add("END");
-        list.add("PAGEUP");
-        list.add("PAGEDOWN");
-        for (char c = 'A'; c <= 'Z'; c++) {
-            list.add(String.valueOf(c));
-        }
-        for (char c = '0'; c <= '9'; c++) {
-            list.add(String.valueOf(c));
+        for (int key = 0; key <= MAX_KEY; key++) {
+            list.add(getKeyName(key));
         }
 
+        for (int button = 0; button <= MAX_MOUSE; button++) {
+            list.add(getMouseName(button));
+        }
         return list;
     }
 }

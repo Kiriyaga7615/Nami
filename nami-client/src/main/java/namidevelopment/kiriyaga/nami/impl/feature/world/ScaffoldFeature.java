@@ -44,7 +44,7 @@ public class ScaffoldFeature extends Feature {
     public final IntSetting shiftTicks = addSetting(new IntSetting("ShiftTicks", 1, 1, 8));
     public final BoolSetting rotate = addSetting(new BoolSetting("Rotate", true));
     public final BoolSetting strictDirection = addSetting(new BoolSetting("StrictDirection", true));
-    public final BoolSetting swapBack = addSetting(new BoolSetting("SwapBack", true));
+    public final BoolSetting swapSilent = addSetting(new BoolSetting("SwapSilent", true));
     public final BoolSetting multiTask = addSetting(new BoolSetting("MultiTask", false));
     public final BoolSetting simulate = addSetting(new BoolSetting("Simulate", true));
     public final BoolSetting swing = addSetting(new BoolSetting("Swing", true));
@@ -95,7 +95,7 @@ public class ScaffoldFeature extends Feature {
 
             renderPos = targetPos;
 
-            if (placeBlock(targetPos, getSlot(),swapBack.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get()))
+            if (placeBlock(targetPos, getSlot(),swapSilent.get(), range.get(), rotate.get(), strictDirection.get(), simulate.get(), swing.get(), this.name, multiTask.get()))
                 blocksPlaced++;
 
             if (blocksPlaced >= shiftTicks.get()) break;

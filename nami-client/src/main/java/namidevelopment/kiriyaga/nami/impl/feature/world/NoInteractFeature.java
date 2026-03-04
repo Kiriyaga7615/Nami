@@ -38,7 +38,7 @@ public class NoInteractFeature extends Feature {
         super("NoInteract", "Prevents you from interacting with certain blocks.", FeatureCategory.of("World"), "antiinteract");
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onPlaceBlock(PlaceBlockEvent event) {
         LocalPlayer player = event.getPlayer();
         BlockHitResult hitResult = event.getHitResult();
@@ -86,7 +86,7 @@ public class NoInteractFeature extends Feature {
     }
 
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onPacketSendRespawn(PacketSendEvent ev) {
         if (!packet.get()) return;
 

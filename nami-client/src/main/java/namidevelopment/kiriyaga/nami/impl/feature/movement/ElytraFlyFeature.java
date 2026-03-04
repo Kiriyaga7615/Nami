@@ -9,11 +9,11 @@ import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.client.RotationsFeature;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import namidevelopment.kiriyaga.nami.mixin.DuckKeyMapping;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
+import namidevelopment.kiriyaga.api.util.Timer;
 import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -53,6 +53,8 @@ public class ElytraFlyFeature extends Feature {
     // CONTROL
     //public final BoolSetting midAirFreeze = addSetting(new BoolSetting("mid air freeze", false));
     public final BoolSetting lockPitch = addSetting(new BoolSetting("LockPitch", true));
+    public final BoolSetting hover = addSetting(new BoolSetting("Hover", true));
+    public final IntSetting hoverSpeed = addSetting(new IntSetting("HoverSpeed", 10, 2, 20)); // тики 2-20
 
     // BOOST
     //public final BoolSetting boost = addSetting(new BoolSetting("Boost", false));
@@ -73,6 +75,9 @@ public class ElytraFlyFeature extends Feature {
     private long rocket = 0;
     private boolean climbingToTarget = false;
 
+    private final Timer hoverTimer = new Timer();
+    private boolean hoverB = true;
+
     public ElytraFlyFeature() {
         super("ElytraFly", "Improves elytra flying.", FeatureCategory.of("Movement"), "elytrafly");
         //boost.setShowCondition(() -> mode.get() == FlyMode.BOUNCE);
@@ -80,6 +85,8 @@ public class ElytraFlyFeature extends Feature {
         pitch.setShowCondition(() -> mode.get() == FlyMode.BOUNCE);
         pitchDegree.setShowCondition(() -> mode.get() == FlyMode.BOUNCE && pitch.get());
         lockPitch.setShowCondition(() -> mode.get() == FlyMode.ROTATION);
+        hover.setShowCondition(() -> mode.get() == FlyMode.ROTATION);
+        hoverSpeed.setShowCondition(() -> mode.get() == FlyMode.ROTATION && hover.get());
         vLow.setShowCondition(() -> mode.get() == FlyMode.GLIDE);
         vHigh.setShowCondition(() -> mode.get() == FlyMode.GLIDE);
         climbPitch.setShowCondition(() -> mode.get() == FlyMode.GLIDE);
@@ -107,7 +114,7 @@ public class ElytraFlyFeature extends Feature {
         baseY = 0;
     }
 
-/*    @SubscribeEvent(priority = EventPriority.HIGHEST)
+/*    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onMove(MoveEvent event) {
         if (MC.player == null || mode.get() != FlyMode.BOUNCE) return;
 
@@ -166,52 +173,32 @@ public class ElytraFlyFeature extends Feature {
         } else
         if (mode.get() == FlyMode.ROTATION) {
             if (!MC.player.isFallFlying()) return;
-
             Vec3 dir = getControlDirection();
-
-//            if (midAirFreeze.get() && dir == null) {
-//                float yaw = MC.player.getYaw();
-//                float pitchFreeze = -3f;
-//
-//                double forwardMotion = (MC.player.age % 8 < 4) ? 0.1 : -0.1;
-//
-//                double radYaw = Math.toRadians(yaw);
-//                Vec3d freezeVel = new Vec3d(
-//                        -Math.sin(radYaw) * forwardMotion,
-//                        0,
-//                        Math.cos(radYaw) * forwardMotion
-//                );
-//
-//                MC.player.setVelocity(freezeVel);
-//
-//                ROTATION_SERVICE.getRequestHandler().submit(
-//                        new RotationRequest(this.getName(), rotationPriority.get(), yaw, pitchFreeze)
-//                );
-//
-//                setJumpHeld(true);
-//                return;
-//            }
-
             if (dir != null) {
-                float finalYaw;
-                float finalPitch;
+                float finalYRot;
+                float finalXRot;
 
                 if (Math.abs(dir.y) > 0.5) {
-                    finalYaw = MC.player.getYRot();
-                    finalPitch = dir.y > 0 ? -90f : 90f;
+                    finalYRot = MC.player.getYRot();
+                    finalXRot = dir.y > 0 ? -90f : 90f;
                 } else {
-                    finalYaw = (float) Math.toDegrees(Math.atan2(dir.z, dir.x)) - 90f;
-                    finalPitch = MC.player.getXRot();
-                    if (lockPitch.get()) {
-                        finalPitch = -3f;
-                    }
+                    finalYRot = (float) Math.toDegrees(Math.atan2(dir.z, dir.x)) - 90f;
+                    finalXRot = MC.player.getXRot();
+                    if (lockPitch.get()) finalXRot = -3f;
                 }
 
-                ROTATION_SERVICE.getRequestHandler().submit(
-                        new RotationRequest(this.getName(), 1, finalYaw, finalPitch, RotationsFeature.RotationMode.MOTION)
-                );
+                ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.getName(), 1, finalYRot, finalXRot, RotationsFeature.RotationMode.MOTION));
+            } else if (hover.get()) {
+                int hoverMs = hoverSpeed.get() * 50;
+                if (hoverTimer.hasElapsed(hoverMs)) {
+                    hoverB = !hoverB;
+                    hoverTimer.reset();
+                }
 
-                setJumpHeld(true);
+                float targetYaw = MC.player.getYRot() + (hoverB ? 0f : 180f);
+                float targetPitch = -3f;
+
+                ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.getName(), 1, targetYaw, targetPitch, RotationsFeature.RotationMode.MOTION));
             }
         } else if (mode.get() == FlyMode.GLIDE) {
             if (!MC.player.isFallFlying())
@@ -267,7 +254,7 @@ public class ElytraFlyFeature extends Feature {
                 targetPitch = cruisePitch();
             }
 
-            float currentPitch = ROTATION_SERVICE.getStateHandler().getRotationPitch();
+            float currentPitch = ROTATION_SERVICE.getStateHandler().getRotationXRot();
             float smoothPitch = approach(currentPitch, targetPitch, 10);
 
             //TODO yaw smooth n
@@ -302,7 +289,7 @@ public class ElytraFlyFeature extends Feature {
         return Mth.clamp(pitchDeg, -89f, 89f);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     private void onPreTick2(PreTickEvent event) {
         if (MC.player == null) return;
 
@@ -378,10 +365,8 @@ public class ElytraFlyFeature extends Feature {
         int hotbarSlot = getSlotInHotbar(item);
 
         if (hotbarSlot != -1) {
-            int prevSlot = MC.player.getInventory().getSelectedSlot();
-            InventoryUtils.attemptSwitch(hotbarSlot);
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(hotbarSlot, true);
             MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
-            InventoryUtils.attemptSwitch(prevSlot);
             return true;
         }
 

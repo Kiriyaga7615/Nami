@@ -7,7 +7,9 @@ import namidevelopment.kiriyaga.api.event.impl.PacketSendEvent;
 import namidevelopment.kiriyaga.nami.impl.feature.miscellaneous.NoPacketKick;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -44,7 +46,6 @@ public abstract class MixinConnection {
     private void onPacketSend(Packet<?> packet, ChannelFutureListener listener, boolean flush, CallbackInfo ci) {
         PacketSendEvent event = new PacketSendEvent(packet);
         EVENT_SERVICE.post(event);
-
         if (event.isCancelled()) {
             ci.cancel();
         }

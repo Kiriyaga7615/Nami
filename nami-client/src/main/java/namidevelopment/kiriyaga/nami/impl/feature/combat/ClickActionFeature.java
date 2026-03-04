@@ -9,7 +9,6 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.KeyBindSetting;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -22,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
 import static namidevelopment.kiriyaga.api.NamiApi.INVENTORY_SERVICE;
 import static namidevelopment.kiriyaga.api.NamiApi.ROTATION_SERVICE;
 import static namidevelopment.kiriyaga.nami.Nami.*;
-import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.RotationUtils.getLookVectorFromYawPitch;
+import static namidevelopment.kiriyaga.api.NamiApi.*;
+import static namidevelopment.kiriyaga.api.util.RotationUtils.getLookVectorFromYRotXRot;
 
 @RegisterFeature
 public class ClickActionFeature extends Feature {
@@ -45,7 +45,6 @@ public class ClickActionFeature extends Feature {
 
     @Override
     public void onEnable() {
-        useKey.setWasPressedLastTick(false);
         recall = false;
     }
 
@@ -53,14 +52,9 @@ public class ClickActionFeature extends Feature {
     private void onTick(PreTickEvent ev) {
         if (MC.level == null || MC.player == null) return;
 
-        boolean pressed = useKey.isPressed();
-        if (groundAction.get() == GroundAction.EXP && pressed && !MC.player.isFallFlying()) {
-            use();
-            useKey.setWasPressedLastTick(pressed);
-            return;
-        }
+        boolean pressed = KEYBIND_SERVICE.isPressedToggle(useKey);
 
-        if (pressed && !useKey.wasPressedLastTick() || recall) {
+        if (pressed || recall) {
             recall = false;
             if (MC.player.isFallFlying()) {
                 useGlide();
@@ -68,8 +62,6 @@ public class ClickActionFeature extends Feature {
                 use();
             }
         }
-
-        useKey.setWasPressedLastTick(pressed);
     }
 
     private void use() {
@@ -113,10 +105,8 @@ public class ClickActionFeature extends Feature {
         int hotbarSlot = getSlotInHotbar(item);
 
         if (hotbarSlot != -1) {
-            int prevSlot = MC.player.getInventory().getSelectedSlot();
-            InventoryUtils.attemptSwitch(hotbarSlot);
+            INVENTORY_SERVICE.getSwapHandler().attemptSwitch(hotbarSlot, true);
             MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
-            InventoryUtils.attemptSwitch(prevSlot);
             return;
         }
 
@@ -143,8 +133,8 @@ public class ClickActionFeature extends Feature {
             if (MC.player.distanceToSqr(entity) > 100) continue;
 
             EntityHitResult hitResult = raycastTarget(MC.player, entity, rayRange,
-                    ROTATION_SERVICE.getStateHandler().getServerYaw(),
-                    ROTATION_SERVICE.getStateHandler().getServerPitch());
+                    ROTATION_SERVICE.getStateHandler().getServerYRot(),
+                    ROTATION_SERVICE.getStateHandler().getServerXRot());
 
             if (hitResult != null)
                 return false;
@@ -174,7 +164,7 @@ public class ClickActionFeature extends Feature {
 
     private EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yaw, float pitch) {
         Vec3 eyePos = player.getEyePosition(1.0f);
-        Vec3 look = getLookVectorFromYawPitch(yaw, pitch);
+        Vec3 look = getLookVectorFromYRotXRot(yaw, pitch);
         Vec3 reachEnd = eyePos.add(look.scale(reach));
 
         AABB targetBox = target.getBoundingBox();

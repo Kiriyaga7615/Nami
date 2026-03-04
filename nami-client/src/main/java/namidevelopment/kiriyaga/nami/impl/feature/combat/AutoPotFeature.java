@@ -11,7 +11,6 @@ import namidevelopment.kiriyaga.nami.impl.feature.client.RotationsFeature;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import namidevelopment.kiriyaga.api.util.Timer;
 import namidevelopment.kiriyaga.api.util.entity.TargetUtils;
 import net.minecraft.client.player.LocalPlayer;
@@ -55,7 +54,7 @@ public class AutoPotFeature extends Feature { // TODO: refactor this
         throwMode.setShowCondition(rotate::get);
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onPreTick(PreTickEvent ev) {
         if (MC.player == null || MC.level == null) return;
         if (MC.player.getEffect(potEffect.get().getEffect()) != null && MC.player.getEffect(potEffect.get().getEffect()).getAmplifier() >= amplifier.get()) {
@@ -93,13 +92,7 @@ public class AutoPotFeature extends Feature { // TODO: refactor this
                 }
 
                 if (rotate.get()) {
-                    ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(
-                            this.name,
-                            6,
-                            MC.player.getYRot(),
-                            pitch,
-                            RotationsFeature.RotationMode.MOTION
-                    ));
+                    ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(this.name, 6, MC.player.getYRot(), pitch, RotationsFeature.RotationMode.MOTION));
 
                     if (!ROTATION_SERVICE.getRequestHandler().isCompleted(this.name)) return;
                 }
@@ -110,13 +103,12 @@ public class AutoPotFeature extends Feature { // TODO: refactor this
 
                 switch (swapMode.get()) {
                     case NORMAL -> {
-                        InventoryUtils.attemptSwitch(potSlot);
+                        INVENTORY_SERVICE.getSwapHandler().attemptSwitch(potSlot, false);
                         MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
                     }
                     case SILENT -> {
-                        InventoryUtils.attemptSwitch(potSlot);
+                        INVENTORY_SERVICE.getSwapHandler().attemptSwitch(potSlot, true);
                         MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
-                        InventoryUtils.attemptSwitch(prev);
                     }
                 }
 
@@ -150,18 +142,16 @@ public class AutoPotFeature extends Feature { // TODO: refactor this
             if (!ROTATION_SERVICE.getRequestHandler().isCompleted(this.name)) return;
         }
 
-        int prevSlot = MC.player.getInventory().getSelectedSlot();
         throwTimer.reset();
 
         switch (swapMode.get()) {
             case NORMAL -> {
-                InventoryUtils.attemptSwitch(potSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(potSlot, false);
                 MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
             }
             case SILENT -> {
-                InventoryUtils.attemptSwitch(potSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(potSlot, true);
                 MC.gameMode.useItem(MC.player, InteractionHand.MAIN_HAND);
-                InventoryUtils.attemptSwitch(prevSlot);
             }
         }
     }

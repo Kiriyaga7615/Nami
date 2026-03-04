@@ -9,7 +9,6 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.ItemStack;
@@ -68,7 +67,7 @@ public class AutoToolFeature extends Feature {
             }
 
             if (prioritySlot != -1) {
-                InventoryUtils.attemptSwitch(prioritySlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(prioritySlot, false);
                 return;
             }
 
@@ -92,7 +91,7 @@ public class AutoToolFeature extends Feature {
             }
 
             if (bestSlot != -1)
-                InventoryUtils.attemptSwitch(bestSlot);
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(bestSlot, false);
         });
     }
 }

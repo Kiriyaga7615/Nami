@@ -1,14 +1,12 @@
 package namidevelopment.kiriyaga.api.core.rotation.model;
 
 import namidevelopment.kiriyaga.api.contract.FeatureContractService;
-import namidevelopment.kiriyaga.api.contract.feature.FontFeatureConfig;
 import namidevelopment.kiriyaga.api.contract.feature.RotationsFeatureConfig;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.function.Supplier;
 
-import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
 
 /**
@@ -42,24 +40,24 @@ public class RotationRequest {
     private final boolean dynamic;
 
     /**
-     * Supplir of yaw param, dynamic
+     * Supplir of YRot param, dynamic
      */
-    private final Supplier<Float> yawSupplier;
+    private final Supplier<Float> yRotSupplier;
 
     /**
-     * Supplier of pitch param, dynamic.
+     * Supplier of XRot param, dynamic.
      */
-    private final Supplier<Float> pitchSupplier;
+    private final Supplier<Float> xRotSupplier;
 
     /**
-     * Static yaw param.
+     * Static YRot param.
      */
-    public float targetYaw;
+    public float targetYRot;
 
     /**
-     * dynamic yaw param.
+     * Static XRot param.
      */
-    public float targetPitch;
+    public float targetXRot;
 
     /**
      * Rotation mode (default = settinga)
@@ -84,11 +82,11 @@ public class RotationRequest {
      *
      * @param id        identifier
      * @param priority  priority
-     * @param yaw       static yaw value
-     * @param pitch     static pitch value
+     * @param yRot       static yRot value
+     * @param XRot     static XRot value
      */
-    public RotationRequest(String id, int priority, float yaw, float pitch) {
-        this(id, priority, yaw, pitch, getDefaultRotationMode());
+    public RotationRequest(String id, int priority, float yRot, float XRot) {
+        this(id, priority, yRot, XRot, getDefaultRotationMode());
     }
 
     /**
@@ -96,18 +94,18 @@ public class RotationRequest {
      *
      * @param id            identifier
      * @param priority      priority
-     * @param yaw           static yaw value
-     * @param pitch         static pitch value
+     * @param yRot           static yRot value
+     * @param XRot         static XRot value
      * @param rotationMode  override rotation mode
      */
-    public RotationRequest(String id, int priority, float yaw, float pitch, RotationsFeatureConfig.RotationMode rotationMode) {
+    public RotationRequest(String id, int priority, float yRot, float XRot, RotationsFeatureConfig.RotationMode rotationMode) {
         this.id = id;
         this.priority = priority;
         this.dynamic = false;
-        this.targetYaw = yaw;
-        this.targetPitch = pitch;
-        this.yawSupplier = null;
-        this.pitchSupplier = null;
+        this.targetYRot = yRot;
+        this.targetXRot = XRot;
+        this.yRotSupplier = null;
+        this.xRotSupplier = null;
         this.rotationMode = rotationMode;
     }
 
@@ -116,11 +114,11 @@ public class RotationRequest {
      *
      * @param id             identifier
      * @param priority       priority
-     * @param yawSupplier    dynamic yaw supplier
-     * @param pitchSupplier  dynamic pitch supplier
+     * @param yRotSupplier    dynamic yRot supplier
+     * @param xRotSupplier  dynamic XRot supplier
      */
-    public RotationRequest(String id, int priority, Supplier<Float> yawSupplier, Supplier<Float> pitchSupplier) {
-        this(id, priority, yawSupplier, pitchSupplier, getDefaultRotationMode());
+    public RotationRequest(String id, int priority, Supplier<Float> yRotSupplier, Supplier<Float> xRotSupplier) {
+        this(id, priority, yRotSupplier, xRotSupplier, getDefaultRotationMode());
     }
 
     /**
@@ -128,16 +126,16 @@ public class RotationRequest {
      *
      * @param id             identifier
      * @param priority       priority
-     * @param yawSupplier    dynamic yaw supplier
-     * @param pitchSupplier  dynamic pitch supplier
+     * @param yRotSupplier    dynamic yRot supplier
+     * @param xRotSupplier  dynamic XRot supplier
      * @param rotationMode   override rotation mode
      */
-    public RotationRequest(String id, int priority, Supplier<Float> yawSupplier, Supplier<Float> pitchSupplier, RotationsFeatureConfig.RotationMode rotationMode) {
+    public RotationRequest(String id, int priority, Supplier<Float> yRotSupplier, Supplier<Float> xRotSupplier, RotationsFeatureConfig.RotationMode rotationMode) {
         this.id = id;
         this.priority = priority;
         this.dynamic = true;
-        this.yawSupplier = yawSupplier;
-        this.pitchSupplier = pitchSupplier;
+        this.yRotSupplier = yRotSupplier;
+        this.xRotSupplier = xRotSupplier;
         this.rotationMode = rotationMode;
         updateTarget();
     }
@@ -157,11 +155,11 @@ public class RotationRequest {
 
         Vec3 predictedEye = predictMotion(player);
 
-        this.targetYaw = getYawToVec(predictedEye, pos);
-        this.targetPitch = getPitchToVec(predictedEye, pos);
+        this.targetYRot = getYRotToVec(predictedEye, pos);
+        this.targetXRot = getXRotToVec(predictedEye, pos);
 
-        this.yawSupplier = null;
-        this.pitchSupplier = null;
+        this.yRotSupplier = null;
+        this.xRotSupplier = null;
         dynamic = false;
     }
 
@@ -170,13 +168,13 @@ public class RotationRequest {
     }
 
     /**
-     * Updates {@link #targetYaw} and {@link #targetPitch},
+     * Updates {@link #targetYRot} and {@link #targetXRot},
      * if request is dynamic and has valid {@link Supplier}.
      */
     public void updateTarget() {
-        if (dynamic && yawSupplier != null && pitchSupplier != null) {
-            targetYaw = yawSupplier.get();
-            targetPitch = pitchSupplier.get();
+        if (dynamic && yRotSupplier != null && xRotSupplier != null) {
+            targetYRot = yRotSupplier.get();
+            targetXRot = xRotSupplier.get();
         }
     }
 

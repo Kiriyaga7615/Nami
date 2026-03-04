@@ -59,7 +59,7 @@ public class AutoBowReleaseFeature extends Feature {
                     new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN)
             );
             MC.player.releaseUsingItem();
-            sendSequencedPacket(id -> new ServerboundUseItemPacket(MC.player.getUsedItemHand(), id, ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch()));
+            sendSequencedPacket(id -> new ServerboundUseItemPacket(MC.player.getUsedItemHand(), id, ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot()));
 
         }
     }

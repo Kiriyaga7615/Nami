@@ -9,8 +9,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-import static namidevelopment.kiriyaga.api.NamiApi.*;
-
 public class RotationUtils {
     public static int wrapDegrees(int angle) {
         angle %= 360;
@@ -26,14 +24,14 @@ public class RotationUtils {
         return angle;
     }
 
-    public static float yawDifference(float targetYaw, float currentYaw) {
+    public static float yRotDifference(float targetYaw, float currentYaw) {
         float diff = (targetYaw - currentYaw) % 360f;
         if (diff >= 180f) diff -= 360f;
         if (diff < -180f) diff += 360f;
         return diff;
     }
 
-    public static float alignYaw(float playerYaw, float currentYaw) {
+    public static float alignYRot(float playerYaw, float currentYaw) {
         int wraps = Math.round((currentYaw - playerYaw) / 360f);
         return playerYaw + wraps * 360f;
     }
@@ -97,13 +95,13 @@ public class RotationUtils {
         return predicted.getEyePos();
     }
 
-    public static int getYawToVec(Entity from, Vec3 to) {
+    public static int getYRotToVec(Entity from, Vec3 to) {
         double dx = to.x - from.getX();
         double dz = to.z - from.getZ();
         return wrapDegrees((int) Math.round(Math.toDegrees(Math.atan2(dz, dx)) - 90.0));
     }
 
-    public static int getPitchToVec(Entity from, Vec3 to) {
+    public static int getXRotToVec(Entity from, Vec3 to) {
         Vec3 eyePos = from.getEyePosition();
         double dx = to.x - eyePos.x;
         double dy = to.y - eyePos.y;
@@ -111,22 +109,35 @@ public class RotationUtils {
         return (int) Math.round(-Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz))));
     }
 
-    public static float getYawToVec(Vec3 from, Vec3 to) {
+    public static float getYRotToVec(Vec3 from, Vec3 to) {
         double dx = to.x - from.x;
         double dz = to.z - from.z;
         return (float) Mth.wrapDegrees(Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
     }
 
-    public static float getPitchToVec(Vec3 from, Vec3 to) {
+    public static float getXRotToVec(Vec3 from, Vec3 to) {
         double dx = to.x - from.x;
         double dy = to.y - from.y;
         double dz = to.z - from.z;
         return (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
     }
 
-    public static EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yaw, float pitch) {
+    public static EntityHitResult raycastTarget(Vec3 eyePos, Entity target, double reach, float yRot, float xRot) {
+        Vec3 look = getLookVectorFromYRotXRot(yRot, xRot);
+        Vec3 reachEnd = eyePos.add(look.scale(reach));
+
+        AABB targetBox = target.getBoundingBox();
+
+        if (targetBox.clip(eyePos, reachEnd).isPresent()) {
+            return new EntityHitResult(target);
+        }
+
+        return null;
+    }
+
+    public static EntityHitResult raycastTarget(Entity player, Entity target, double reach, float yRot, float xRot) {
         Vec3 eyePos = player.getEyePosition(1.0f);
-        Vec3 look = getLookVectorFromYawPitch(yaw, pitch);
+        Vec3 look = getLookVectorFromYRotXRot(yRot, xRot);
         Vec3 reachEnd = eyePos.add(look.scale(reach));
 
         AABB targetBox = target.getBoundingBox();
@@ -145,13 +156,13 @@ public class RotationUtils {
 
     public static EntityHitResult raycastAABBFromPlayer(Entity player, AABB box, double reach, float yaw, float pitch) {
         Vec3 eyePos = player.getEyePosition(1.0f);
-        Vec3 lookVec = getLookVectorFromYawPitch(yaw, pitch);
+        Vec3 lookVec = getLookVectorFromYRotXRot(yaw, pitch);
         Vec3 reachEnd = eyePos.add(lookVec.scale(reach));
 
         return raycastAABB(eyePos, reachEnd, box);
     }
 
-    public static Vec3 getLookVectorFromYawPitch(float yaw, float pitch) {
+    public static Vec3 getLookVectorFromYRotXRot(float yaw, float pitch) {
         float f = (float) Math.cos(-yaw * 0.017453292F - Math.PI);
         float g = (float) Math.sin(-yaw * 0.017453292F - Math.PI);
         float h = - (float) Math.cos(-pitch * 0.017453292F);

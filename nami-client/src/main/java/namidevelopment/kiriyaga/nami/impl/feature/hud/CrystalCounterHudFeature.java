@@ -48,7 +48,7 @@ public class CrystalCounterHudFeature extends HudElementFeature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onPacketReceive(PacketReceiveEvent event) {
         if (MC.player == null || MC.level == null) return;
         if (mode.get() != Mode.EXPLOSION) return;

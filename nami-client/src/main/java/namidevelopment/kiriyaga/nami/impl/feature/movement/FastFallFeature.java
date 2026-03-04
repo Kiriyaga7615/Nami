@@ -25,7 +25,7 @@ public class FastFallFeature extends Feature {
     private void onTick(PreTickEvent ev) {
         if (MC.level == null || MC.player == null) return;
 
-        if (!INPUT_SERVICE.hasAnyInput() || INPUT_SERVICE.isJumpPressed() || MC.player.isInPowderSnow || MC.player.isUnderWater() || MC.player.isInLava() || MC.player.isInWater() || MC.player.isFallFlying() || MC.player.isNoGravity())
+        if (!INPUT_SERVICE.getInputCache().hasAnyInput() || INPUT_SERVICE.getInputCache().jump() || MC.player.isInPowderSnow || MC.player.isUnderWater() || MC.player.isInLava() || MC.player.isInWater() || MC.player.isFallFlying() || MC.player.isNoGravity())
             return;
 
         if (MC.player.onGround()) {

@@ -9,7 +9,7 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 
 import static namidevelopment.kiriyaga.api.NamiApi.MC;
-import static namidevelopment.kiriyaga.api.util.RotationUtils.alignYaw;
+import static namidevelopment.kiriyaga.api.util.RotationUtils.alignYRot;
 
 @RegisterFeature
 public class YawFeature extends Feature {
@@ -20,14 +20,14 @@ public class YawFeature extends Feature {
         super("Yaw", "Snap player yaw to nearest fixed angle.", FeatureCategory.of("Movement"));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPreTick(PreTickEvent event) {
         if (MC.player == null || MC.level == null) return;
 
         float s = 360f / directions.get();
         float targetYaw = Math.round(MC.player.getYRot() / s) * s;
 
-        targetYaw = alignYaw(targetYaw, MC.player.getYRot());
+        targetYaw = alignYRot(targetYaw, MC.player.getYRot());
         MC.player.setYRot(targetYaw);
     }
 

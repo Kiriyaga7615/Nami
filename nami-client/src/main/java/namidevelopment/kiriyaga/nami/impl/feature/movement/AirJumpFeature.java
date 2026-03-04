@@ -23,20 +23,17 @@ public class AirJumpFeature extends Feature {
 
     @Override
     public void onEnable() {
-        useKey.setWasPressedLastTick(false);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     private void onTick(PreTickEvent ev) {
         if (MC.level == null || MC.player == null) return;
 
-        boolean pressed = useKey.isPressed();
+        boolean pressed = KEYBIND_SERVICE.isPressedToggle(useKey);
 
-        if (pressed && !useKey.wasPressedLastTick()) {
+        if (pressed) {
             performAirJump();
         }
-
-        useKey.setWasPressedLastTick(pressed);
     }
 
     private void performAirJump() {

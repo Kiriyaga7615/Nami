@@ -14,6 +14,7 @@ import namidevelopment.kiriyaga.api.util.entity.TargetUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.Blocks;
@@ -60,6 +61,10 @@ public class AutoMineFeature extends Feature {
         if (MC.level == null || MC.player == null) return;
 
         Entity target = TargetUtils.getTarget();
+
+        if (!(target instanceof Player))
+            return;
+
         SpeedMineFeature m = FEATURE_SERVICE.getStorage().getByClass(SpeedMineFeature.class);
 
 /*        if (m.currentTask != null)

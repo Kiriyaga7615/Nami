@@ -23,7 +23,7 @@ public class ClickGuiFeature extends Feature {
 
     public ClickGuiFeature() {
         super("ClickGui", "Opens client UI.", FeatureCategory.of("Client"), "clickgui","click", "gui", "menu", "clckgui");
-        this.keyBind.setDefaultKey(80);
+        this.keyBind.set(80);
     }
 
     @Override
@@ -33,6 +33,7 @@ public class ClickGuiFeature extends Feature {
 
         NAVIGATE_PANEL.resetActive();
         CLICK_GUI_SCREEN.scale = this.scale.get().floatValue(); // bad
+        HUD_EDITOR_SCREEN.scale = this.scale.get().floatValue(); // bad
         //CLICK_GUI_SCREEN.setPreviousScreen(MC.screen);
 
         CLICK_GUI_SCREEN.refreshPanels();

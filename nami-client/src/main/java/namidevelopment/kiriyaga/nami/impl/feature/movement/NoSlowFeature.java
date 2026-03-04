@@ -3,6 +3,7 @@ package namidevelopment.kiriyaga.nami.impl.feature.movement;
 import namidevelopment.kiriyaga.api.event.EventPriority;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
 import namidevelopment.kiriyaga.api.event.impl.ItemUseSlowEvent;
+import namidevelopment.kiriyaga.api.event.impl.PacketSendEvent;
 import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
@@ -10,6 +11,8 @@ import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
@@ -24,17 +27,13 @@ import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopme
 
 @RegisterFeature
 public class NoSlowFeature extends Feature {
-    public enum Mode {
-        NONE, VANILLA, GRIMV3, GRIM
-    }
+    public enum Mode {NONE, VANILLA, GRIMV3, GRIM}
 
-    public enum InvMove {
-        NONE, WAIT, STOP
-    }
+    public enum InvMove {NONE, WAIT, STOP}
 
     public final EnumSetting<Mode> mode = addSetting(new EnumSetting<>("Mode", Mode.VANILLA));
     public final BoolSetting items = addSetting(new BoolSetting("Items", true));
-    public final EnumSetting<InvMove> invMove = addSetting(new EnumSetting<>("MultiAction", InvMove.NONE));
+    //public final EnumSetting<InvMove> invMove = addSetting(new EnumSetting<>("MultiAction", InvMove.NONE));
     public final BoolSetting fastCrawl = addSetting(new BoolSetting("FastCrawl", false));
     //public final BoolSetting fastWeb = addSetting(new BoolSetting("fast web", false));
     public final BoolSetting onlyOnGround = addSetting(new BoolSetting("OnlyOnGround", true));
@@ -63,7 +62,6 @@ public class NoSlowFeature extends Feature {
         if (mode.get() == Mode.GRIMV3){
             boost = MC.player.tickCount % 3 == 0 || MC.player.tickCount % 4 == 0;
             //if (MC.player.age % 12 == 0) boost = false;
-
             if (boost){
                 ev.cancel();
                 return;
@@ -76,8 +74,8 @@ public class NoSlowFeature extends Feature {
         if (mode.get() == Mode.GRIM && MC.player.isUsingItem() && !MC.player.isShiftKeyDown() && items.get()) {
 
             if (isFood(MC.player.getActiveItem())) {
-                float yaw = ROTATION_SERVICE.getStateHandler().getServerYaw();
-                float pitch = ROTATION_SERVICE.getStateHandler().getServerPitch();
+                float yaw = ROTATION_SERVICE.getStateHandler().getServerYRot();
+                float pitch = ROTATION_SERVICE.getStateHandler().getServerXRot();
 
                 if (MC.player.getUsedItemHand() == InteractionHand.MAIN_HAND)
                     sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.OFF_HAND, id, yaw, pitch));

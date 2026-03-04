@@ -4,7 +4,7 @@ import namidevelopment.kiriyaga.api.contract.FeatureContractService;
 import namidevelopment.kiriyaga.api.contract.feature.RotationsFeatureConfig;
 import namidevelopment.kiriyaga.api.core.rotation.model.RotationRequest;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
-import static namidevelopment.kiriyaga.api.util.RotationUtils.yawDifference;
+import static namidevelopment.kiriyaga.api.util.RotationUtils.yRotDifference;
 
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.util.Mth;
@@ -49,6 +49,8 @@ public class RotationRequestHandler {
      * USE STATIC REQUEST AND UPDATE DATA ON ANY PRE-TICK EVENT HIGHER THEN LOWEST
      */
     public void submit(RotationRequest request) {
+        RotationsFeatureConfig rotationsFeatureConfig = FeatureContractService.get(RotationsFeatureConfig.class);
+
 //        RotationFeature.RotationMode mode = Feature_SERVICE.getStorage().getByClass(RotationFeature.class).rotation.get();
 
         if (request.rotationMode == RotationsFeatureConfig.RotationMode.SILENT) {
@@ -106,8 +108,8 @@ public class RotationRequestHandler {
                 .filter(r -> r.id.equals(id))
                 .findFirst()
                 .map(r -> {
-                    float yawDiff = yawDifference(r.targetYaw, stateHandler.getRotationYaw());
-                    float pitchDiff = r.targetPitch - stateHandler.getRotationPitch();
+                    float yawDiff = yRotDifference(r.targetYRot, stateHandler.getRotationYRot());
+                    float pitchDiff = r.targetXRot - stateHandler.getRotationXRot();
                     return Math.abs(yawDiff) <= threshold && Math.abs(pitchDiff) <= threshold;
                 }).orElse(false);
     }
@@ -142,31 +144,31 @@ public class RotationRequestHandler {
     private void performSilent(RotationRequest req) {
         RotationsFeatureConfig rotationsFeatureConfig = FeatureContractService.get(RotationsFeatureConfig.class);
 
-        float targetYaw = req.targetYaw;
-        float targetPitch = req.targetPitch;
+        float targetYRot = req.targetYRot;
+        float targetXRot = req.targetXRot;
 
         if (rotationsFeatureConfig.getJitterMode() == RotationsFeatureConfig.JitterMode.NORMAL) {
             float minJitter = (float) (rotationsFeatureConfig.getRotationThreshold() / 4f);
             float maxJitter = (float) (rotationsFeatureConfig.getRotationThreshold() / 2);
-            float jitterYaw = minJitter + (float) (Math.random() * (maxJitter - minJitter));
-            float jitterPitch = minJitter + (float) (Math.random() * (maxJitter - minJitter));
-            jitterYaw *= Math.random() < 0.5 ? -1 : 1;
-            jitterPitch *= Math.random() < 0.5 ? -1 : 1;
+            float jitterYRot = minJitter + (float) (Math.random() * (maxJitter - minJitter));
+            float jitterXRot = minJitter + (float) (Math.random() * (maxJitter - minJitter));
+            jitterYRot *= Math.random() < 0.5 ? -1 : 1;
+            jitterXRot *= Math.random() < 0.5 ? -1 : 1;
 
-            targetYaw += jitterYaw;
-            targetPitch += jitterPitch;
+            targetYRot += jitterYRot;
+            targetXRot += jitterXRot;
 
-            targetPitch = Mth.clamp(targetPitch, -90f, 90f);
+            targetXRot = Mth.clamp(targetXRot, -90f, 90f);
         } else if (rotationsFeatureConfig.getJitterMode() == RotationsFeatureConfig.JitterMode.GRIM) {
             float f = (float)((Math.random() * 2.0 - 1.0) * 0.001f);
-            targetPitch = Mth.clamp(targetPitch + f, -90.0F, 90.0F);
+            targetXRot = Mth.clamp(targetXRot + f, -90.0F, 90.0F);
         }
 
 //        ROTATION_SERVICE.getStateHandler().setRotationYaw(targetYaw);
 //        ROTATION_SERVICE.getStateHandler().setRotationPitch(targetPitch);
-        ROTATION_SERVICE.getStateHandler().setServerYaw(targetYaw);
-        ROTATION_SERVICE.getStateHandler().setServerPitch(targetPitch);
+        ROTATION_SERVICE.getStateHandler().setServerYRot(targetYRot);
+        ROTATION_SERVICE.getStateHandler().setServerXRot(targetXRot);
 
-        MC.getConnection().send(new ServerboundMovePlayerPacket.PosRot(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYaw, targetPitch, MC.player.onGround(), true));
+        MC.getConnection().send(new ServerboundMovePlayerPacket.PosRot(MC.player.getX(), MC.player.getY(), MC.player.getZ(), targetYRot, targetXRot, MC.player.onGround(), true));
     }
 }

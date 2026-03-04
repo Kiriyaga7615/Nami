@@ -18,38 +18,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import static namidevelopment.kiriyaga.nami.Nami.*;
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 @Mixin(MultiPlayerGameMode.class)
 public abstract class MixinMultiPlayerGameMode {
     @Shadow
     private int destroyDelay;
-
-    private float savedYaw, savedPitch;
-
-    @Inject(method = "useItem", at = @At("HEAD"))
-    private void interactItem1(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-        if (player != MC.player) return;
-        if (!ROTATION_SERVICE.getStateHandler().isRotating()) return;
-
-        savedYaw = player.getYRot();
-        savedPitch = player.getXRot();
-
-        float spoofYaw = ROTATION_SERVICE.getStateHandler().getRotationYaw();
-        float spoofPitch = ROTATION_SERVICE.getStateHandler().getRotationPitch();
-
-        player.setYRot(spoofYaw);
-        player.setXRot(spoofPitch);
-    }
-
-    @Inject(method = "useItem", at = @At("RETURN"))
-    private void interactItem2(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir) {
-        if (player != MC.player) return;
-        if (!ROTATION_SERVICE.getStateHandler().isRotating()) return;
-
-        player.setYRot(savedYaw);
-        player.setXRot(savedPitch);
-    }
 
     @Inject(method = "startDestroyBlock", at = @At("HEAD"), cancellable = true)
     private void onAttackBlock(BlockPos blockPos, Direction direction, CallbackInfoReturnable<Boolean> call){

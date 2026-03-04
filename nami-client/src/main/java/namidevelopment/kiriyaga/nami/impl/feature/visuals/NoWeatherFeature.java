@@ -16,7 +16,7 @@ public class NoWeatherFeature extends Feature {
         super("NoWeather", "Disables rendering of weather.", FeatureCategory.of("Render"), "noweather", "nowether", "nowather");
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     private void onUpdate (PreTickEvent ev){
         if (MC == null || MC.level == null || MC.player == null)
             return;

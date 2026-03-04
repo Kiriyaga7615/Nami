@@ -12,6 +12,7 @@ import java.util.List;
 
 import static namidevelopment.kiriyaga.api.NamiApi.MC;
 import static namidevelopment.kiriyaga.api.NamiApi.SERVER_SERVICE;
+import static namidevelopment.kiriyaga.nami.Nami.CLICK_GUI_SCREEN;
 
 public class CategoryPanel {
 
@@ -59,7 +60,7 @@ public class CategoryPanel {
     }
 
     public void render(GuiGraphics context, Font font, int x, int y, int mouseX, int mouseY) {
-        int contentHeight = getContentHeight(MC.getWindow().getGuiScaledHeight(), y);
+        int contentHeight = getContentHeight((int)(MC.getWindow().getGuiScaledHeight() / CLICK_GUI_SCREEN.scale), y);
         currentHeight += (contentHeight - currentHeight) * 10f * 1f / SERVER_SERVICE.getInstantFPS();
         int realContentHeight = 0;
 

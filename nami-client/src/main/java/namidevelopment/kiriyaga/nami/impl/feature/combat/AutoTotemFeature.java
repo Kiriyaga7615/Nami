@@ -11,22 +11,24 @@ import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.EnumSetting;
 import namidevelopment.kiriyaga.api.model.setting.IntSetting;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
-import namidevelopment.kiriyaga.api.util.InventoryUtils;
 import namidevelopment.kiriyaga.api.util.entity.PlayerUtils;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
-import static namidevelopment.kiriyaga.nami.Nami.*;
-import static namidevelopment.kiriyaga.api.NamiApi.*;import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isItemAWeapon;
 
 @RegisterFeature
 public class AutoTotemFeature extends Feature {
@@ -36,7 +38,7 @@ public class AutoTotemFeature extends Feature {
     public final IntSetting health = addSetting(new IntSetting("Health", 12, 2, 36));
     public final BoolSetting offhandOverride = addSetting(new BoolSetting("Override", false));
     public final EnumSetting<Offhand> overrideItem = addSetting(new EnumSetting<>("Item", Offhand.TOTEM));
-    public final BoolSetting swordGap = addSetting(new BoolSetting("SwordGap", true));
+    public final BoolSetting gapOverride = addSetting(new BoolSetting("GapOverride", true));
     public final BoolSetting fastSwap = addSetting(new BoolSetting("Alternative", true));
     public final BoolSetting mainhand = addSetting(new BoolSetting("Mainhand", false));
     public final BoolSetting mainhandGapple = addSetting(new BoolSetting("MainhandGapple", false));
@@ -48,17 +50,21 @@ public class AutoTotemFeature extends Feature {
     private long lastAttemptTime = 0;
     private int totemCount = 0;
 
+    public boolean mainhandActive = false;
+
     public AutoTotemFeature() {
         super("AutoTotem", "Automatically places totem in your hand.", FeatureCategory.of("Combat"), "autototem");
         mainhandSlot.setShowCondition(mainhand::get);
         overrideItem.setShowCondition(offhandOverride::get);
-        swordGap.setShowCondition(offhandOverride::get);
+        gapOverride.setShowCondition(offhandOverride::get);
+        mainhandGapple.setShowCondition(mainhand::get);
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public void onPreTick(PreTickEvent event) {
         if (MC.level == null || MC.player == null) return;
         this.clearDisplayInfo();
+        mainhandActive = false;
 
         int totemCount = PlayerUtils.getTotemCount();
 
@@ -84,15 +90,11 @@ public class AutoTotemFeature extends Feature {
 
         ItemStack offhandStack = player.getOffhandItem();
         ItemStack targetStack = null;
-        boolean overrideActive = false;
 
         if (offhandOverride.get()) {
             int effectiveHealth = (int) (player.getHealth() + player.getAbsorptionAmount());
             if (effectiveHealth >= health.get()) {
                 targetStack = getOverrideStack();
-                if (targetStack != null) {
-                    overrideActive = true;
-                }
             }
         }
 
@@ -101,61 +103,53 @@ public class AutoTotemFeature extends Feature {
             if (targetStack == null) return;
         }
 
-        if (mainhand.get()) {
-            boolean useGapple = mainhandGapple.get() && MC.options.keyUse.isDown() && MC.player.getInventory().getSelectedSlot() == mainhandSlot.get();
+        boolean lowHp = player.getHealth() + player.getAbsorptionAmount() <= health.get();
+        if (mainhand.get() && lowHp) {
+            mainhandActive = true;
 
-            if (useGapple) {
-                int gappleSlot = findInventorySlot(new ItemStack(Items.ENCHANTED_GOLDEN_APPLE), mainhandSlot.get());
-                if (gappleSlot == -1) {
-                    gappleSlot = findInventorySlot(new ItemStack(Items.GOLDEN_APPLE), mainhandSlot.get());
-                }
+            ItemStack mhStack = player.getInventory().getItem(mainhandSlot.get());
 
-                if (gappleSlot != -1 && MC.player.getInventory().getItem(mainhandSlot.get()).getItem() != Items.ENCHANTED_GOLDEN_APPLE
-                        && MC.player.getInventory().getItem(mainhandSlot.get()).getItem() != Items.GOLDEN_APPLE) {
+            if (mhStack.getItem() != Items.TOTEM_OF_UNDYING && offhandStack.getItem() == Items.TOTEM_OF_UNDYING) {
+                int totemSlot = findInventorySlot(new ItemStack(Items.TOTEM_OF_UNDYING), mainhandSlot.get());
+                if (totemSlot != -1) {
                     if (fastSwap.get()) {
-                        INVENTORY_SERVICE.getClickHandler().swapSlot(convertSlot(gappleSlot), mainhandSlot.get());
+                        INVENTORY_SERVICE.getClickHandler().swapSlot(convertSlot(totemSlot), mainhandSlot.get());
                         lastAttemptTime = System.currentTimeMillis();
                     } else {
-                        clickSlot(gappleSlot, convertSlot(mainhandSlot.get()));
+                        clickSlot(totemSlot, convertSlot(mainhandSlot.get()));
                         lastAttemptTime = System.currentTimeMillis();
-                    }
-                }
-            } else {
-                if (MC.player.getInventory().getItem(mainhandSlot.get()).getItem() != Items.TOTEM_OF_UNDYING) {
-                    int totem = findInventorySlot(new ItemStack(Items.TOTEM_OF_UNDYING), mainhandSlot.get());
-                    if (totem != -1) {
-                        if (fastSwap.get()) {
-                            INVENTORY_SERVICE.getClickHandler().swapSlot(convertSlot(totem), mainhandSlot.get());
-                            lastAttemptTime = System.currentTimeMillis();
-                        } else {
-                            clickSlot(totem, convertSlot(mainhandSlot.get()));
-                            lastAttemptTime = System.currentTimeMillis();
-                        }
                     }
                 }
             }
 
+            boolean useGapple = mainhandGapple.get() && MC.options.keyUse.isDown();
+            if (useGapple) {
+                int gappleSlot = findInventorySlot(new ItemStack(Items.ENCHANTED_GOLDEN_APPLE), -1);
+                if (gappleSlot == -1) gappleSlot = findInventorySlot(new ItemStack(Items.GOLDEN_APPLE), -1);
 
-            if (MC.player.getHealth() + MC.player.getAbsorptionAmount() <= health.get() && MC.player.getInventory().getItem(mainhandSlot.get()).getItem() == Items.TOTEM_OF_UNDYING)
-                InventoryUtils.attemptSwitch(mainhandSlot.get());
+                if (gappleSlot != -1 && gappleSlot < 9) {
+                    INVENTORY_SERVICE.getSwapHandler().attemptSwitch(gappleSlot, false);
+                } else {
+                    INVENTORY_SERVICE.getSwapHandler().attemptSwitch(mainhandSlot.get(), false);
+                }
+            } else {
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(mainhandSlot.get(), false);
+            }
         }
 
         int targetSlot;
-
-        if (mainhand.get())
+        if (mainhandActive) {
             targetSlot = findInventorySlot(targetStack, mainhandSlot.get());
-        else
+        } else {
             targetSlot = findInventorySlot(targetStack);
+        }
 
         if (targetSlot == -1) return;
-
         if (offhandStack.getItem() == targetStack.getItem()) return;
 
         if (fastSwap.get()) {
-            if (offhandStack.getItem() != targetStack.getItem()) {
-                INVENTORY_SERVICE.getClickHandler().swapSlot(convertSlot(targetSlot), 40);
-                lastAttemptTime = System.currentTimeMillis();
-            }
+            INVENTORY_SERVICE.getClickHandler().swapSlot(convertSlot(targetSlot), 40);
+            lastAttemptTime = System.currentTimeMillis();
         } else {
             clickSlot(targetSlot, 45);
             lastAttemptTime = System.currentTimeMillis();
@@ -177,12 +171,25 @@ public class AutoTotemFeature extends Feature {
         Offhand type = overrideItem.get();
         LocalPlayer player = MC.player;
 
-        if (swordGap.get()
-        && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get()
-        && isItemAWeapon(MC.player.getInventory().getSelectedItem())
-        && MC.options.keyUse.isDown())
-            return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
+        if (gapOverride.get() && MC.player.getHealth() + MC.player.getAbsorptionAmount() >= health.get() && MC.options.keyUse.isDown()) {
 
+            if (!MC.player.getInventory().getSelectedItem().isEmpty() && MC.player.getInventory().getSelectedItem().getUseAnimation() != ItemUseAnimation.NONE || MC.player.getInventory().getSelectedItem().getItem() == Items.TOTEM_OF_UNDYING) {
+                return null;
+            }
+
+            if (MC.hitResult instanceof BlockHitResult blockHit) {
+                BlockPos pos = blockHit.getBlockPos();
+                BlockState state = MC.level.getBlockState(pos);
+
+                InteractionResult result = state.useWithoutItem(MC.level, MC.player, blockHit);
+
+                if (result.consumesAction()) {
+                    return null;
+                }
+            }
+
+            return new ItemStack(Items.ENCHANTED_GOLDEN_APPLE);
+        }
         switch (type) {
             case TOTEM:
                 return new ItemStack(Items.TOTEM_OF_UNDYING);

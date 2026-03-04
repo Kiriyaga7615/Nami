@@ -10,6 +10,7 @@ import namidevelopment.kiriyaga.api.model.feature.Feature;
 import namidevelopment.kiriyaga.api.model.feature.FeatureCategory;
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.util.EnchantmentUtils;
+import namidevelopment.kiriyaga.api.util.GrimUtils;
 import namidevelopment.kiriyaga.nami.impl.feature.client.ColorFeature;
 import namidevelopment.kiriyaga.api.model.setting.BoolSetting;
 import namidevelopment.kiriyaga.api.model.setting.DoubleSetting;
@@ -20,6 +21,7 @@ import namidevelopment.kiriyaga.api.util.InteractionUtils;
 import namidevelopment.kiriyaga.api.util.entity.DamageUtils;
 import namidevelopment.kiriyaga.api.util.entity.EntityUtils;
 import namidevelopment.kiriyaga.api.util.render.RenderUtil;
+import namidevelopment.kiriyaga.nami.impl.feature.combat.AuraFeature;
 import namidevelopment.kiriyaga.nami.impl.feature.world.SpeedMineFeature;
 import namidevelopment.kiriyaga.nami.mixininterface.ILivingEntity;
 import net.minecraft.core.BlockPos;
@@ -38,8 +40,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -50,19 +54,16 @@ import java.util.*;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static namidevelopment.kiriyaga.api.NamiApi.*;
 import static namidevelopment.kiriyaga.api.util.RotationUtils.*;
 import static namidevelopment.kiriyaga.api.util.entity.PlayerUtils.isBroken;
+import static namidevelopment.kiriyaga.nami.impl.feature.combat.AuraFeature.getWeapon;
 
 @RegisterFeature
 public class AutoCrystalFeature extends Feature {
     public enum Sequential {NONE, FULL }
-    
+
     //place
     public final BoolSetting doPlace = addSetting(new BoolSetting("Place", true));
     public final DoubleSetting placeRange = addSetting(new DoubleSetting("PlaceRange","Range", 6.0, 1.0, 6.0));
@@ -72,19 +73,24 @@ public class AutoCrystalFeature extends Feature {
     public final BoolSetting placeIgnoreItems = addSetting(new BoolSetting("PlaceIgnoreItems","IgnoreItems", true));
     public final BoolSetting placeIgnoreCrystals = addSetting(new BoolSetting("PlaceIgnoreCrystals","IgnoreCrystals", true));
     public final BoolSetting placeStrictDirection = addSetting(new BoolSetting("PlaceStrictDirection","StrictDirection", true));
-    public final BoolSetting placeSwapBack = addSetting(new BoolSetting("PlaceSwapBack","SwapBack", true));
+    public final BoolSetting placeSwapSilent = addSetting(new BoolSetting("PlaceSwapSilent","SwapSilent", true));
     public final BoolSetting placeMultitask = addSetting(new BoolSetting("PlaceMultitask","Multitask", false));
-    public final BoolSetting placeIgnoreTerrain = addSetting(new BoolSetting("PlaceIgnoreTerrain","IgnoreTerrain", true));
+    public final BoolSetting placeIdPredict = addSetting(new BoolSetting("PlaceIdPredict","IdPredict", false));
+    public final IntSetting placeMinPredict = addSetting(new IntSetting("PlaceMinPredict","MinPredict", 0, 0, 20));
+    public final IntSetting placeMaxPredict = addSetting(new IntSetting("PlaceMaxPredict","MaxPredict", 0, 0, 20));
 
     //break
     public final BoolSetting doBreak = addSetting(new BoolSetting("Break", true));
     public final DoubleSetting breakRange = addSetting(new DoubleSetting("BreakRange","Range", 3.0, 1.0, 7.0));
+    public final BoolSetting breakStanceAbuse = addSetting(new BoolSetting("BreakStanceAbuse","StanceAbuse", false));
     public final IntSetting breakInhibit = addSetting(new IntSetting("Inhibit", 4, 1, 20));
     public final IntSetting breakDelay = addSetting(new IntSetting("BreakDelay","Delay", 0, 0, 20));
     public final BoolSetting breakRotate = addSetting(new BoolSetting("BreakRotate","Rotate", true));
     public final BoolSetting breakSwing = addSetting(new BoolSetting("BreakSwing","Swing", true));
     public final BoolSetting breakMultitask = addSetting(new BoolSetting("BreakMultitask","Multitask", false));
     public final IntSetting breakAge = addSetting(new IntSetting("Age", 0, 0, 20));
+    public final BoolSetting breakAntiWeak = addSetting(new BoolSetting("BreakAntiWeak","AntiWeak", false));
+    public final BoolSetting breakSwapSilent = addSetting(new BoolSetting("BreakSwapSilent","SwapSilent", true));
     public final EnumSetting<Sequential> breakSequential = addSetting(new EnumSetting<>("BreakSequential","Sequential", Sequential.NONE));
 
     //damages
@@ -96,7 +102,8 @@ public class AutoCrystalFeature extends Feature {
     public final DoubleSetting healthBalance = addSetting(new DoubleSetting("HealthBalance", 0.20, 0.00, 1.00));
     public final DoubleSetting armorBalance = addSetting(new DoubleSetting("ArmorBalance", 0.20, 0.00, 1.00));
     public final BoolSetting antiFeetTrap = addSetting(new BoolSetting("AntiFeetTrap", true));
-    public final DoubleSetting antiFeetTrapFactor = addSetting(new DoubleSetting("Factor", 0.80, 0.5, 1.00));
+    public final DoubleSetting antiFeetTrapFactor = addSetting(new DoubleSetting("Factor", 0.55, 0.3, 0.7));
+    public final BoolSetting ignoreTerrain = addSetting(new BoolSetting("IgnoreTerrain","IgnoreTerrain", true));
 
     //render
     public final BoolSetting render = addSetting(new BoolSetting("Render", true));
@@ -106,16 +113,18 @@ public class AutoCrystalFeature extends Feature {
     private PlaceTarget lastPlaceTarget = null;
     public float lastTotalDamage;
     float lastCalcTimeMs = 0;
+    private volatile long predictId;
 
     private final Int2IntOpenHashMap crystalHits = new Int2IntOpenHashMap();
     private final Long2IntOpenHashMap crystalPlaces = new Long2IntOpenHashMap();
     private final Set<Integer> deadIds = ConcurrentHashMap.newKeySet();
 
 
-    private final ExecutorService calcExecutor = Executors.newSingleThreadExecutor();
-    private volatile Future<?> runningTask;
-    private final AtomicReference<PlaceTarget> asyncBest = new AtomicReference<>();
-    private volatile PlaceTarget bestPlace;
+    private PlaceTarget bestPlace;
+
+    private int cachedChunkX = Integer.MIN_VALUE;
+    private int cachedChunkZ = Integer.MIN_VALUE;
+    private ChunkAccess cachedChunk;
 
     public AutoCrystalFeature() {
         super("AutoCrystal", "Automatically places and break crystals to kill people, if you are good enough!.", FeatureCategory.of("Combat"), "autocrystal", "ac", "crystalaura");
@@ -129,6 +138,8 @@ public class AutoCrystalFeature extends Feature {
         breakAge.setShowCondition(() -> doBreak.get());
         breakSequential.setShowCondition(() -> doBreak.get());
         breakInhibit.setShowCondition(() -> doBreak.get());
+        breakSwapSilent.setShowCondition(() -> doBreak.get() && breakAntiWeak.get());
+        breakStanceAbuse.setShowCondition(() -> doBreak.get());
 
         placeRange.setShowCondition(() -> doPlace.get());
         placeDelay.setShowCondition(() -> doPlace.get());
@@ -136,10 +147,13 @@ public class AutoCrystalFeature extends Feature {
         placeSwing.setShowCondition(() -> doPlace.get());
         placeIgnoreItems.setShowCondition(() -> doPlace.get());
         placeMultitask.setShowCondition(() -> doPlace.get());
-        placeSwapBack.setShowCondition(() -> doPlace.get());
+        placeSwapSilent.setShowCondition(() -> doPlace.get());
         placeIgnoreCrystals.setShowCondition(() -> doPlace.get());
         placeStrictDirection.setShowCondition(() -> doPlace.get());
-        placeIgnoreTerrain.setShowCondition(() -> doPlace.get());
+        ignoreTerrain.setShowCondition(() -> doPlace.get());
+
+        placeMinPredict.setShowCondition(placeIdPredict::get);
+        placeMaxPredict.setShowCondition(placeIdPredict::get);
     }
 
     @Override
@@ -161,44 +175,13 @@ public class AutoCrystalFeature extends Feature {
         update();
 
         long tickId = MC.level.getGameTime();
+        AutoCrystalSnapshot.debugInfo dbg = new AutoCrystalSnapshot.debugInfo(tickId);
+        AutoCrystalSnapshot snap = doSnapshot(tickId, dbg);
+        bestPlace = findNextPlaceTargetForSnapshot(snap, dbg);
 
-        if (runningTask == null || runningTask.isDone()) {
-            AutoCrystalSnapshot.AsyncDebugInfo dbg = new AutoCrystalSnapshot.AsyncDebugInfo(tickId);
-
-            AutoCrystalSnapshot snap = doSnapshot(tickId, dbg);
-            runningTask = calcExecutor.submit(() -> {
-                PlaceTarget best = findNextPlaceTargetForSnapshot(snap, dbg);
-                asyncBest.set(best);
-
-                if (debug.get()) {
-                    float ms = (System.nanoTime() - dbg.startNs) / 1_000_000f;
-
-                    MC.execute(() -> {
-                        CHAT_SERVICE.sendPersistent(
-                                "AutoCrystalFeature#asyncCalc",
-                                dbg.buildMessage(ms)
-                        );
-                    });
-                }
-            });
-        }
-
-        if (this.asyncBest.get() != null) {
-            BlockPos pos = this.asyncBest.get().pos;
-            BlockPos base = pos.below();
-
-            Vec3 crystalPos = new Vec3(base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5);
-
-            float realDamage = calculateDamage(crystalPos);
-
-            if (realDamage > 0.0f) {
-                bestPlace = new PlaceTarget(pos, realDamage);
-                lastTotalDamage = realDamage;
-            } else {
-                bestPlace = null;
-            }
-        } else {
-            bestPlace = null;
+        if (debug.get()) {
+            float ms = (System.nanoTime() - dbg.startNs) / 1_000_000f;
+            CHAT_SERVICE.sendPersistent("AutoCrystalFeature#placeCalcs", dbg.buildMessage(ms));
         }
 
         if (doBreak.get()) {
@@ -219,24 +202,29 @@ public class AutoCrystalFeature extends Feature {
 
         this.clearDisplayInfo();
         this.addDisplayInfo(String.format(Locale.US, "%.2f", lastTotalDamage));
-        this.addDisplayInfo(String.format(Locale.US, "%.4f", lastCalcTimeMs));
+        this.addDisplayInfo(String.format(Locale.US, "%.2f", lastCalcTimeMs) + "ms");
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketReceive(PacketReceiveEvent event) {
-        if (!(event.getPacket() instanceof ClientboundEntityEventPacket packet)) return;
-        if (packet.getEventId() != 3) return;
+        if ((event.getPacket() instanceof ClientboundEntityEventPacket packet)) {
+            if (packet.getEventId() != 3) return;
 
-        // Author: cattyngmd
-        MC.execute(() -> {
-            Entity e = packet.getEntity(MC.level);
-            if (e instanceof LivingEntity living) {
-                ((ILivingEntity) living).setServerSideDead(true);
-            }
-            if (e instanceof Player player) {
-                deadIds.add(e.getId());
-            }
-        });
+            // Author: cattyngmd
+            MC.execute(() -> {
+                Entity e = packet.getEntity(MC.level);
+                if (e instanceof LivingEntity living) {
+                    ((ILivingEntity) living).setServerSideDead(true);
+                }
+                if (e instanceof Player player) {
+                    deadIds.add(e.getId());
+                }
+            });
+        }
+
+        if (event.getPacket() instanceof ClientboundAddEntityPacket packet && packet.getId() > predictId) {
+            predictId = packet.getId();
+        }
     }
 
     @SubscribeEvent
@@ -249,7 +237,7 @@ public class AutoCrystalFeature extends Feature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private void onAddEntityEvent(AddEntityEvent event) {
         if (breakSequential.get() != Sequential.FULL) return;
 
@@ -263,7 +251,7 @@ public class AutoCrystalFeature extends Feature {
             fake.setPos(pos);
             fake.setId(packet.getId());
 
-            doBreakOnNetty(fake);
+            doBreakSequential(fake, true);
         }
     }
 
@@ -278,7 +266,7 @@ public class AutoCrystalFeature extends Feature {
         RenderUtil.drawBoxLines(box, color, true, true, 1.5f);
     }
 
-    private void doBreakOnNetty(EndCrystal crystal) { // we are not on netty actually
+    private void doBreakSequential(EndCrystal crystal, boolean b) {
         if (!breakMultitask.get() && MC.player.isUsingItem())  {
             return;
         }
@@ -286,13 +274,13 @@ public class AutoCrystalFeature extends Feature {
         if (breakRotate.get()) {
             Vec3 hit = getClosestPointToEye(MC.player.getEyePosition(), crystal.getBoundingBox());
 
-            float yaw = (float) getYawToVec(MC.player, hit);
-            float pitch = (float) getPitchToVec(MC.player, hit);
+            float yaw = (float) getYRotToVec(MC.player, hit);
+            float pitch = (float) getXRotToVec(MC.player, hit);
 
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AutoCrystalFeature.class.getName(), 9, yaw, pitch));
         }
 
-        if (!canBreak(crystal)) {
+        if (b && !canBreak(crystal)) {
             return;
         }
 
@@ -313,8 +301,8 @@ public class AutoCrystalFeature extends Feature {
 
         if (breakRotate.get()) {
             Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), target.crystal.getBoundingBox());
-            float yaw = (float) getYawToVec(MC.player, pos);
-            float pitch = (float) getPitchToVec(MC.player, pos);
+            float yaw = (float) getYRotToVec(MC.player, pos);
+            float pitch = (float) getXRotToVec(MC.player, pos);
 
             ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AutoCrystalFeature.class.getName(), 9, yaw, pitch));
         }
@@ -327,6 +315,15 @@ public class AutoCrystalFeature extends Feature {
         if (hits >= breakInhibit.get() && target.crystal.tickCount < 20)
             return;
 
+        if (breakAntiWeak.get()) {
+            var weakness = MC.player.getEffect(MobEffects.WEAKNESS);
+            var strength = MC.player.getEffect(MobEffects.STRENGTH);
+
+            int slot = getWeapon();
+            if (weakness.getAmplifier() - strength.getAmplifier() > 0 && slot != -1) {
+                INVENTORY_SERVICE.getSwapHandler().attemptSwitch(slot, breakSwapSilent.get());
+            }
+        }
         MC.gameMode.attack(MC.player, target.crystal);
 
         if (breakSwing.get())
@@ -340,7 +337,7 @@ public class AutoCrystalFeature extends Feature {
     private BreakTarget bestCrystal() {
         BreakTarget best = null;
 
-        for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.END_CRYSTALS, 10)) {
+        for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.END_CRYSTALS, 12)) {
             if (!(e instanceof EndCrystal crystal)) continue;
 
             if (e.tickCount < breakAge.get()) continue;
@@ -351,14 +348,26 @@ public class AutoCrystalFeature extends Feature {
                 continue;
 
             //   if (MC.player.distanceToSqr(crystal) > 10 * 10) continue;
+            Vec3 eyePos;
+            if (breakStanceAbuse.get()) {
+                double foundDist = Double.MAX_VALUE;
+                Vec3 foundEye = MC.player.getEyePosition(1.0f);
+                for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                    Vec3 closest = getClampClosestPoint(v, crystal.getBoundingBox());
+                    double dist = v.distanceTo(closest);
+                    if (dist < foundDist) {
+                        foundDist = dist;
+                        foundEye = v;
+                    }
+                }
+                eyePos = foundEye;
+            } else {
+                eyePos = MC.player.getEyePosition(1.0f);
+            }
 
-            Vec3 pos = getClosestPointToEye(MC.player.getEyePosition(), crystal.getBoundingBox());
-            float yaw = (float) getYawToVec(MC.player, pos);
-            float pitch = (float) getPitchToVec(MC.player, pos);
-            EntityHitResult perfect = raycastTarget(MC.player, crystal, breakRange.get(), yaw, pitch);
-            boolean insideBox = crystal.getBoundingBox().contains(MC.player.getEyePosition());
+            if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystal.getBoundingBox())) > breakRange.get())
+                continue;
 
-            if (!insideBox && perfect == null) continue;
 
             float totalDamage = calculateDamage(crystal.position());
             if (totalDamage <= -0.9f)
@@ -378,9 +387,25 @@ public class AutoCrystalFeature extends Feature {
         if (!breakRotate.get())
             return true;
 
-      //  ROTATION_SERVICE.getRequestHandler().submit(new RotationRequest(AutoCrystalFeature.class.getName(), 5, idealYaw, idealPitch));
-        boolean insideBox = crystal.getBoundingBox().contains(MC.player.getEyePosition(1.0f));
-        EntityHitResult serverCheck = raycastTarget(MC.player, crystal, breakRange.get(), ROTATION_SERVICE.getStateHandler().getServerYaw(), ROTATION_SERVICE.getStateHandler().getServerPitch());
+        Vec3 eyePos;
+        if (breakStanceAbuse.get()) {
+            double foundDist = Double.MAX_VALUE;
+            Vec3 foundEye = MC.player.getEyePosition(1.0f);
+            for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                Vec3 closest = getClampClosestPoint(v, crystal.getBoundingBox());
+                double dist = v.distanceTo(closest);
+                if (dist < foundDist) {
+                    foundDist = dist;
+                    foundEye = v;
+                }
+            }
+            eyePos = foundEye;
+        } else {
+            eyePos = MC.player.getEyePosition(1.0f);
+        }
+
+        boolean insideBox = crystal.getBoundingBox().contains(eyePos);
+        EntityHitResult serverCheck = raycastTarget(eyePos, crystal, breakRange.get(), ROTATION_SERVICE.getStateHandler().getServerYRot(), ROTATION_SERVICE.getStateHandler().getServerXRot());
         return serverCheck != null || insideBox;
     }
 
@@ -390,22 +415,33 @@ public class AutoCrystalFeature extends Feature {
             return;
         }
 
-        InteractionUtils.interactBlockAt(target.pos.below(), Items.END_CRYSTAL, null, placeSwapBack.get(), placeMultitask.get(), placeRange.get(), placeRotate.get(), placeStrictDirection.get(), false, placeSwing.get(), AutoCrystalFeature.class.getName() + "_PLACE");
+        InteractionUtils.interactBlockAt(target.pos.below(), Items.END_CRYSTAL, null, placeSwapSilent.get(), placeMultitask.get(), placeRange.get(), placeRotate.get(), placeStrictDirection.get(), false, placeSwing.get(), AutoCrystalFeature.class.getName() + "_PLACE");
 
         lastPlaceTarget = target;
-
+        lastTotalDamage = target.totalDamage;
+        
         crystalPlaces.put(target.pos.asLong(), 0);
+
+        if (placeIdPredict.get()) {
+            for(int i = Math.min(placeMinPredict.get(), placeMaxPredict.get()); i <= Math.max(placeMinPredict.get(), placeMaxPredict.get()); i++) {
+                int id = (int) (predictId + i);
+                int hits = crystalHits.get(id);
+
+                if (hits >= breakInhibit.get())
+                    return;
+
+                EndCrystal crystal = new EndCrystal(MC.level, 0.0, 0.0, 0.0);
+                crystal.setId(id);
+                doBreakSequential(crystal, false);
+            }
+        }
+    
         placeTimer = placeDelay.get();
     }
 
-    private AutoCrystalSnapshot doSnapshot(long tickId, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
-        Vec3 eyePos = MC.player.getEyePosition();
+    private AutoCrystalSnapshot doSnapshot(long tickId, AutoCrystalSnapshot.debugInfo dbg) {
+        Vec3 eyePos = MC.player.getEyePosition(1.0f);
         BlockPos playerPos = MC.player.blockPosition();
-
-        double pr = placeRange.get();
-        double br = breakRange.get();
-        double minDmg = minDamage.get();
-
         List<Player> entities = EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PLAYERS, 12).stream().filter(e -> e instanceof LivingEntity).map(e -> (Player) e).toList();
         dbg.targetsTotal = entities.size();
 
@@ -414,9 +450,9 @@ public class AutoCrystalFeature extends Feature {
         for (Player e : entities) {
             if (e.isDeadOrDying())
                 continue;
-            if (SOCIALS_SERVICE.isFriend(e.getName().getString()))
-                continue;
             if (((ILivingEntity) e).isServerSideDead())
+                continue;
+            if (deadIds.contains(e.getId()))
                 continue;
 
             dbg.targetsValid++;
@@ -461,7 +497,7 @@ public class AutoCrystalFeature extends Feature {
             targets.add(new AutoCrystalSnapshot.TargetData(e.getId(), e.position(), e.getBoundingBox(), (float) Math.floor(e.getAttributeValue(Attributes.ARMOR)), (float) e.getAttributeValue(Attributes.ARMOR_TOUGHNESS), resistanceAmp, mask, prot, blastProt, e.getHealth(), e.getAbsorptionAmount(), broken));
         }
 
-        int r = (int) Math.ceil(pr);
+        int r = (int) Math.ceil(placeRange.get());
         int rr = r * r;
 
         ArrayList<BlockPos> candidates = new ArrayList<>();
@@ -476,20 +512,20 @@ public class AutoCrystalFeature extends Feature {
 
                     BlockPos pos = playerPos.offset(x, y, z);
                     BlockPos base = pos.below();
-
                     BlockState baseState = MC.level.getBlockState(base);
                     if (!baseState.is(Blocks.OBSIDIAN) && !baseState.is(Blocks.BEDROCK)) {
                         dbg.candidatesBadBase++;
                         continue;
                     }
 
-                    if (!MC.level.getBlockState(pos).isAir()) {
+                    BlockState state = MC.level.getBlockState(pos);
+                    if (!state.isAir() && !(state.getBlock().equals(Blocks.FIRE) && MC.level.dimension() == Level.END)) {
                         dbg.candidatesNotAir++;
                         continue;
                     }
 
                     AABB blockBox = new AABB(pos);
-                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > pr) {
+                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, blockBox)) > placeRange.get()) {
                         dbg.candidatesOutPlaceRange++;
                         continue;
                     }
@@ -497,19 +533,30 @@ public class AutoCrystalFeature extends Feature {
                     Vec3 crystalPos = new Vec3(base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5);
                     AABB crystalBox = new AABB(crystalPos.x-1, crystalPos.y, crystalPos.z-1, crystalPos.x+1, crystalPos.y + 2.0, crystalPos.z + 1.0);
 
-                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystalBox)) > br) {
+                    if (breakStanceAbuse.get()) {
+                        double foundDist = Double.MAX_VALUE;
+                        Vec3 foundEye = MC.player.getEyePosition(1.0f);
+                        for (Vec3 v : GrimUtils.getPossibleEyePositions(MC.player)) {
+                            Vec3 closest = getClampClosestPoint(v, crystalBox);
+                            double dist = v.distanceTo(closest);
+                            if (dist < foundDist) {
+                                foundDist = dist;
+                                foundEye = v;
+                            }
+                        }
+                        eyePos = foundEye;
+                    }
+
+                    if (eyePos.distanceTo(getClampClosestPoint(eyePos, crystalBox)) > breakRange.get()) {
                         dbg.candidatesOutBreakRange++;
                         continue;
                     }
 
-                    AABB checkIntersects = new AABB(
-                            base.getX(), base.getY() + 1, base.getZ(),
-                            base.getX() + 1, base.getY() + 2, base.getZ() + 1
-                    );
+                    AABB checkIntersects = new AABB(base.getX(), base.getY() + 1, base.getZ(), base.getX() + 1, base.getY() + 2, base.getZ() + 1);
 
                     boolean blocked = false;
                     for (Entity e : MC.level.getEntities(null, checkIntersects)) {
-                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && item.getAge() <= 5) continue;
+                        if (placeIgnoreItems.get() && e instanceof ItemEntity item && !item.verticalCollisionBelow) continue;
                         if (placeIgnoreCrystals.get() && e instanceof EndCrystal crystal && crystal.tickCount < 5) continue;
                         if (e instanceof EndCrystal crystal && crystal.blockPosition().equals(pos)) continue;
                         blocked = true;
@@ -526,10 +573,10 @@ public class AutoCrystalFeature extends Feature {
             }
         }
 
-        return new AutoCrystalSnapshot(tickId, MC.player.getId(), eyePos, playerPos, pr, br, minDmg, assumeBestArmor.get(), MC.level.getDifficulty(), true, MC.level, targets.toArray(new AutoCrystalSnapshot.TargetData[0]), candidates.toArray(new BlockPos[0]), ignored);
+        return new AutoCrystalSnapshot(tickId, MC.player.getId(), eyePos, playerPos, placeRange.get(), breakRange.get(), minDamage.get(), assumeBestArmor.get(), MC.level.getDifficulty(), true, MC.level, targets.toArray(new AutoCrystalSnapshot.TargetData[0]), candidates.toArray(new BlockPos[0]), ignored);
     }
 
-    private PlaceTarget findNextPlaceTargetForSnapshot(AutoCrystalSnapshot snap, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
+    private PlaceTarget findNextPlaceTargetForSnapshot(AutoCrystalSnapshot snap, AutoCrystalSnapshot.debugInfo dbg) {
         PlaceTarget best = null;
 
         for (BlockPos pos : snap.candidatePos()) {
@@ -550,17 +597,13 @@ public class AutoCrystalFeature extends Feature {
         return best;
     }
 
-    private float calculateDamageForSnapshot(Vec3 explosionPos, AutoCrystalSnapshot snap, AutoCrystalSnapshot.AsyncDebugInfo dbg) {
+    private float calculateDamageForSnapshot(Vec3 explosionPos, AutoCrystalSnapshot snap, AutoCrystalSnapshot.debugInfo dbg) {
         float total = 0.0f;
         boolean any = false;
 
         for (var t : snap.targets()) {
             double dist = t.pos().distanceTo(explosionPos);
             if (dist > 12.0) continue;
-
-
-            if (deadIds.contains(t.id()))
-                continue;
 
             double exposure = calculateExposureForSnapshot(explosionPos, t.box(), snap);
             if (exposure <= 0.0) continue;
@@ -584,6 +627,10 @@ public class AutoCrystalFeature extends Feature {
 
                 continue;
             }
+
+            if (SOCIALS_SERVICE.isFriend(MC.level.getEntity(t.id()).getName().getString()))
+                continue;
+
             double dynMin = getMinDamage(t.health(), t.absorption(), t.armorBroken());
 
             if (dmg < dynMin) {
@@ -637,13 +684,15 @@ public class AutoCrystalFeature extends Feature {
         int hits = 0;
         int misses = 0;
 
+        DamageUtils.ExposureContext ctx = new DamageUtils.ExposureContext(Vec3.ZERO, Vec3.ZERO);
+
         for (double x = 0; x <= dx; x += dx / steps) {
             for (double y = 0; y <= dy; y += dy / steps) {
                 for (double z = 0; z <= dz; z += dz / steps) {
 
                     Vec3 pos = new Vec3(box.minX + x, box.minY + y, box.minZ + z);
-
-                    if (raycastForSnapshot(pos, source, snap) == null) {
+                    ctx.set(pos, source);
+                    if (raycastForSnapshot(ctx, snap) == null) {
                         misses++;
                     }
 
@@ -655,21 +704,19 @@ public class AutoCrystalFeature extends Feature {
         return hits == 0 ? 0f : (float) misses / hits;
     }
 
-    private BlockHitResult raycastForSnapshot(Vec3 start, Vec3 end, AutoCrystalSnapshot snap) {
+    private BlockHitResult raycastForSnapshot(DamageUtils.ExposureContext ctx, AutoCrystalSnapshot snap) {
         return BlockGetter.traverseBlocks(
-                start, end,
-                new DamageUtils.ExposureContext(start, end),
-                (ctx, pos) -> {
+                ctx.start(), ctx.end(),
+                ctx,
+                (context, pos) -> {
 
                     if (snap.ignoredBlocks() != null && snap.ignoredBlocks().contains(pos))
                         return null;
 
-                    BlockState state = snap.level().getBlockState(pos);
-
-                    return state.getCollisionShape(snap.level(), pos)
-                            .clip(ctx.start(), ctx.end(), pos);
+                    BlockState state = getBlockFast(snap.level(), pos);
+                    return state.getCollisionShape(snap.level(), pos).clip(context.start(), context.end(), pos);
                 },
-                ctx -> null
+                context -> null
         );
     }
 
@@ -683,7 +730,7 @@ public class AutoCrystalFeature extends Feature {
     private Set<BlockPos> ignoredBlocks() {
         Set<BlockPos> ignored = new HashSet<>();
 
-        if (placeIgnoreTerrain.get()) {
+        if (ignoreTerrain.get()) {
             int r = placeRange.get().intValue()+2;
             BlockPos center = MC.player.blockPosition();
 
@@ -727,6 +774,12 @@ public class AutoCrystalFeature extends Feature {
 
         for (Entity e : EntityUtils.getEntities(EntityUtils.EntityTypeCategory.PLAYERS, 12)) {
             if (!(e instanceof Player player)) continue;
+            if (player.isDeadOrDying())
+                continue;
+            if (((ILivingEntity) player).isServerSideDead())
+                continue;
+            if (deadIds.contains(player.getId()))
+                continue;
 
             float dmg = DamageUtils.crystalDamage(player, player.position(), player.getBoundingBox(), crystalPos, DamageUtils.BLOCK_CHECK, assumeBestArmor.get(), ignored);
 
@@ -809,6 +862,38 @@ public class AutoCrystalFeature extends Feature {
                 return true;
         }
         return false;
+    }
+
+    private BlockState getBlockFast(Level level, BlockPos pos) {
+
+        if (level.isOutsideBuildHeight(pos.getY())) {
+            return Blocks.VOID_AIR.defaultBlockState();
+        }
+
+        int chunkX = pos.getX() >> 4;
+        int chunkZ = pos.getZ() >> 4;
+
+        if (cachedChunkX != chunkX || cachedChunkZ != chunkZ) {
+            cachedChunk = level.getChunk(chunkX, chunkZ);
+            cachedChunkX = chunkX;
+            cachedChunkZ = chunkZ;
+        }
+
+        var chunk = cachedChunk;
+
+        if (chunk != null) {
+            var section = chunk.getSections()[level.getSectionIndex(pos.getY())];
+
+            if (section != null && !section.hasOnlyAir()) {
+                return section.getBlockState(
+                        pos.getX() & 15,
+                        pos.getY() & 15,
+                        pos.getZ() & 15
+                );
+            }
+        }
+
+        return Blocks.AIR.defaultBlockState();
     }
 
     private record PlaceTarget(BlockPos pos, float totalDamage) {}

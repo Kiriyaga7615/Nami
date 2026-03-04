@@ -40,11 +40,12 @@ public class AnnouncerFeature extends Feature {
 
     public AnnouncerFeature() {
         super("Announcer", "Announces in chat when a certain action happened.", FeatureCategory.of("Miscellaneous"), "joinannounce", "joins", "announce", "visualrange");
-        soundMode.setShowCondition(visualRange::get);
         joinEveryone.setShowCondition(joinAnnounce::get);
         joinFriends.setShowCondition(joinAnnounce::get);
+        joinEnemy.setShowCondition(joinAnnounce::get);
         rangeEveryone.setShowCondition(visualRange::get);
         rangeFriends.setShowCondition(visualRange::get);
+        soundMode.setShowCondition(visualRange::get);
         selfPop.setShowCondition(totemPopCounter::get);
         friendsPop.setShowCondition(totemPopCounter::get);
         othersPop.setShowCondition(totemPopCounter::get);
@@ -78,7 +79,7 @@ public class AnnouncerFeature extends Feature {
         return othersPop.get();
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onPacketReceive(PacketReceiveEvent event) {
         if (!joinAnnounce.get()) return;
 
@@ -116,7 +117,7 @@ public class AnnouncerFeature extends Feature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onEntitySpawn(AddEntityEvent event) {
         if (MC.player == null || MC.level == null || !visualRange.get()) return;
 
@@ -139,7 +140,7 @@ public class AnnouncerFeature extends Feature {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void onTotemPop(TotemPopEvent event) {
         if (!totemPopCounter.get()) return;
         if (MC.player == null || MC.level == null) return;
