@@ -2,6 +2,7 @@ package namidevelopment.kiriyaga.nami.impl.feature.combat;
 
 import namidevelopment.kiriyaga.api.annotation.RegisterFeature;
 import namidevelopment.kiriyaga.api.annotation.SubscribeEvent;
+import namidevelopment.kiriyaga.api.event.impl.PacketReceiveEvent;
 import namidevelopment.kiriyaga.api.event.impl.PreTickEvent;
 import namidevelopment.kiriyaga.api.event.impl.Render3DEvent;
 import namidevelopment.kiriyaga.api.model.feature.Feature;
@@ -61,6 +62,11 @@ public class FeetTrapFeature extends Feature {
     @SubscribeEvent
     public void onRender(Render3DEvent event) {
         trap.onRender(event);
+    }
+
+    @SubscribeEvent
+    public void onPacketReceive(PacketReceiveEvent event) {
+        trap.handlePacket(event, this, getTrapTargets());
     }
 
     private List<BlockPos> getTrapTargets() {
