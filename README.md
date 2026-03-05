@@ -1,6 +1,7 @@
 # Nami
 
-1.21.11
+This is the last public version of nami made for minecraft 1.21.11
+It wont receive any updates
 
 ### Join our discord - https://discord.gg/auHTtNAqRq
 
