@@ -44,24 +44,3 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifactId = project.archives_base_name
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/NamiDevelopment/nami")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}

@@ -6,14 +6,6 @@ plugins {
 }
 
 repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/NamiDevelopment/nami")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
-
     maven { url = "https://api.modrinth.com/maven" }
 
     maven { url = "https://maven.fabricmc.net/" }
@@ -33,8 +25,7 @@ processResources {
     inputs.property "loader_version", project.loader_version
     inputs.property "minecraft_version", project.minecraft_version
 
-    filesMatching("fabric.mod.json") {
-        expand(
+    filesMatching("fabric.mod.json") {expand(
                 version: project.version,
                 loader_version: project.loader_version,
                 minecraft_version: project.minecraft_version
@@ -44,7 +35,6 @@ processResources {
 
 group = project.maven_group
 version = project.mod_version
-def namiApiVersion = project.nami_api
 
 tasks.register("printVersion") {
     doLast {
@@ -58,8 +48,8 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modCompileOnly "maven.modrinth:sodium:${project.sodium_version}"
-    modImplementation "namidevelopment.kiriyaga:nami-api:${namiApiVersion}"
-    include "namidevelopment.kiriyaga:nami-api:${namiApiVersion}"
+    modImplementation project(":nami-api")
+    include project(":nami-api")
 }
 
 java {
