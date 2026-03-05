@@ -18,6 +18,15 @@ repositories {
 
 loom {
     accessWidenerPath = file("src/main/resources/META-INF/nami.accesswidener")
+
+    mods {
+        "nami-api" {
+            sourceSet project(":nami-api").sourceSets.main
+        }
+        "nami-client" {
+            sourceSet sourceSets.main
+        }
+    }
 }
 
 processResources {
@@ -48,8 +57,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modCompileOnly "maven.modrinth:sodium:${project.sodium_version}"
-    modImplementation project(":nami-api")
-    include project(":nami-api")
+    include implementation(project(path: ":nami-api", configuration: "namedElements"))
 }
 
 java {
