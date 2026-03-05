@@ -31,7 +31,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew :nami-client:build
 
       - name: Upload
         uses: actions/upload-artifact@v4

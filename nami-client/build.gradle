@@ -57,7 +57,8 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modCompileOnly "maven.modrinth:sodium:${project.sodium_version}"
-    include implementation(project(path: ":nami-api", configuration: "namedElements"))
+    modImplementation project(":nami-api")
+    include project(":nami-api")
 }
 
 java {
