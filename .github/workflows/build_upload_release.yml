@@ -65,7 +65,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Build
-        run: ./gradlew :nami-client:build
+        run: ./gradlew build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
